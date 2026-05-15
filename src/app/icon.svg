@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Outer left dot (charcoal) -->
+  <circle cx="16" cy="10" r="7" fill="#2D2D38"/>
+  <!-- Center dot (cobalt blue) -->
+  <circle cx="32" cy="10" r="7" fill="#1400D4"/>
+  <!-- Outer right dot (charcoal) -->
+  <circle cx="48" cy="10" r="7" fill="#2D2D38"/>
+  <!-- Pill / i-body (cobalt blue) -->
+  <rect x="24" y="22" width="16" height="36" rx="8" fill="#1400D4"/>
+</svg>

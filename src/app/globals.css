@@ -1,26 +1,502 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand palette — IT Arena cobalt blue + charcoal + amber */
+  --background: 220 33% 98%;
+  --foreground: 222 47% 8%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 8%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 8%;
+
+  /* Primary: logo blue #1400D4 → hsl(246, 100%, 42%) */
+  --primary: 246 100% 42%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Secondary: soft slate (same hue family as logo) */
+  --secondary: 246 32% 93%;
+  --secondary-foreground: 246 47% 11%;
+
+  --muted: 220 20% 94%;
+  --muted-foreground: 217 16% 48%;
+
+  /* Accent: amber/orange */
+  --accent: 38 95% 52%;
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 220 20% 88%;
+  --input: 220 20% 88%;
+  --ring: 246 100% 42%;
+  --radius: 0.625rem;
+
+  /* Brand extras */
+  --brand-navy: 246 47% 11%;
+  --brand-blue: 246 100% 42%;
+  --brand-charcoal: 235 15% 18%;
+  --brand-orange: 38 95% 52%;
+  --brand-teal: 172 66% 40%;
+  --brand-purple: 258 70% 58%;
+
+  /* Charts */
+  --chart-1: 246 100% 42%;
+  --chart-2: 38 95% 52%;
+  --chart-3: 172 66% 40%;
+  --chart-4: 258 70% 58%;
+  --chart-5: 342 75% 55%;
+
+  /* Admin shell — light, premium SaaS surfaces */
+  --admin-sidebar: 0 0% 100%;
+  --admin-sidebar-border: 220 20% 90%;
+  --admin-canvas: 220 25% 97%;
+  --admin-canvas-mesh: 220 33% 98%;
+  --admin-topbar-bg: 0 0% 100%;
+  --admin-shadow-sm: 0 1px 2px hsl(222 47% 8% / 0.04);
+  --admin-shadow-card: 0 1px 3px hsl(222 47% 8% / 0.06),
+    0 12px 32px -8px hsl(222 47% 8% / 0.08);
+
+  /* Elevated admin panels — shared by .admin-card-elevated + scoped Card */
+  --admin-card-radius: 1rem;
+  --admin-card-border: hsl(var(--border) / 0.58);
+  --admin-card-surface:
+    radial-gradient(
+      ellipse 120% 90% at 50% -45%,
+      hsl(246 100% 42% / 0.08),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 100% 0%,
+      hsl(38 95% 52% / 0.06),
+      transparent 50%
+    ),
+    hsl(var(--card));
+  --admin-card-inner-highlight: linear-gradient(
+    180deg,
+    hsl(0 0% 100% / 0.65) 0%,
+    transparent 40%
+  );
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 96%;
+
+  --card: 222 40% 9%;
+  --card-foreground: 210 40% 96%;
+
+  --popover: 222 40% 9%;
+  --popover-foreground: 210 40% 96%;
+
+  --primary: 246 100% 62%;
+  --primary-foreground: 246 47% 6%;
+
+  --secondary: 246 28% 16%;
+  --secondary-foreground: 210 40% 96%;
+
+  --muted: 246 28% 14%;
+  --muted-foreground: 215 20% 60%;
+
+  --accent: 38 95% 55%;
+  --accent-foreground: 246 47% 6%;
+
+  --destructive: 0 62% 38%;
+  --destructive-foreground: 210 40% 96%;
+
+  --border: 246 28% 18%;
+  --input: 246 28% 18%;
+  --ring: 246 100% 62%;
+
+  --brand-navy: 246 47% 11%;
+  --brand-blue: 246 100% 62%;
+  --brand-charcoal: 235 15% 18%;
+  --brand-orange: 38 95% 55%;
+  --brand-teal: 172 66% 48%;
+  --brand-purple: 258 70% 65%;
+
+  --chart-1: 246 100% 62%;
+  --chart-2: 38 95% 58%;
+  --chart-3: 172 66% 48%;
+  --chart-4: 258 70% 65%;
+  --chart-5: 342 75% 62%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: hsl(var(--border));
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Gradient mesh helpers */
+.mesh-gradient {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(246 100% 42% / 0.15), transparent),
+              radial-gradient(ellipse 60% 40% at 80% 60%, hsl(38 95% 52% / 0.08), transparent),
+              radial-gradient(ellipse 50% 60% at 10% 90%, hsl(172 66% 40% / 0.08), transparent),
+              hsl(var(--background));
+}
+
+.mesh-gradient-navy {
+  background: radial-gradient(ellipse 80% 60% at 20% 50%, hsl(246 100% 42% / 0.3), transparent),
+              radial-gradient(ellipse 60% 80% at 80% 20%, hsl(258 70% 58% / 0.2), transparent),
+              hsl(var(--brand-navy));
+}
+
+/* Animated gradient border */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border {
+  background: linear-gradient(135deg, hsl(var(--brand-blue)), hsl(var(--brand-orange)), hsl(var(--brand-teal)));
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* Card accent top bar */
+.card-accent-blue::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: hsl(var(--brand-blue));
+  border-radius: var(--radius) var(--radius) 0 0;
+  margin: -1px -1px 0;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection */
+::selection {
+  background-color: hsl(var(--primary) / 0.15);
+  color: hsl(var(--foreground));
+}
+
+/* Admin app canvas — subtle depth without dark mode */
+.admin-app-canvas {
+  background-color: hsl(var(--admin-canvas));
+  background-image: radial-gradient(
+      ellipse 100% 80% at 50% -30%,
+      hsl(246 100% 42% / 0.06),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 100% 0%,
+      hsl(38 95% 52% / 0.04),
+      transparent 45%
+    );
+}
+
+.admin-card-elevated {
+  position: relative;
+  border-radius: var(--admin-card-radius);
+  box-shadow: var(--admin-shadow-card);
+  border: 1px solid var(--admin-card-border);
+  background: var(--admin-card-surface);
+  isolation: isolate;
+}
+
+.admin-card-elevated::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--admin-card-inner-highlight);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.admin-card-elevated > * {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-main-enter {
+  animation: admin-main-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-main-enter {
+    animation: none;
+  }
+}
+
+@keyframes admin-main-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Admin route Cards — mesh surface, brand accent bar, scoped via html[data-admin-ui] */
+html[data-admin-ui] [data-slot="card"] {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--admin-card-radius) !important;
+  border: 1px solid var(--admin-card-border) !important;
+  background: var(--admin-card-surface) !important;
+  box-shadow: var(--admin-shadow-card) !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+
+html[data-admin-ui] [data-slot="card"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--brand-blue)),
+    hsl(var(--brand-orange) / 0.88),
+    hsl(var(--brand-teal) / 0.72)
+  );
+  border-radius: var(--admin-card-radius) var(--admin-card-radius) 0 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+html[data-admin-ui] [data-slot="card"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--admin-card-inner-highlight);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html[data-admin-ui] [data-slot="card"] > * {
+  position: relative;
+  z-index: 2;
+}
+
+html[data-admin-ui] [data-slot="card-header"].border-b {
+  border-color: hsl(var(--border) / 0.5);
+}
+
+html[data-admin-ui] [data-slot="card-title"] {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  min-width: 0;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  text-wrap: pretty;
+}
+
+html[data-admin-ui] [data-slot="card-footer"] {
+  background: hsl(var(--muted) / 0.38);
+  border-color: hsl(var(--border) / 0.45);
+}
+
+/* KPI tiles in admin — left gradient rail + same surface system */
+html[data-admin-ui] [data-slot="stat-card"] {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--admin-card-radius);
+  border: 1px solid var(--admin-card-border) !important;
+  background: var(--admin-card-surface) !important;
+  box-shadow: var(--admin-shadow-card) !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
+html[data-admin-ui] [data-slot="stat-card"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    hsl(var(--brand-blue)),
+    hsl(var(--brand-teal) / 0.55)
+  );
+  border-radius: var(--admin-card-radius) 0 0 var(--admin-card-radius);
+  z-index: 1;
+  pointer-events: none;
+}
+
+html[data-admin-ui] [data-slot="stat-card"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--admin-card-inner-highlight);
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html[data-admin-ui] [data-slot="stat-card"] > * {
+  position: relative;
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-admin-ui] a[data-slot="stat-card"] {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  html[data-admin-ui] a[data-slot="stat-card"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px -2px hsl(222 47% 8% / 0.1),
+      0 18px 40px -12px hsl(222 47% 8% / 0.12);
+  }
+}
+
+/* Portaled overlays — Base UI portals to body; scope while admin shell is mounted */
+html[data-admin-ui] [data-slot="popover-content"],
+html[data-admin-ui] [data-slot="dropdown-menu-content"],
+html[data-admin-ui] [data-slot="dropdown-menu-sub-content"],
+html[data-admin-ui] [data-slot="select-content"],
+html[data-admin-ui] [data-slot="admin-sidebar-tooltip"] {
+  border-radius: calc(var(--radius) + 0.25rem);
+  border: 1px solid hsl(var(--border) / 0.65);
+  box-shadow: var(--admin-shadow-card);
+  background: hsl(var(--popover) / 0.98);
+  backdrop-filter: blur(8px);
+}
+
+/* Rich help tooltips (e.g. ticket comment visibility) — fully opaque, no glass */
+[data-slot="tooltip-content"].ticket-comment-visibility-tooltip {
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  backdrop-filter: none;
+}
+
+/* Admin ticket sticky composer — must paint above activity list; tokens can be overridden by utilities */
+html[data-admin-ui] [data-slot="admin-ticket-comment-composer"] {
+  z-index: 70 !important;
+  background-color: hsl(var(--card)) !important;
+  background-image: none !important;
+  color: hsl(var(--card-foreground));
+  isolation: isolate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-admin-ui] [data-slot="popover-content"],
+  html[data-admin-ui] [data-slot="dropdown-menu-content"],
+  html[data-admin-ui] [data-slot="dropdown-menu-sub-content"],
+  html[data-admin-ui] [data-slot="select-content"],
+  html[data-admin-ui] [data-slot="admin-sidebar-tooltip"] {
+    backdrop-filter: none;
+  }
+}
+
+html[data-admin-ui] [data-slot="dropdown-menu-content"],
+html[data-admin-ui] [data-slot="admin-sidebar-tooltip"] {
+  min-width: 12rem;
+}
+
+html[data-admin-ui] [data-slot="dropdown-menu-item"],
+html[data-admin-ui] [data-slot="select-item"],
+html[data-admin-ui] [data-slot="dropdown-menu-sub-trigger"],
+html[data-admin-ui] [data-slot="dropdown-menu-checkbox-item"],
+html[data-admin-ui] [data-slot="dropdown-menu-radio-item"] {
+  min-height: 2.25rem;
+  border-radius: calc(var(--radius) - 0.125rem);
+}
+
+/* Override primitive focus:bg-accent while keeping destructive items unchanged */
+html[data-admin-ui] [data-slot="dropdown-menu-item"][data-variant="default"]:is(:focus, :focus-visible) {
+  background-color: hsl(var(--muted) / 0.5) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+html[data-admin-ui]
+  [data-slot="dropdown-menu-item"][data-variant="default"]:is(:focus, :focus-visible)
+  [data-slot="dropdown-menu-shortcut"] {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+html[data-admin-ui] [data-slot="dropdown-menu-sub-trigger"]:is(
+  :focus,
+  :focus-visible,
+  [data-open],
+  [data-popup-open]
+) {
+  background-color: hsl(var(--muted) / 0.5) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+html[data-admin-ui] [data-slot="select-item"]:is(:focus, :focus-visible) {
+  background-color: hsl(var(--muted) / 0.5) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+html[data-admin-ui] [data-slot="dropdown-menu-checkbox-item"]:is(:focus, :focus-visible),
+html[data-admin-ui] [data-slot="dropdown-menu-radio-item"]:is(:focus, :focus-visible) {
+  background-color: hsl(var(--muted) / 0.5) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+html[data-admin-ui] [data-slot="select-label"],
+html[data-admin-ui] [data-slot="dropdown-menu-label"] {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Command palette when admin UI scope is active (may be portaled to body) */
+html[data-admin-ui] [data-command-palette] {
+  border-radius: calc(var(--radius) + 0.25rem);
+  border: 1px solid hsl(var(--border) / 0.65);
+  box-shadow: var(--admin-shadow-card);
+  background: hsl(var(--popover) / 0.98);
+  backdrop-filter: blur(8px);
+}
+
+html[data-admin-ui] [data-command-palette] .cmdk-group-heading {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+  padding: 0.375rem 0.5rem 0.25rem;
+}
+
+html[data-admin-ui] [data-command-palette] [cmdk-item] {
+  min-height: 2.25rem;
+}
+
+html[data-admin-ui] [data-command-palette] [cmdk-item][aria-selected="true"],
+html[data-admin-ui] [data-command-palette] [cmdk-item][data-selected="true"] {
+  background-color: hsl(var(--muted) / 0.55);
+}
+
+html[data-admin-ui] [data-command-palette] [cmdk-item]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-admin-ui] [data-command-palette] {
+    backdrop-filter: none;
+  }
 }
