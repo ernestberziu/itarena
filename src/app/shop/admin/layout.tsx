@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { NextIntlClientProvider } from "next-intl";
 import { AdminAppShell } from "@/components/admin/admin-app-shell";
 import { shopUrl } from "@/lib/shop-url";
+import { getShopUrlRequestContext } from "@/lib/shop-url-request";
 import sqMessages from "../../../../messages/sq.json";
 
 export default async function ShopAdminLayout({
@@ -11,8 +12,9 @@ export default async function ShopAdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth().catch(() => null);
+  const shopCtx = await getShopUrlRequestContext();
   if (!session || !["ADMIN", "OPS"].includes(session.user.role)) {
-    redirect(shopUrl());
+    redirect(shopUrl("", shopCtx));
   }
 
   const nameParts = session.user.name?.split(" ") ?? ["A"];

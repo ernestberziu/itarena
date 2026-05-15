@@ -6,7 +6,7 @@ import { ShoppingCart, Globe, Menu, X, Search, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "./cart-context";
 import { ItArenaLogo } from "@/components/brand/logo";
-import { mainSiteUrl, shopUrl, shopUrlWithLang } from "@/lib/shop-url";
+import { mainSiteUrl, shopUrl, shopUrlWithLang, mainSiteHostname } from "@/lib/shop-url";
 
 interface ShopNavbarProps {
   lang: "sq" | "en";
@@ -86,7 +86,7 @@ export function ShopNavbar({
               </Link>
             )}
             <Link href={mainSiteUrl()} className="hover:text-white transition-colors">
-              itarena.al
+              {mainSiteHostname()}
             </Link>
           </div>
         </div>

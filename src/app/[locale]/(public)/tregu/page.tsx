@@ -6,7 +6,8 @@ import {
   Printer, Shield, Headphones, Package, Truck, CreditCard, Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { shopUrl } from "@/lib/shop-url";
+import { shopHostLabel, shopUrl } from "@/lib/shop-url";
+import { getShopUrlRequestContext } from "@/lib/shop-url-request";
 
 export async function generateMetadata({
   params,
@@ -25,6 +26,17 @@ export default async function TreguPage({
 }) {
   const { locale } = await params;
   const lp = locale === "sq" ? "" : `/${locale}`;
+
+  const shopCtx = await getShopUrlRequestContext();
+  const shopDomainLabel = shopCtx
+    ? shopHostLabel(shopCtx.requestHost)
+    : (() => {
+        try {
+          return new URL(shopUrl("", shopCtx)).hostname;
+        } catch {
+          return "shop";
+        }
+      })();
 
   const categories = [
     { icon: Monitor, name: locale === "sq" ? "Kompjuterë & Laptopë" : "Computers & Laptops", color: "bg-blue-50 text-blue-600 border-blue-100" },
@@ -47,7 +59,7 @@ export default async function TreguPage({
         <div className="container relative mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 border border-amber-200 px-5 py-2 text-sm font-semibold text-amber-700 mb-8">
             <ShoppingBag className="h-4 w-4" />
-            IT Arena Shop — shop.itarena.al
+            IT Arena Shop — {shopDomainLabel}
           </div>
 
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-7 leading-tight">
@@ -80,7 +92,7 @@ export default async function TreguPage({
               size="lg"
               asChild
             >
-              <Link href={shopUrl()}>
+              <Link href={shopUrl("", shopCtx)}>
                 {locale === "sq" ? "Shko tek Dyqani" : "Go to Shop"}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -153,7 +165,7 @@ export default async function TreguPage({
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {categories.map((cat) => (
-              <Link key={cat.name} href={shopUrl()} className="group">
+              <Link key={cat.name} href={shopUrl("", shopCtx)} className="group">
                 <div className={`flex items-center gap-4 rounded-2xl border p-5 bg-white hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${cat.color}`}>
                   <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${cat.color}`}>
                     <cat.icon className="h-6 w-6" />
@@ -174,7 +186,7 @@ export default async function TreguPage({
               size="lg"
               asChild
             >
-              <Link href={shopUrl()}>
+              <Link href={shopUrl("", shopCtx)}>
                 {locale === "sq" ? "Shiko Të Gjitha Produktet" : "View All Products"}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -210,7 +222,7 @@ export default async function TreguPage({
                   </Link>
                 </Button>
                 <Button size="lg" variant="secondary" asChild className="rounded-xl">
-                  <Link href={shopUrl()}>
+                  <Link href={shopUrl("", shopCtx)}>
                     {locale === "sq" ? "Hyr dhe Bli" : "Login & Buy"}
                   </Link>
                 </Button>

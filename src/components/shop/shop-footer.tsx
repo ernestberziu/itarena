@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Phone, Mail, MapPin, Truck, CreditCard, Shield } from "lucide-react";
 import { ItArenaLogo } from "@/components/brand/logo";
-import { mainSiteUrl, shopUrl } from "@/lib/shop-url";
+import { mainSiteUrl, shopUrl, mainSiteHostname } from "@/lib/shop-url";
 
 interface ShopFooterProps {
   lang: "sq" | "en";
@@ -52,12 +52,24 @@ export function ShopFooter({ lang }: ShopFooterProps) {
             </h3>
             <ul className="space-y-2.5">
               {[
-                { label: lang === "sq" ? "Të gjitha produktet" : "All products", href: shopUrl() },
-                { label: lang === "sq" ? "Shporta" : "Cart", href: shopUrl("cart") },
-                { label: lang === "sq" ? "Portali im" : "My portal", href: mainSiteUrl("portal/dashboard") },
-                { label: "itarena.al", href: mainSiteUrl() },
+                {
+                  key: "products",
+                  label: lang === "sq" ? "Të gjitha produktet" : "All products",
+                  href: shopUrl(),
+                },
+                {
+                  key: "cart",
+                  label: lang === "sq" ? "Shporta" : "Cart",
+                  href: shopUrl("cart"),
+                },
+                {
+                  key: "portal",
+                  label: lang === "sq" ? "Portali im" : "My portal",
+                  href: mainSiteUrl("portal/dashboard"),
+                },
+                { key: "main", label: mainSiteHostname(), href: mainSiteUrl() },
               ].map((l) => (
-                <li key={l.label}>
+                <li key={l.key}>
                   <Link href={l.href} className="text-sm text-slate-400 hover:text-white transition-colors">
                     {l.label}
                   </Link>

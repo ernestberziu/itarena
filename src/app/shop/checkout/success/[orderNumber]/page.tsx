@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, ShoppingBag, Truck, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mainSiteUrl, shopUrl } from "@/lib/shop-url";
+import { getShopUrlRequestContext } from "@/lib/shop-url-request";
 
 export const metadata = { title: "Porosia u konfirmua!" };
 
@@ -11,6 +12,7 @@ export default async function OrderSuccessPage({
   params: Promise<{ orderNumber: string }>;
 }) {
   const { orderNumber } = await params;
+  const shopCtx = await getShopUrlRequestContext();
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center py-16 px-4">
@@ -61,7 +63,7 @@ export default async function OrderSuccessPage({
           <Button
             asChild
           >
-            <Link href={shopUrl()}>Vazhdo me Blerjet</Link>
+            <Link href={shopUrl("", shopCtx)}>Vazhdo me Blerjet</Link>
           </Button>
           <Button variant="outline" asChild>
             <Link href={mainSiteUrl("portal/orders")}>Shiko Porositë e Mia</Link>
