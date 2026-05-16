@@ -17,20 +17,6 @@ services:
       timeout: 5s
       retries: 12
 
-  meilisearch:
-    image: getmeili/meilisearch:latest
-    container_name: itarena-meilisearch
-    environment:
-      MEILI_MASTER_KEY: "itarena-dev-master-key"
-      MEILI_ENV: "development"
-    ports:
-      - "7700:7700"
-    volumes:
-      - meilisearch_data:/meili_data
-    restart: unless-stopped
-
 volumes:
   postgres_data:
-    driver: local
-  meilisearch_data:
     driver: local

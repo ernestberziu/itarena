@@ -1,4 +1,4 @@
-import { shopUrl, mainSiteUrl } from "@/lib/shop-url";
+import { shopUrl } from "@/lib/shop-url";
 
 /** Resolve admin path for in-app navigation (locale-prefixed app routes). */
 export function localeAdminHref(locale: "sq" | "en", path: string): string {
@@ -8,16 +8,14 @@ export function localeAdminHref(locale: "sq" | "en", path: string): string {
 }
 
 /**
- * When rendered on the shop host, main-app admin links must be absolute to the marketing app.
+ * Admin links from the shop app shell use the same origin as the main site; paths are locale-prefixed.
  */
 export function crossAppAdminHref(
-  context: "locale" | "shop",
+  _context: "locale" | "shop",
   locale: "sq" | "en",
   path: string
 ): string {
-  const rel = localeAdminHref(locale, path);
-  if (context === "locale") return rel;
-  return mainSiteUrl(rel);
+  return localeAdminHref(locale, path);
 }
 
 export function commerceHref(

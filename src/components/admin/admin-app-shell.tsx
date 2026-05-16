@@ -40,6 +40,8 @@ import {
 } from "@/components/admin/admin-href";
 import { SHOP_CATEGORY_SELECTED_TEXT } from "@/lib/shop-category-selected-color";
 import type { Role } from "@/types/domain";
+import type { AdminFeature, AclLevel } from "@/lib/admin-acl/features";
+import { hasAclLevel } from "@/lib/admin-acl/features";
 
 const COLLAPSE_KEY = "admin-sidebar-collapsed";
 
@@ -59,6 +61,8 @@ export interface AdminAppShellProps {
   contextApp: "locale" | "shop";
   locale: "sq" | "en";
   notificationCount?: number;
+  /** When set, main/commerce nav items require at least read access for the matching feature id. */
+  effectiveAcl?: Record<AdminFeature, AclLevel> | null;
 }
 
 export function AdminAppShell({
@@ -70,6 +74,7 @@ export function AdminAppShell({
   contextApp,
   locale,
   notificationCount = 0,
+  effectiveAcl = null,
 }: AdminAppShellProps) {
   const pathname = usePathname();
   const t = useTranslations("admin");
@@ -108,10 +113,20 @@ export function AdminAppShell({
     };
   }, []);
 
-  const mainItems = MAIN_NAV.filter((item) => item.roles.includes(userRole));
-  const commerceItems = COMMERCE_NAV.filter((item) =>
-    item.roles.includes(userRole)
-  );
+  const mainItems = MAIN_NAV.filter((item) => {
+    if (!item.roles.includes(userRole)) return false;
+    if (!effectiveAcl) return true;
+    return hasAclLevel(effectiveAcl, item.id as AdminFeature, "read");
+  });
+  const commerceItems = COMMERCE_NAV.filter((item) => {
+    if (!item.roles.includes(userRole)) return false;
+    if (!effectiveAcl) return true;
+    return hasAclLevel(effectiveAcl, item.id as AdminFeature, "read");
+  });
+
+  const canSeeNotifications =
+    !effectiveAcl || hasAclLevel(effectiveAcl, "notifications", "read");
+  const canSeeProfile = !effectiveAcl || hasAclLevel(effectiveAcl, "profile", "read");
 
   const profileHref = crossAppAdminHref(contextApp, locale, "/admin/profile");
   const notificationsHref = crossAppAdminHref(
@@ -403,6 +418,7 @@ export function AdminAppShell({
             adminLocale={locale}
           />
 
+          {canSeeNotifications ? (
           <Button
             variant="outline"
             size="sm"
@@ -418,6 +434,7 @@ export function AdminAppShell({
               )}
             </Link>
           </Button>
+          ) : null}
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -438,14 +455,18 @@ export function AdminAppShell({
               <ChevronDown className="h-3.5 w-3.5 opacity-50" strokeWidth={2} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-48">
+              {canSeeProfile ? (
               <DropdownMenuItem render={<Link href={profileHref} />}>
                 <User className="h-4 w-4" strokeWidth={2} />
                 {t("profile")}
               </DropdownMenuItem>
+              ) : null}
+              {canSeeNotifications ? (
               <DropdownMenuItem render={<Link href={notificationsHref} />}>
                 <Bell className="h-4 w-4" strokeWidth={2} />
                 {t("notifications")}
               </DropdownMenuItem>
+              ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"

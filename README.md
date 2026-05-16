@@ -5,7 +5,7 @@ Monorepo web app with a **single PostgreSQL** database via Prisma. The **shop pr
 ## Prerequisites
 
 - Node.js + npm  
-- Docker (optional, for local Postgres / Meilisearch from `docker-compose.yml`)
+- Docker (optional, for local Postgres from `docker-compose.yml`)
 
 ## Environment
 
@@ -15,7 +15,13 @@ Copy `.env.example` to `.env`. You need at least:
 - `AUTH_SECRET`, `AUTH_URL` (NextAuth-compatible fallbacks in code: `NEXTAUTH_*`)  
 - `FINANCA5_API_URL`, `FINANCA5_API_KEY` — storefront + admin catalog (read-only) + quote SKU checks  
 
-Optional blocks are documented in `.env.example` (email, R2, Meilisearch, Inngest, Sentry, `PRISMA_LOG`, etc.).
+Optional blocks are documented in `.env.example` (email, Cloudinary, `PRISMA_LOG`, etc.).
+
+## Shop URL (single domain)
+
+The storefront lives at **`/shop`** on the same host as the marketing site (e.g. `https://example.com/shop`). [`src/lib/shop-url.ts`](src/lib/shop-url.ts) builds links from `NEXT_PUBLIC_APP_URL` + `/shop` by default.
+
+**Legacy `shop.example.com` hostnames:** [`src/proxy.ts`](src/proxy.ts) (Next.js **proxy** convention) responds with a **308 redirect** to the apex host and `/shop…` path. For traffic that never hits Next (CDN-only), add the same rule at the edge — see [`docs/shop-subdomain-redirects.md`](docs/shop-subdomain-redirects.md).
 
 ## Local development
 

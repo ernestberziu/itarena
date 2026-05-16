@@ -3,12 +3,14 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import {
   WORKING_HOURS_PER_DAY,
   MAX_RESOLUTION_HOURS,
   normalizeTicketEstimate,
   slaDeadlineFromEstimate,
 } from "@/lib/ticket-estimate";
+import { filterTicketHistoryForClient } from "@/lib/ticket-activity";
 
 const patchSchema = z.object({
   status: z
@@ -26,7 +28,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json();
@@ -41,6 +43,11 @@ export async function PATCH(
 
   if (!isStaff && !isOwner) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
+    if (denied) return denied;
   }
 
   const updateData: Record<string, unknown> = {};
@@ -101,7 +108,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           error: "Invalid estimate",
-          message: `Combined estimate must not exceed ${MAX_RESOLUTION_HOURS} working hours (${WORKING_HOURS_PER_DAY}h per day + hours).`,
+          message: `Combined estimate must not exceed ${MAX_RESOLUTION_HOURS} hours (${WORKING_HOURS_PER_DAY}h per calendar day + additional hours).`,
         },
         { status: 400 }
       );
@@ -211,7 +218,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const ticket = await db.ticket.findUnique({
@@ -235,6 +242,18 @@ export async function GET(
   const isStaff = ["ADMIN", "ENGINEER", "SALES", "OPS"].includes(session.user.role);
   if (!isStaff && ticket.createdById !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "tickets", "read");
+    if (denied) return denied;
+  }
+
+  if (!isStaff) {
+    return NextResponse.json({
+      ...ticket,
+      history: filterTicketHistoryForClient(ticket.history),
+    });
   }
 
   return NextResponse.json(ticket);

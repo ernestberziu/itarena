@@ -3,10 +3,20 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { getFinanca5Client } from "@/lib/financa5-client";
 import { adaptProducts } from "@/lib/erp-adapters";
 import { Package } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 export const metadata = { title: "Admin — Produktet" };
 
 export default async function AdminProductsPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/hyr");
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageRead("sq", acl, "shop_products", { redirectTo: "/shop" });
+
   let products: {
     id: string;
     nameSq: string;

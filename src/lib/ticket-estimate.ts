@@ -1,5 +1,5 @@
-/** One “day” in estimates = this many hours toward SLA resolutionHours (wall-clock from createdAt). */
-export const WORKING_HOURS_PER_DAY = 8;
+/** One estimated day = this many hours toward SLA resolutionHours (wall-clock from createdAt). */
+export const WORKING_HOURS_PER_DAY = 24;
 export const MAX_RESOLUTION_HOURS = 4000;
 
 function toNonNegativeInt(v: unknown, max: number): number {

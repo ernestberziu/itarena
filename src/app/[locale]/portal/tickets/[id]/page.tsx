@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 import { TicketDetailView } from "@/components/portal/ticket-detail-view";
-import type { TicketStatus, Priority, Role } from "@/types/domain";
+import { filterTicketHistoryForClient } from "@/lib/ticket-activity";
+import { STAFF_ROLES, type TicketStatus, type Priority, type Role } from "@/types/domain";
 
 export default async function TicketDetailPage({
   params,
@@ -15,32 +15,47 @@ export default async function TicketDetailPage({
 
   const { locale, id } = await params;
 
-  const ticket = await db.ticket.findUnique({
-    where: { id },
-    include: {
-      createdBy: { select: { id: true, firstName: true, lastName: true, email: true, role: true } },
-      assignedTo: { select: { id: true, firstName: true, lastName: true } },
-      company: { select: { name: true } },
-      comments: {
-        include: {
-          author: { select: { id: true, firstName: true, lastName: true, role: true } },
+  const isStaff = STAFF_ROLES.includes(session.user.role as Role);
+
+  const [ticket, engineers] = await Promise.all([
+    db.ticket.findUnique({
+      where: { id },
+      include: {
+        createdBy: { select: { id: true, firstName: true, lastName: true, email: true, role: true } },
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        company: { select: { name: true } },
+        comments: {
+          include: {
+            author: { select: { id: true, firstName: true, lastName: true, role: true } },
+          },
+          orderBy: { createdAt: "asc" },
         },
-        orderBy: { createdAt: "asc" },
-      },
-      history: {
-        include: {
-          changedBy: { select: { firstName: true, lastName: true, role: true } },
+        history: {
+          include: {
+            changedBy: { select: { firstName: true, lastName: true, role: true } },
+          },
+          orderBy: { createdAt: "asc" },
         },
-        orderBy: { createdAt: "asc" },
       },
-    },
-  });
+    }),
+    isStaff
+      ? db.user.findMany({
+          where: { role: { in: ["ADMIN", "ENGINEER", "SALES", "OPS"] } },
+          select: { id: true, firstName: true, lastName: true },
+          orderBy: { firstName: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
 
   if (!ticket) notFound();
 
   // Access control — clients can only see their own tickets
-  const isStaff = ["ADMIN", "ENGINEER", "SALES", "OPS"].includes(session.user.role);
   if (!isStaff && ticket.createdById !== session.user.id) notFound();
+
+  const mappedHistory = ticket.history.map((h) => ({
+    ...h,
+    changedBy: { ...h.changedBy, role: h.changedBy.role as Role },
+  }));
 
   // Cast DB string values to domain types
   const typedTicket = {
@@ -52,10 +67,7 @@ export default async function TicketDetailPage({
       ...c,
       author: { ...c.author, role: c.author.role as Role },
     })),
-    history: ticket.history.map((h) => ({
-      ...h,
-      changedBy: { ...h.changedBy, role: h.changedBy.role as Role },
-    })),
+    history: isStaff ? mappedHistory : filterTicketHistoryForClient(mappedHistory),
   };
 
   return (
@@ -64,6 +76,7 @@ export default async function TicketDetailPage({
       currentUserId={session.user.id}
       currentUserRole={session.user.role as Role}
       locale={locale}
+      engineers={isStaff ? engineers : undefined}
     />
   );
 }

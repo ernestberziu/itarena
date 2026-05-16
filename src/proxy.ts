@@ -20,12 +20,27 @@ function localeUrlPrefix(pathname: string): string {
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Subdomain routing: shop.* → rewrite to /shop/*
-  const host = req.headers.get("host") ?? "";
-  if (host.startsWith("shop.")) {
-    const url = req.nextUrl.clone();
-    url.pathname = pathname === "/" ? "/shop" : `/shop${pathname}`;
-    return NextResponse.rewrite(url);
+  // Legacy shop subdomain → canonical path on apex host (single-domain /shop)
+  const hostHeader = req.headers.get("host") ?? "";
+  if (hostHeader.toLowerCase().startsWith("shop.")) {
+    const apexHost = hostHeader.replace(/^shop\./i, "");
+    const u = new URL(req.url);
+    const forwardedProto = req.headers.get("x-forwarded-proto")?.split(",")[0].trim();
+    if (forwardedProto === "http" || forwardedProto === "https") {
+      u.protocol = `${forwardedProto}:`;
+    }
+    u.host = apexHost;
+    const path = req.nextUrl.pathname;
+    const search = req.nextUrl.search;
+    const shopPath =
+      path === "/" || path === ""
+        ? "/shop"
+        : path.startsWith("/shop")
+          ? path
+          : `/shop${path}`;
+    u.pathname = shopPath;
+    u.search = search;
+    return NextResponse.redirect(u, 308);
   }
 
   // Shop paths: bypass locale (intl) middleware entirely

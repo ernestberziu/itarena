@@ -19,6 +19,7 @@ function buildTicketsListHref(
     priority?: string | null;
     breached?: boolean;
     assignee?: string | null;
+    requester?: string | null;
   }
 ) {
   const p = new URLSearchParams();
@@ -28,6 +29,8 @@ function buildTicketsListHref(
   if (params.breached) p.set("filter", "breached");
   const a = params.assignee?.trim();
   if (a && a !== "__all__") p.set("assignee", a);
+  const r = params.requester?.trim();
+  if (r) p.set("requester", r);
   const qs = p.toString();
   return `${listPrefix}/admin/tickets${qs ? `?${qs}` : ""}`;
 }
@@ -36,6 +39,7 @@ export function AdminTicketsAssigneeSelect({
   listPrefix,
   engineers,
   assignee,
+  requester,
   q,
   status,
   priority,
@@ -45,6 +49,7 @@ export function AdminTicketsAssigneeSelect({
   listPrefix: string;
   engineers: AssigneeFilterOption[];
   assignee?: string | null;
+  requester?: string | null;
   q?: string | null;
   status?: string | null;
   priority?: string | null;
@@ -79,6 +84,7 @@ export function AdminTicketsAssigneeSelect({
       priority,
       breached,
       assignee: assigneeParam,
+      requester,
     });
     router.push(href);
   }

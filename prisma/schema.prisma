@@ -29,6 +29,8 @@ model User {
   twoFactorSecret  String?
   isActive         Boolean   @default(true)
   lastLoginAt      DateTime?
+  /// Optional per-user admin area overrides (read/write). Null = use role defaults.
+  adminAclJson     Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -126,9 +128,9 @@ model Ticket {
   createdById  String
   assignedToId String?
   companyId    String?
-  /// Estimated additional hours; with estimatedDays drives slaDeadline from createdAt (8h per day + hours, wall-clock).
+  /// Estimated additional hours; with estimatedDays drives slaDeadline from createdAt (24h per calendar day + hours, wall-clock).
   estimatedHours         Int?
-  /// Estimated working days; each day counts as 8 hours toward SLA deadline from createdAt.
+  /// Estimated calendar days; each day counts as 24 hours toward SLA deadline from createdAt.
   estimatedDays          Int?
   /// When the requester has no portal account (admin-created ticket).
   externalRequesterName  String?
@@ -300,6 +302,20 @@ model BlogPost {
   @@map("blog_posts")
 }
 
+// ─── Shop catalog overlays (Financa5 remains source of truth for prices/stock/names) ─
+
+/// Editable shop presentation keyed by Financa5 ARTIKUJ.KOD (`ShopProduct.id` / `sku`).
+model ShopProductOverlay {
+  erpKod         String   @id
+  imagesJson     String   @default("[]") @db.Text
+  descriptionSq  String?  @db.Text
+  descriptionEn  String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("shop_product_overlays")
+}
+
 // ─── Email Templates ─────────────────────────────────────────────────────────
 
 model EmailTemplate {
@@ -313,4 +329,47 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 
   @@map("email_templates")
+}
+
+// ─── Admin report presets / schedules / share links ───────────────────────────
+
+model ReportPreset {
+  id          String   @id @default(cuid())
+  name        String
+  createdById String
+  configJson  Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schedules ReportSchedule[]
+  shares    ReportShareLink[]
+
+  @@map("report_presets")
+}
+
+model ReportSchedule {
+  id          String    @id @default(cuid())
+  presetId    String
+  preset      ReportPreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  cron        String
+  recipients  String    @db.Text
+  lastRunAt   DateTime?
+  enabled     Boolean   @default(true)
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@map("report_schedules")
+}
+
+model ReportShareLink {
+  id          String    @id @default(cuid())
+  presetId    String?
+  preset      ReportPreset? @relation(fields: [presetId], references: [id], onDelete: SetNull)
+  paramsJson  Json
+  token       String    @unique
+  expiresAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@map("report_share_links")
 }

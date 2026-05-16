@@ -86,28 +86,26 @@ export function Footer() {
                 { label: t("nav.partners"), href: "/partneret" },
                 { label: t("nav.blog"), href: "/blog" },
                 { label: t("nav.contact"), href: "/kontakt" },
-                { label: "IT Shop", href: shopUrl(), external: true },
               ].map((item) => (
                 <li key={item.label}>
-                  {"external" in item && item.external ? (
-                    <Link
-                      href={item.href}
-                      className="flex items-center gap-1.5 text-sm text-amber-400 hover:text-amber-300 transition-colors font-medium"
-                    >
-                      <ArrowUpRight className="h-3 w-3" />
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <Link
-                      href={navLink(item.href)}
-                      className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
-                    >
-                      <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
-                      {item.label}
-                    </Link>
-                  )}
+                  <Link
+                    href={navLink(item.href)}
+                    className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
+                  >
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                    {item.label}
+                  </Link>
                 </li>
               ))}
+              <li key="it-shop">
+                <Link
+                  href={shopUrl()}
+                  className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
+                >
+                  <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
+                  IT Shop
+                </Link>
+              </li>
             </ul>
           </div>
 

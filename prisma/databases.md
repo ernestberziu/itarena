@@ -13,7 +13,7 @@ Portal **orders** are stored in Postgres only; inventory is updated in ERP separ
 ## Local development
 
 1. Copy [`.env.example`](../.env.example) to `.env` and set `DATABASE_URL`, auth, and Financa5 variables.
-2. `docker compose up -d postgres` (optional: `meilisearch` is in the same compose file).
+2. `docker compose up -d postgres` (optional).
 3. `npx prisma migrate deploy` or `npx prisma db push`, then `npx prisma db seed` (Postgres only). The seed command is defined in [`prisma.config.ts`](../prisma.config.ts) and runs with **`tsx`**; that file imports **`dotenv/config`** so `.env` is loaded (Prisma skips its default `.env` load when a config file is present).
 4. For local shop/catalog data, run `npm run dev:with-mock` or start `node dev-mock/financa5/server.js` so Financa5Api is reachable.
 

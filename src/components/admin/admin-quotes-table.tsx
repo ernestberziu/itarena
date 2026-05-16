@@ -1,11 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
+import { motion, useReducedMotion } from "framer-motion";
 import { AdminDataTable } from "@/components/admin/admin-data-table";
-import { AdminQuoteStatusUpdater } from "@/components/admin/quote-status-updater";
+import { AdminQuoteRowActions } from "@/components/admin/admin-quote-row-actions";
+import { QuoteStatusBadge } from "@/components/admin/quote-status-badge";
 import { formatDate, formatPrice } from "@/lib/utils";
-import { STATUS_LABELS } from "@/lib/admin-quote-status";
+import { summarizeServicesJson } from "@/lib/quote-display";
 
 export { QUOTE_STATUSES, STATUS_LABELS } from "@/lib/admin-quote-status";
 
@@ -14,40 +18,99 @@ export type AdminQuoteRow = {
   quoteNumber: string;
   title: string;
   status: string;
-  /** Serialized decimal / number */
   total: string | null;
   createdAt: string;
+  validUntil: string | null;
+  services: string;
+  contactName: string;
+  contactEmail: string;
+  pdfUrl: string | null;
   requestedBy: { firstName: string; lastName: string };
   company: { name: string } | null;
 };
 
-export function AdminQuotesTable({ quotes, locale }: { quotes: AdminQuoteRow[]; locale: string }) {
+export function AdminQuotesTable({
+  quotes,
+  locale,
+  lp,
+}: {
+  quotes: AdminQuoteRow[];
+  locale: string;
+  lp: string;
+}) {
+  const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const paginationLocale = locale === "en" ? "en" : "sq";
+  const emptyMessage = th("Nuk ka rezultate për këtë kërkim.", "No results for this search.");
+
   const columns = useMemo<ColumnDef<AdminQuoteRow>[]>(() => {
-    const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
     return [
-      { accessorKey: "quoteNumber", header: th("Nr. Ofertës", "Quote #"), cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">{row.original.quoteNumber}</span>
-      ) },
-      { accessorKey: "title", header: th("Titulli", "Title"), cell: ({ row }) => (
-        <span className="font-medium max-w-xs truncate block">{row.original.title}</span>
-      ) },
       {
-        id: "requester",
-        header: th("Klienti", "Requester"),
+        accessorKey: "quoteNumber",
+        header: th("Nr.", "#"),
+        enableSorting: true,
+        cell: ({ row }) => {
+          const href = `${lp}/admin/quotes/${row.original.id}`;
+          return (
+            <Link
+              href={href}
+              className="font-mono text-xs font-medium text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {row.original.quoteNumber}
+            </Link>
+          );
+        },
+      },
+      {
+        accessorKey: "title",
+        header: th("Kërkesa", "Request"),
+        enableSorting: true,
+        sortingFn: "alphanumeric",
+        cell: ({ row }) => {
+          const summary = summarizeServicesJson(row.original.services);
+          return (
+            <div className="max-w-[min(100vw,20rem)] lg:max-w-xs">
+              <p className="truncate font-medium">{row.original.title}</p>
+              {summary ? (
+                <p className="truncate text-xs text-muted-foreground" title={summary}>
+                  {summary}
+                </p>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        id: "customer",
+        accessorFn: (row) => `${row.contactName} ${row.contactEmail}`.toLowerCase(),
+        header: th("Klienti", "Customer"),
+        enableSorting: true,
         cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {row.original.requestedBy.firstName} {row.original.requestedBy.lastName}
-          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{row.original.contactName}</p>
+            <p className="truncate text-xs text-muted-foreground">{row.original.contactEmail}</p>
+          </div>
         ),
       },
       {
         id: "company",
+        accessorFn: (row) => row.company?.name?.toLowerCase() ?? "",
         header: th("Kompania", "Company"),
-        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.company?.name ?? "—"}</span>,
+        enableSorting: true,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{row.original.company?.name ?? "—"}</span>
+        ),
       },
       {
         id: "total",
+        accessorFn: (row) => {
+          const n = row.total == null ? NaN : Number(row.total);
+          return Number.isNaN(n) ? 0 : n;
+        },
         header: th("Shuma", "Amount"),
+        enableSorting: true,
         cell: ({ row }) => {
           const n = row.original.total == null ? null : Number(row.original.total);
           return (
@@ -60,31 +123,136 @@ export function AdminQuotesTable({ quotes, locale }: { quotes: AdminQuoteRow[]; 
       {
         accessorKey: "status",
         header: th("Statusi", "Status"),
-        cell: ({ row }) => {
-          const sl = STATUS_LABELS[row.original.status];
-          return sl ? (
-            <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${sl.color}`}>
-              {sl[locale as "sq" | "en"]}
-            </span>
-          ) : null;
-        },
+        enableSorting: true,
+        sortingFn: "alphanumeric",
+        cell: ({ row }) => (
+          <QuoteStatusBadge
+            status={row.original.status}
+            locale={locale}
+            validUntil={row.original.validUntil}
+          />
+        ),
       },
       {
         accessorKey: "createdAt",
         header: th("Krijuar", "Created"),
+        enableSorting: true,
         cell: ({ row }) => (
-          <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(new Date(row.original.createdAt))}</span>
+          <span className="whitespace-nowrap text-xs text-muted-foreground">
+            {formatDate(new Date(row.original.createdAt))}
+          </span>
         ),
+      },
+      {
+        id: "validUntil",
+        accessorKey: "validUntil",
+        header: th("Skadon", "Expires"),
+        enableSorting: true,
+        cell: ({ row }) =>
+          row.original.validUntil ? (
+            <span className="whitespace-nowrap text-xs text-muted-foreground">
+              {formatDate(new Date(row.original.validUntil))}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
+      {
+        id: "assigned",
+        header: th("Stafi", "Staff"),
+        enableSorting: false,
+        cell: () => <span className="text-xs text-muted-foreground">—</span>,
       },
       {
         id: "actions",
         header: "",
+        enableSorting: false,
         cell: ({ row }) => (
-          <AdminQuoteStatusUpdater quoteId={row.original.id} currentStatus={row.original.status} locale={locale} />
+          <AdminQuoteRowActions
+            quoteId={row.original.id}
+            detailHref={`${lp}/admin/quotes/${row.original.id}`}
+            currentStatus={row.original.status}
+            locale={locale}
+            pdfUrl={row.original.pdfUrl}
+          />
         ),
       },
     ];
-  }, [locale]);
+  }, [locale, lp, th]);
 
-  return <AdminDataTable columns={columns} data={quotes} pageSize={50} />;
+  return (
+    <>
+      <div className="hidden lg:block">
+        <AdminDataTable
+          columns={columns}
+          data={quotes}
+          pageSize={50}
+          variant="adminSaaS"
+          stickyHeader
+          paginationLocale={paginationLocale}
+          emptyMessage={emptyMessage}
+          onRowClick={(row) => router.push(`${lp}/admin/quotes/${row.id}`)}
+        />
+      </div>
+
+      <div className="space-y-3 lg:hidden">
+        {quotes.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-16 text-center text-sm text-muted-foreground">
+            {emptyMessage}
+          </div>
+        ) : (
+          quotes.map((q, i) => (
+            <motion.article
+              key={q.id}
+              layout
+              {...(!reduceMotion ? { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 } } : {})}
+              transition={{ duration: reduceMotion ? 0 : 0.2, delay: reduceMotion ? 0 : i * 0.03 }}
+              className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <Link
+                    href={`${lp}/admin/quotes/${q.id}`}
+                    className="font-mono text-xs font-medium text-primary hover:underline"
+                  >
+                    {q.quoteNumber}
+                  </Link>
+                  <h3 className="mt-1 line-clamp-2 font-semibold leading-snug">{q.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {q.contactName} · {q.contactEmail}
+                  </p>
+                </div>
+                <AdminQuoteRowActions
+                  quoteId={q.id}
+                  detailHref={`${lp}/admin/quotes/${q.id}`}
+                  currentStatus={q.status}
+                  locale={locale}
+                  pdfUrl={q.pdfUrl}
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <QuoteStatusBadge status={q.status} locale={locale} validUntil={q.validUntil} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span>
+                  {th("Shuma", "Amount")}:{" "}
+                  <span className="font-semibold text-foreground">
+                    {q.total != null && !Number.isNaN(Number(q.total)) ? formatPrice(Number(q.total)) : "—"}
+                  </span>
+                </span>
+                <span>
+                  {th("Krijuar", "Created")}: {formatDate(new Date(q.createdAt))}
+                </span>
+                {q.validUntil ? (
+                  <span>
+                    {th("Skadon", "Expires")}: {formatDate(new Date(q.validUntil))}
+                  </span>
+                ) : null}
+              </div>
+            </motion.article>
+          ))
+        )}
+      </div>
+    </>
+  );
 }

@@ -8,6 +8,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { MarkAllReadButton } from "@/components/portal/mark-all-read-button";
 import { timeAgo } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 const TYPE_ICONS: Record<string, string> = {
   TICKET_UPDATE: "🎫",
@@ -23,9 +25,13 @@ export default async function AdminNotificationsPage({
   params: Promise<{ locale: string }>;
 }) {
   const session = await auth();
-  if (!session) redirect("/hyr");
+  if (!session?.user?.id) redirect("/hyr");
 
   const { locale } = await params;
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageRead(locale, acl, "notifications");
+
   const lp = locale === "sq" ? "" : `/${locale}`;
 
   const notifications = await db.notification.findMany({

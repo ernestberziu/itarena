@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { generateQuoteNumber } from "@/lib/utils";
 
 const createSchema = z.object({
@@ -68,11 +69,16 @@ async function getOrCreateGuestUserId(email: string, name: string): Promise<stri
   return user.id;
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const isStaff = ["ADMIN", "SALES"].includes(session.user.role);
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "quotes", "read");
+    if (denied) return denied;
+  }
 
   const quotes = await db.quote.findMany({
     where: isStaff ? {} : { requestedById: session.user.id },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { generateOrderNumber } from "@/lib/utils";
 
 const orderItemSchema = z.object({
@@ -72,11 +73,16 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ id: order.id, orderNumber: order.orderNumber }, { status: 201 });
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const isStaff = ["ADMIN", "OPS"].includes(session.user.role);
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "orders", "read");
+    if (denied) return denied;
+  }
 
   const orders = await db.order.findMany({
     where: isStaff ? {} : { userId: session.user.id },

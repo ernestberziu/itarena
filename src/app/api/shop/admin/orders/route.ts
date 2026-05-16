@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 
 const ADMIN_ROLES = ["ADMIN", "OPS"];
 
-async function requireAdmin() {
+async function requireShopOrdersStaff() {
   const session = await auth();
-  if (!session || !ADMIN_ROLES.includes(session.user.role)) return null;
-  return session;
+  if (!session?.user?.id || !ADMIN_ROLES.includes(session.user.role)) return null;
+  const denied = await assertAdminApiAcl(session.user.id, "shop_orders", "read");
+  if (denied) return { error: denied };
+  return { session };
+}
+
+async function requireShopOrdersWrite() {
+  const session = await auth();
+  if (!session?.user?.id || !ADMIN_ROLES.includes(session.user.role)) return null;
+  const denied = await assertAdminApiAcl(session.user.id, "shop_orders", "write");
+  if (denied) return { error: denied };
+  return { session };
 }
 
 export async function GET() {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const result = await requireShopOrdersStaff();
+  if (!result) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if ("error" in result) return result.error;
 
   const orders = await db.order.findMany({
     include: { user: { select: { firstName: true, lastName: true, email: true } } },
@@ -30,8 +42,9 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const result = await requireShopOrdersWrite();
+  if (!result) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if ("error" in result) return result.error;
 
   const { id, status, staffNotes } = await req.json();
   if (!id || !status) {

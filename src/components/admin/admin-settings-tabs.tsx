@@ -55,8 +55,8 @@ export function AdminSettingsTabs({ locale }: { locale: string }) {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             {t(
-              "Aktualisht njoftimet përdorin konfigurimin e mjedisit (Resend) kur është aktiv.",
-              "Notifications currently use environment configuration (Resend) when enabled."
+              "Aktualisht njoftimet përdorin SMTP (mjedisi) kur është aktiv.",
+              "Notifications currently use SMTP from environment variables when enabled."
             )}
           </CardContent>
         </Card>

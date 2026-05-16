@@ -1,14 +1,16 @@
 /**
  * /shop/products/[id]
  *
- * [id] is the ERP article code (ARTIKUJ.KOD) — not a Prisma database id.
- * Products are fetched live from Financa5Api; nothing is read from Prisma.
+ * [id] is the ERP article code (ARTIKUJ.KOD). Financa5 supplies prices/stock/names;
+ * optional images and descriptions are merged from Postgres (`shop_product_overlays`).
  */
 
+import type { ShopProductOverlay } from "@prisma/client";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getFinanca5Client } from "@/lib/financa5-client";
 import { adaptProduct, adaptCategory } from "@/lib/erp-adapters";
+import { getShopProductOverlaysByKods, mergeShopProduct } from "@/lib/shop-product-overlay";
 import { ProductDetailView } from "@/components/shop/product-detail-view";
 
 export const revalidate = 60;
@@ -72,6 +74,16 @@ export default async function ProductDetailPage({
       )
       .slice(0, 4)
       .map((p) => adaptProduct(p, catMap));
+
+    const overlayKods = [product.erpKod, ...related.map((r) => r.erpKod)];
+    let overlayMap = new Map<string, ShopProductOverlay>();
+    try {
+      overlayMap = await getShopProductOverlaysByKods(overlayKods);
+    } catch (e) {
+      console.error(`[product-detail] overlay load failed for '${kod}':`, e);
+    }
+    product = mergeShopProduct(product, overlayMap.get(product.erpKod) ?? null);
+    related = related.map((r) => mergeShopProduct(r, overlayMap.get(r.erpKod) ?? null));
   } catch (err) {
     console.error(`[product-detail] failed to load product '${kod}':`, err);
   }

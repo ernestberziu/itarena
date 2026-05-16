@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { countUnreadNotifications } from "@/lib/notification-count";
 import { AdminAppShell } from "@/components/admin/admin-app-shell";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 
 const ADMIN_ROLES = ["ADMIN", "ENGINEER", "SALES", "OPS"];
 
@@ -27,6 +28,7 @@ export default async function AdminLayout({
     .toUpperCase();
 
   const unreadAdmin = await countUnreadNotifications(session.user.id);
+  const effectiveAcl = await getCachedEffectiveAcl(session.user.id);
 
   return (
     <AdminAppShell
@@ -37,6 +39,7 @@ export default async function AdminLayout({
       contextApp="locale"
       locale={locale === "en" ? "en" : "sq"}
       notificationCount={unreadAdmin}
+      effectiveAcl={effectiveAcl}
     >
       {children}
     </AdminAppShell>

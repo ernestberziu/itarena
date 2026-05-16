@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 export default async function AdminProfilePage({
   params,
@@ -10,9 +12,12 @@ export default async function AdminProfilePage({
   params: Promise<{ locale: string }>;
 }) {
   const session = await auth();
-  if (!session) redirect("/hyr");
+  if (!session?.user?.id) redirect("/hyr");
 
   const { locale } = await params;
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageRead(locale, acl, "profile");
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },

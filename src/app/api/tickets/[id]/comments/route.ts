@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 
 const schema = z.object({
   body: z.string().min(1),
@@ -14,7 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json();
@@ -29,6 +30,11 @@ export async function POST(
 
   if (!isStaff && !isOwner) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
+    if (denied) return denied;
   }
 
   if (ticket.status === "CLOSED") {

@@ -12,6 +12,7 @@ import {
 } from "@/lib/ticket-estimate";
 import { STAFF_ROLES } from "@/types/domain";
 import { sendPortalAccountInviteEmail } from "@/lib/portal-invite-email";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 
 const baseSchema = z
   .object({
@@ -29,7 +30,7 @@ const baseSchema = z
     if (sum > MAX_RESOLUTION_HOURS) {
       ctx.addIssue({
         code: "custom",
-        message: `Combined estimate must not exceed ${MAX_RESOLUTION_HOURS} working hours (${WORKING_HOURS_PER_DAY}h per day + hours).`,
+        message: `Combined estimate must not exceed ${MAX_RESOLUTION_HOURS} hours (${WORKING_HOURS_PER_DAY}h per calendar day + additional hours).`,
         path: ["estimatedDays"],
       });
     }
@@ -76,7 +77,7 @@ function generateTempPassword(): string {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const parsedBase = baseSchema.safeParse(body);
@@ -85,6 +86,11 @@ export async function POST(req: NextRequest) {
   }
 
   const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
+    if (denied) return denied;
+  }
 
   let requesterUserId: string | undefined;
   let externalRequesterName: string | undefined;
@@ -311,9 +317,14 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "tickets", "read");
+    if (denied) return denied;
+  }
 
   const tickets = await db.ticket.findMany({
     where: isStaff ? {} : { createdById: session.user.id },

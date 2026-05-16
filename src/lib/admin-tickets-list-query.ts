@@ -9,6 +9,8 @@ export type AdminTicketsListQuery = {
   status?: string | null;
   priority?: string | null;
   filter?: string | null;
+  /** User id (cuid) — filter tickets created by this portal user */
+  requester?: string | null;
   /** User id (cuid) or literal `unassigned` for tickets with no assignee */
   assignee?: string | null;
 };
@@ -21,6 +23,7 @@ export function adminTicketsListWhere(input: AdminTicketsListQuery): Prisma.Tick
   const breachedOnly = input.filter === "breached";
   const q = input.q?.trim();
   const assigneeRaw = input.assignee?.trim();
+  const requesterRaw = input.requester?.trim();
 
   if (status && (ADMIN_TICKET_STATUS_OPTIONS as readonly string[]).includes(status)) {
     where.status = status;
@@ -38,6 +41,12 @@ export function adminTicketsListWhere(input: AdminTicketsListQuery): Prisma.Tick
     const cuidLike = /^c[a-z0-9]{24}$/i;
     if (cuidLike.test(assigneeRaw)) {
       where.assignedToId = assigneeRaw;
+    }
+  }
+  if (requesterRaw) {
+    const cuidLike = /^c[a-z0-9]{24}$/i;
+    if (cuidLike.test(requesterRaw)) {
+      where.createdById = requesterRaw;
     }
   }
   if (q) {

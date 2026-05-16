@@ -28,6 +28,7 @@ import { DIVISION_LABELS } from "@/lib/sla";
 import {
   mergeTicketActivity,
   formatHistoryActivity,
+  isClientVisibleTicketHistoryRow,
   type TicketCommentRow,
   type TicketHistoryRow,
 } from "@/lib/ticket-activity";
@@ -417,11 +418,22 @@ export function AdminTicketDetailView({
                         <GitBranch className="h-3 w-3" />
                       </span>
                       <div className="min-w-0 flex-1 rounded-lg border border-border/50 bg-muted/15 px-3 py-2 dark:bg-muted/20">
+                        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                          {!isClientVisibleTicketHistoryRow(h) ? (
+                            <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-900 dark:text-amber-100">
+                              <Lock className="h-3 w-3" />
+                              {t("Vetëm stafi", "Staff only")}
+                            </span>
+                          ) : null}
+                          <time
+                            className="text-xs text-muted-foreground ml-auto"
+                            dateTime={h.createdAt.toISOString()}
+                          >
+                            {timeAgo(h.createdAt)} · {formatDateTime(h.createdAt)}
+                          </time>
+                        </div>
                         <p className="text-xs leading-snug text-foreground/90 sm:text-sm">
                           {formatHistoryActivity(h, locale, engineerById)}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {formatDateTime(h.createdAt)}
                         </p>
                       </div>
                     </li>

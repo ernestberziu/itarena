@@ -368,6 +368,18 @@ html[data-admin-ui] [data-slot="stat-card"] > * {
   }
 }
 
+/* Sheets / drawers — solid white panel in light admin (no glass); portaled next to overlay */
+html[data-admin-ui] [data-slot="sheet-content"] {
+  background-color: hsl(0 0% 100%);
+  color: hsl(var(--foreground));
+  backdrop-filter: none;
+}
+
+html.dark[data-admin-ui] [data-slot="sheet-content"] {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+}
+
 /* Portaled overlays — Base UI portals to body; scope while admin shell is mounted */
 html[data-admin-ui] [data-slot="popover-content"],
 html[data-admin-ui] [data-slot="dropdown-menu-content"],
@@ -403,6 +415,10 @@ html[data-admin-ui] [data-slot="admin-ticket-comment-composer"] {
   html[data-admin-ui] [data-slot="dropdown-menu-sub-content"],
   html[data-admin-ui] [data-slot="select-content"],
   html[data-admin-ui] [data-slot="admin-sidebar-tooltip"] {
+    backdrop-filter: none;
+  }
+
+  html[data-admin-ui] [data-slot="sheet-content"] {
     backdrop-filter: none;
   }
 }
@@ -498,5 +514,16 @@ html[data-admin-ui] [data-command-palette] [cmdk-item]:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   html[data-admin-ui] [data-command-palette] {
     backdrop-filter: none;
+  }
+}
+
+@media print {
+  [data-admin-shell] aside,
+  [data-admin-shell] header,
+  .reports-dashboard .sticky {
+    display: none !important;
+  }
+  .reports-dashboard {
+    background: white !important;
   }
 }

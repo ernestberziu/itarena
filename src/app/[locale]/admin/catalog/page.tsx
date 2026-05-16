@@ -1,12 +1,24 @@
+import type { ShopProductOverlay } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Package } from "lucide-react";
+import { AlertTriangle, Layers, Package } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { FilterBar } from "@/components/admin/filter-bar";
+import {
+  AdminListToolbar,
+  AdminListToolbarClear,
+  AdminListToolbarSubmitButton,
+} from "@/components/admin/admin-list-toolbar";
+import { AdminQuickFilterChips } from "@/components/admin/admin-quick-filter-chips";
 import { EmptyState } from "@/components/shared/empty-state";
-import { AdminCatalogTable, type AdminCatalogRow } from "@/components/admin/admin-catalog-table";
+import { AdminCatalogTable } from "@/components/admin/admin-catalog-table";
+import type { AdminCatalogRow } from "@/components/admin/admin-catalog-types";
 import { getFinanca5Client } from "@/lib/financa5-client";
 import { adaptProducts } from "@/lib/erp-adapters";
+import { getShopProductOverlaysByKods, mergeShopProducts } from "@/lib/shop-product-overlay";
+import { AdminStatCard } from "@/components/admin/users";
+import { Input } from "@/components/ui/input";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 export default async function AdminCatalogPage({
   params,
@@ -16,11 +28,17 @@ export default async function AdminCatalogPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const session = await auth();
-  if (!session) redirect("/hyr");
+  if (!session?.user?.id) redirect("/hyr");
 
   const { locale } = await params;
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageRead(locale, acl, "catalog");
+
   const sp = await searchParams;
   const lp = locale === "sq" ? "" : `/${locale}`;
+  const en = locale === "en";
+  const t = (sq: string, e: string) => (en ? e : sq);
   const q = sp.q?.trim();
   /** ERP category id (LISTE.KOD), same as slug in shop URLs. */
   const categorySlug = sp.category?.trim() || undefined;
@@ -39,20 +57,32 @@ export default async function AdminCatalogPage({
       categorySlug,
       search: q,
     });
-    products = adapted.products.map((product) => ({
-      id: product.id,
-      sku: product.sku,
-      nameSq: product.nameSq,
-      nameEn: product.nameEn,
-      brand: product.brand,
-      stock: product.stock,
-      lowStockAt: product.lowStockAt,
-      isActive: product.isActive,
-      imagesJson: JSON.stringify(product.images),
-      priceRetail: String(product.priceRetail),
-      priceB2b: String(product.priceB2b),
-      category: { nameSq: product.category.nameSq, nameEn: product.category.nameEn },
-    }));
+    let overlayMap = new Map<string, ShopProductOverlay>();
+    try {
+      overlayMap = await getShopProductOverlaysByKods(adapted.products.map((p) => p.id));
+    } catch (e) {
+      console.error("[admin/catalog] overlay load failed:", e);
+    }
+    const merged = mergeShopProducts(adapted.products, overlayMap);
+    products = merged.map((product) => {
+      const ov = overlayMap.get(product.erpKod);
+      return {
+        id: product.id,
+        sku: product.sku,
+        nameSq: product.nameSq,
+        nameEn: product.nameEn,
+        brand: product.brand,
+        stock: product.stock,
+        lowStockAt: product.lowStockAt,
+        isActive: product.isActive,
+        imagesJson: JSON.stringify(product.images),
+        priceRetail: String(product.priceRetail),
+        priceB2b: String(product.priceB2b),
+        category: { nameSq: product.category.nameSq, nameEn: product.category.nameEn },
+        overlayDescriptionSq: ov?.descriptionSq ?? null,
+        overlayDescriptionEn: ov?.descriptionEn ?? null,
+      };
+    });
     categories = adapted.categories;
   } catch {
     catalogError = true;
@@ -60,14 +90,14 @@ export default async function AdminCatalogPage({
 
   if (catalogError) {
     return (
-      <div className="space-y-5">
+      <div className="space-y-6">
         <AdminPageHeader
-          title={locale === "sq" ? "Katalog Produktesh" : "Product Catalog"}
-          description={locale === "sq" ? "Burimi: Financa5" : "Source: Financa5"}
+          title={t("Katalog Produktesh", "Product Catalog")}
+          description={t("Burimi: Financa5", "Source: Financa5")}
         />
         <EmptyState
           icon={Package}
-          title={locale === "sq" ? "Katalogu nuk është i arritshëm" : "Catalog unavailable"}
+          title={t("Katalogu nuk është i arritshëm", "Catalog unavailable")}
           description={
             locale === "sq"
               ? "Kontrollo FINANCA5_API_URL dhe FINANCA5_API_KEY. Lokalisht: npm run dev:with-mock ose node dev-mock/financa5/server.js."
@@ -78,48 +108,106 @@ export default async function AdminCatalogPage({
     );
   }
 
+  const baseHref = `${lp}/admin/catalog`;
+  const hasActiveFilters = Boolean(q || categorySlug);
+  const lowStock = products.filter((p) => p.stock <= p.lowStockAt).length;
+  const inactive = products.filter((p) => !p.isActive).length;
+
+  function categoryHref(slug: string | null) {
+    const p = new URLSearchParams();
+    if (q) p.set("q", q);
+    if (slug) p.set("category", slug);
+    const qs = p.toString();
+    return qs ? `${baseHref}?${qs}` : baseHref;
+  }
+
+  const activeCategory =
+    categorySlug && categories.some((c) => c.slug === categorySlug) ? categorySlug : null;
+
+  const categoryChips = [
+    { href: categoryHref(null), label: t("Të gjitha", "All"), value: null as string | null },
+    ...categories.map((c) => ({
+      href: categoryHref(c.slug),
+      label: locale === "sq" ? c.nameSq : c.nameEn,
+      value: c.slug,
+    })),
+  ];
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <AdminPageHeader
-        title={locale === "sq" ? "Katalog Produktesh" : "Product Catalog"}
-        description={`${products.length} ${locale === "sq" ? "produkte (Financa5)" : "products (Financa5)"}`}
+        title={t("Katalog Produktesh", "Product Catalog")}
+        description={t(
+          `${products.length} produkte në këtë pamje (Financa5 + përshkrime/figura lokale)`,
+          `${products.length} products in this view (Financa5 + local descriptions/images)`
+        )}
         toolbar={
-          <FilterBar>
-            <form method="GET" action={`${lp}/admin/catalog`} className="flex flex-wrap items-center gap-2">
-              <input
-                name="q"
-                defaultValue={q}
-                placeholder={locale === "sq" ? "Kërko produkt, SKU..." : "Search product, SKU..."}
-                className="h-8 rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-52"
+          <AdminListToolbar>
+            <div className="flex w-full flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
+              <form method="GET" action={baseHref} className="flex w-full flex-col gap-3 lg:flex-1 lg:flex-row lg:flex-wrap lg:items-end">
+                <div className="relative min-w-0 flex-1 lg:max-w-md">
+                  <Input
+                    name="q"
+                    defaultValue={q}
+                    placeholder={t("Kërko produkt, SKU…", "Search product, SKU…")}
+                    className="h-10"
+                    aria-label={t("Kërko", "Search")}
+                  />
+                </div>
+                <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-initial">
+                  <select
+                    name="category"
+                    defaultValue={categorySlug ?? ""}
+                    className="h-10 min-w-[10rem] flex-1 rounded-xl border-2 border-border bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-initial"
+                  >
+                    <option value="">{t("Të gjitha kategoritë", "All categories")}</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.slug}>
+                        {locale === "sq" ? c.nameSq : c.nameEn}
+                      </option>
+                    ))}
+                  </select>
+                  <AdminListToolbarSubmitButton>{t("Kërko", "Search")}</AdminListToolbarSubmitButton>
+                </div>
+              </form>
+              <AdminListToolbarClear
+                href={baseHref}
+                labelSq="Pastro filtrat"
+                labelEn="Clear filters"
+                locale={locale}
+                visible={hasActiveFilters}
               />
-              <select
-                name="category"
-                defaultValue={categorySlug ?? ""}
-                className="h-8 rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="">{locale === "sq" ? "Të gjitha kategoritë" : "All categories"}</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {locale === "sq" ? c.nameSq : c.nameEn}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="h-8 px-3 rounded-lg border bg-primary text-primary-foreground text-sm hover:bg-primary/90 transition-colors"
-              >
-                {locale === "sq" ? "Kërko" : "Search"}
-              </button>
-            </form>
-          </FilterBar>
+            </div>
+            {categories.length > 0 ? (
+              <AdminQuickFilterChips
+                title={t("Kategoria e shpejtë", "Quick category")}
+                chips={categoryChips}
+                activeValue={activeCategory}
+                ariaLabel={t("Filtro sipas kategorisë", "Filter catalog by category")}
+              />
+            ) : null}
+          </AdminListToolbar>
         }
       />
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <AdminStatCard label={t("Produkte", "Products")} value={products.length} icon={Package} />
+        <AdminStatCard label={t("Stok i ulët", "Low stock")} value={lowStock} icon={AlertTriangle} />
+        <AdminStatCard label={t("Jo aktivë", "Inactive")} value={inactive} icon={Layers} />
+        <AdminStatCard label={t("Kategori (filtër)", "Categories")} value={categories.length} icon={Layers} />
+      </div>
 
       {products.length === 0 ? (
         <EmptyState
           icon={Package}
-          title={locale === "sq" ? "Nuk u gjetën produkte" : "No products found"}
-          description={locale === "sq" ? "Provoni të ndryshoni filtrat" : "Try adjusting your filters"}
+          className="rounded-2xl border border-border/50 bg-card/40 py-16"
+          title={hasActiveFilters ? t("Nuk u gjetën produkte", "No products match") : t("Nuk ka produkte", "No products")}
+          description={
+            hasActiveFilters
+              ? t("Provo të ndryshosh kërkimin ose kategorinë.", "Try adjusting search or category.")
+              : t("Nuk u kthyen produkte nga ERP për këtë filtrim.", "ERP returned no products for this filter.")
+          }
+          action={hasActiveFilters ? { label: t("Pastro filtrat", "Clear filters"), href: baseHref } : undefined}
         />
       ) : (
         <AdminCatalogTable products={products} locale={locale} />

@@ -1,10 +1,5 @@
-import { SkeletonTable, SkeletonPageHeader, SkeletonStatGrid } from "@/components/shared/skeleton-card";
+import { AdminListSkeleton } from "@/components/admin/admin-list-skeleton";
 
 export default function Loading() {
-  return (
-    <div className="space-y-5">
-      <SkeletonPageHeader />
-      <SkeletonTable />
-    </div>
-  );
+  return <AdminListSkeleton statCards={4} tableRows={8} />;
 }

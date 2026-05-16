@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -30,6 +30,13 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { STAFF_ROLES, type Role, type TicketStatus } from "@/types/domain";
+import { formatHistoryActivity, type TicketHistoryRow } from "@/lib/ticket-activity";
+
+export type PortalTicketEngineerOption = {
+  id: string;
+  firstName: string;
+  lastName: string;
+};
 
 interface TicketDetailViewProps {
   ticket: {
@@ -60,18 +67,13 @@ interface TicketDetailViewProps {
       createdAt: Date;
       author: { id: string; firstName: string; lastName: string; role: Role };
     }>;
-    history: Array<{
-      id: string;
-      field: string;
-      oldValue: string | null;
-      newValue: string | null;
-      createdAt: Date;
-      changedBy: { firstName: string; lastName: string; role: Role };
-    }>;
+    history: TicketHistoryRow[];
   };
   currentUserId: string;
   currentUserRole: Role;
   locale: string;
+  /** Staff portal: used to resolve assignee IDs in history lines. */
+  engineers?: PortalTicketEngineerOption[];
   /** Override back link target (e.g. admin ticket list). */
   ticketsListHref?: string;
 }
@@ -81,12 +83,27 @@ export function TicketDetailView({
   currentUserId,
   currentUserRole,
   locale,
+  engineers,
   ticketsListHref,
 }: TicketDetailViewProps) {
   const router = useRouter();
   const lp = locale === "sq" ? "" : `/${locale}`;
   const backHref = ticketsListHref ?? `${lp}/portal/tickets`;
   const isStaff = STAFF_ROLES.includes(currentUserRole);
+
+  const engineerById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const e of engineers ?? []) {
+      m.set(e.id, `${e.firstName} ${e.lastName}`.trim());
+    }
+    if (ticket.assignedTo) {
+      m.set(
+        ticket.assignedTo.id,
+        `${ticket.assignedTo.firstName} ${ticket.assignedTo.lastName}`.trim()
+      );
+    }
+    return m;
+  }, [engineers, ticket.assignedTo]);
 
   const [comment, setComment] = useState("");
   const [isInternal, setIsInternal] = useState(false);
@@ -301,19 +318,19 @@ export function TicketDetailView({
               );
             })}
 
-            {/* History events */}
-            {ticket.history.slice(1).map((h) => (
-              <div key={h.id} className="flex items-center gap-2 text-xs text-muted-foreground pl-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-                <span>
-                  {h.changedBy.firstName} {h.changedBy.lastName}
-                </span>
-                <span>
-                  {h.field === "status"
-                    ? `→ ${h.newValue}`
-                    : `${h.field}: ${h.newValue}`}
-                </span>
-                <span>· {timeAgo(h.createdAt)}</span>
+            {/* History events (server already filters rows for non-staff) */}
+            {ticket.history.map((h) => (
+              <div
+                key={h.id}
+                className="flex items-start gap-2 pl-2 text-xs text-muted-foreground"
+              >
+                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="text-sm leading-snug text-foreground/90">
+                    {formatHistoryActivity(h, locale, engineerById)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">{timeAgo(h.createdAt)}</p>
+                </div>
               </div>
             ))}
           </div>

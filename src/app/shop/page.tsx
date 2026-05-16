@@ -1,8 +1,12 @@
+import type { ShopProductOverlay } from "@prisma/client";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { ShopCatalog } from "@/components/shop/shop-catalog";
 import { getFinanca5Client } from "@/lib/financa5-client";
 import { adaptProducts } from "@/lib/erp-adapters";
+import { getShopProductOverlaysByKods, mergeShopProducts } from "@/lib/shop-product-overlay";
+import { SHOP_CATALOG_PAGE_SIZE, shopCatalogHref } from "@/lib/shop-url";
 import { Zap, Package, AlertTriangle } from "lucide-react";
 
 export const metadata = {
@@ -16,12 +20,17 @@ export const revalidate = 60;
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string | string[]; q?: string | string[] }>;
+  searchParams: Promise<{
+    category?: string | string[];
+    q?: string | string[];
+    page?: string | string[];
+  }>;
 }) {
-  const raw          = await searchParams;
+  const raw = await searchParams;
   const categorySlug = Array.isArray(raw.category) ? raw.category[0] : raw.category;
-  const qParam       = Array.isArray(raw.q) ? raw.q[0] : raw.q;
-  const search       = qParam?.trim() || undefined;
+  const qParam = Array.isArray(raw.q) ? raw.q[0] : raw.q;
+  const search = qParam?.trim() || undefined;
+  const pageParam = Array.isArray(raw.page) ? raw.page[0] : raw.page;
 
   const session = await auth().catch(() => null);
   const isB2b =
@@ -44,6 +53,13 @@ export default async function ShopPage({
       categorySlug,
       search,
     }));
+    let overlayMap = new Map<string, ShopProductOverlay>();
+    try {
+      overlayMap = await getShopProductOverlaysByKods(products.map((p) => p.id));
+    } catch (e) {
+      console.error("[shop] overlay load failed:", e);
+    }
+    products = mergeShopProducts(products, overlayMap);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     if (msg.includes("Financa5 API nuk është i arritshëm")) {
@@ -53,6 +69,28 @@ export default async function ShopPage({
     }
     fetchError = msg || "Gabim gjatë marrjes së produkteve.";
   }
+
+  const totalFiltered = products.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / SHOP_CATALOG_PAGE_SIZE));
+
+  let requestedPage = parseInt(String(pageParam ?? "1"), 10);
+  if (!Number.isFinite(requestedPage) || requestedPage < 1) requestedPage = 1;
+  const page = Math.min(requestedPage, totalPages);
+
+  if (requestedPage !== page) {
+    redirect(
+      shopCatalogHref({
+        q: search,
+        category: categorySlug,
+        ...(page > 1 ? { page: String(page) } : {}),
+      })
+    );
+  }
+
+  const pageProducts = products.slice(
+    (page - 1) * SHOP_CATALOG_PAGE_SIZE,
+    page * SHOP_CATALOG_PAGE_SIZE
+  );
 
   return (
     <div>
@@ -80,7 +118,7 @@ export default async function ShopPage({
                 : "Hardware, Software & Periferikë"}
             </h1>
             <p className="text-slate-400 text-sm mt-2">
-              <span className="text-white font-bold">{products.length}</span> produkte ·{" "}
+              <span className="text-white font-bold">{totalFiltered}</span> produkte ·{" "}
               <span className="text-emerald-400 font-semibold">Pagesa me dorëzim (COD)</span> ·{" "}
               <span className="text-white/50">Dërgim 24–48h</span>
             </p>
@@ -123,7 +161,10 @@ export default async function ShopPage({
         }
       >
         <ShopCatalog
-          products={products}
+          products={pageProducts}
+          totalFiltered={totalFiltered}
+          page={page}
+          pageSize={SHOP_CATALOG_PAGE_SIZE}
           categories={categories}
           isB2b={isB2b}
           activeCategory={categorySlug}

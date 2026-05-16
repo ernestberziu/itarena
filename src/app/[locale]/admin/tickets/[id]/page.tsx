@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import { AdminTicketDetailView } from "@/components/admin/admin-ticket-detail-view";
 import type { TicketStatus, Priority, Role } from "@/types/domain";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 export default async function AdminTicketDetailPage({
   params,
@@ -10,9 +12,13 @@ export default async function AdminTicketDetailPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const session = await auth();
-  if (!session) redirect("/hyr");
+  if (!session?.user?.id) redirect("/hyr");
 
   const { locale, id } = await params;
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageRead(locale, acl, "tickets");
+
   const lp = locale === "sq" ? "" : `/${locale}`;
 
   const [ticket, engineers] = await Promise.all([

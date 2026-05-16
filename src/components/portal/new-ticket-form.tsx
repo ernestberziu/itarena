@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -14,8 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  createPopoverHandle,
+} from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DIVISION_LABELS } from "@/lib/sla";
+import { MAX_RESOLUTION_HOURS, WORKING_HOURS_PER_DAY } from "@/lib/ticket-estimate";
 import { cn } from "@/lib/utils";
 
 /** Sentinel for Base UI Select so `value` is never undefined (controlled mode). */
@@ -86,7 +93,7 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
   const [assignees, setAssignees] = useState<AssigneeRow[]>([]);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
 
-  const comboboxRef = useRef<HTMLDivElement>(null);
+  const requesterPopoverHandle = useMemo(() => createPopoverHandle(), []);
 
   useEffect(() => {
     if (variant !== "admin") return;
@@ -134,17 +141,6 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
     }, 320);
     return () => window.clearTimeout(tmr);
   }, [requesterQuery, requesterMode, variant]);
-
-  useEffect(() => {
-    if (!pickerOpen) return;
-    function onDocMouseDown(e: MouseEvent) {
-      if (comboboxRef.current && !comboboxRef.current.contains(e.target as Node)) {
-        setPickerOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onDocMouseDown);
-    return () => document.removeEventListener("mousedown", onDocMouseDown);
-  }, [pickerOpen]);
 
   const onSelectRequester = useCallback((u: RequesterRow) => {
     setSelectedRequester(u);
@@ -228,12 +224,12 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
 
     const d = estimatedDays ?? 0;
     const h = estimatedHours ?? 0;
-    const sum = d * 8 + h;
-    if (sum > 4000) {
+    const sum = d * WORKING_HOURS_PER_DAY + h;
+    if (sum > MAX_RESOLUTION_HOURS) {
       toast.error(
         locale === "sq"
-          ? "Shuma ditë×8 + orë nuk mund të kalojë 4000 orë pune"
-          : "Combined estimate (days×8 + hours) cannot exceed 4000 working hours"
+          ? `Shuma ditë×${WORKING_HOURS_PER_DAY} + orë nuk mund të kalojë ${MAX_RESOLUTION_HOURS} orë gjithsej`
+          : `Combined estimate (days×${WORKING_HOURS_PER_DAY}h + hours) cannot exceed ${MAX_RESOLUTION_HOURS} total hours`
       );
       return;
     }
@@ -571,61 +567,83 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
               </div>
 
               {requesterMode === "portal_user" ? (
-                <div className="space-y-2" ref={comboboxRef}>
+                <div className="space-y-2">
                   <Label htmlFor="requester-search">
                     {locale === "sq" ? "Kërko klient" : "Search client"}
                   </Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="requester-search"
-                      className="pl-9"
-                      autoComplete="off"
-                      placeholder={
-                        locale === "sq"
-                          ? "Emër ose email (min. 2 karaktere)…"
-                          : "Name or email (min. 2 chars)…"
-                      }
-                      value={requesterQuery}
-                      onChange={(e) => {
-                        setRequesterQuery(e.target.value);
-                        setSelectedRequester(null);
-                        setPickerOpen(true);
-                      }}
-                      onFocus={() => setPickerOpen(true)}
+                  <>
+                    <PopoverTrigger
+                      handle={requesterPopoverHandle}
+                      nativeButton={false}
+                      render={(props) => (
+                        <div
+                          {...props}
+                          className={cn("relative w-full", props.className)}
+                        >
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="requester-search"
+                            className="pl-9"
+                            autoComplete="off"
+                            placeholder={
+                              locale === "sq"
+                                ? "Emër ose email (min. 2 karaktere)…"
+                                : "Name or email (min. 2 chars)…"
+                            }
+                            value={requesterQuery}
+                            onChange={(e) => {
+                              setRequesterQuery(e.target.value);
+                              setSelectedRequester(null);
+                              setPickerOpen(true);
+                            }}
+                            onFocus={() => setPickerOpen(true)}
+                          />
+                        </div>
+                      )}
                     />
-                    {pickerOpen && requesterQuery.trim().length >= 2 && (
-                      <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-auto rounded-md border border-border bg-popover py-1 text-sm shadow-md ring-1 ring-foreground/10">
-                        {requesterLoading ? (
-                          <div className="flex items-center gap-2 px-3 py-2 text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            {locale === "sq" ? "Duke kërkuar…" : "Searching…"}
-                          </div>
-                        ) : requesterResults.length === 0 ? (
-                          <p className="px-3 py-2 text-muted-foreground">
-                            {locale === "sq" ? "Nuk u gjet asgjë" : "No matches"}
-                          </p>
-                        ) : (
-                          requesterResults.map((u) => (
-                            <button
-                              key={u.id}
-                              type="button"
-                              className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-muted"
-                              onClick={() => onSelectRequester(u)}
-                            >
-                              <span className="font-medium">
-                                {u.firstName} {u.lastName}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {u.email}
-                                {u.companyName ? ` · ${u.companyName}` : ""}
-                              </span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    <Popover
+                      handle={requesterPopoverHandle}
+                      open={pickerOpen && requesterQuery.trim().length >= 2}
+                      onOpenChange={setPickerOpen}
+                      modal={false}
+                    >
+                      <PopoverContent align="start" side="bottom" sideOffset={4} className="p-0">
+                        <div className="max-h-56 overflow-y-auto p-1">
+                          {requesterLoading ? (
+                            <div className="flex items-center gap-2 px-2 py-2 text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              {locale === "sq" ? "Duke kërkuar…" : "Searching…"}
+                            </div>
+                          ) : requesterResults.length === 0 ? (
+                            <p className="px-2 py-2 text-sm text-muted-foreground">
+                              {locale === "sq" ? "Nuk u gjet asgjë" : "No matches"}
+                            </p>
+                          ) : (
+                            requesterResults.map((u) => (
+                              <button
+                                key={u.id}
+                                type="button"
+                                className={cn(
+                                  "relative flex w-full cursor-default flex-col items-start gap-0.5 rounded-md py-2 pr-2 pl-2 text-left text-sm outline-none select-none",
+                                  "hover:bg-accent hover:text-accent-foreground",
+                                  "focus:bg-accent focus:text-accent-foreground"
+                                )}
+                                onClick={() => onSelectRequester(u)}
+                              >
+                                <span className="font-medium">
+                                  {u.firstName} {u.lastName}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {u.email}
+                                  {u.companyName ? ` · ${u.companyName}` : ""}
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </>
                   {selectedRequester && (
                     <p className="text-xs text-muted-foreground">
                       {locale === "sq" ? "Zgjedhur:" : "Selected:"}{" "}
@@ -657,8 +675,8 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
                 <div className="space-y-4">
                   <p className="text-xs text-muted-foreground">
                     {locale === "sq"
-                      ? "Krijohet një llogari klienti me fjalëkalim të përkohshëm; përdoruesi bëhet pronari i biletës dhe merr email ftese (nëse Resend është i konfiguruar)."
-                      : "Creates a client account with a temporary password; they become the ticket owner and receive an invite email when Resend is configured."}
+                      ? "Krijohet një llogari klienti me fjalëkalim të përkohshëm; përdoruesi bëhet pronari i biletës dhe merr email ftese (nëse SMTP është i konfiguruar)."
+                      : "Creates a client account with a temporary password; they become the ticket owner and receive an invite email when SMTP is configured."}
                   </p>
                   <div className="space-y-2">
                     <Label htmlFor="invite-email">Email *</Label>
@@ -744,7 +762,7 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="est-days">
-                    {locale === "sq" ? "Ditë pune (opsionale)" : "Working days (optional)"}
+                    {locale === "sq" ? "Ditë kalendari (opsionale)" : "Calendar days (optional)"}
                   </Label>
                   <Input
                     id="est-days"
@@ -777,8 +795,8 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
               </div>
               <p className="text-xs text-muted-foreground max-w-prose">
                 {locale === "sq"
-                  ? "Afati SLA llogaritet nga krijimi: ditë×8 orë + orë shtesë (orë të zakonshme); maks. 4000 orë gjithsej. Lëreni bosh për pa afat."
-                  : "SLA deadline = created time + days×8h + hours (wall-clock); max 4000 hours total. Leave both empty for no deadline."}
+                  ? `Afati SLA llogaritet nga krijimi: ditë×${WORKING_HOURS_PER_DAY} orë + orë shtesë (nga krijimi, kalendari); maks. ${MAX_RESOLUTION_HOURS} orë gjithsej. Lëreni bosh për pa afat.`
+                  : `SLA deadline = created time + days×${WORKING_HOURS_PER_DAY}h + extra hours (wall-clock); max ${MAX_RESOLUTION_HOURS} hours total. Leave both empty for no deadline.`}
               </p>
             </CardContent>
           </Card>
@@ -826,7 +844,7 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="portal-est-days">
-                    {locale === "sq" ? "Ditë pune" : "Working days"}
+                    {locale === "sq" ? "Ditë kalendari" : "Calendar days"}
                   </Label>
                   <Input
                     id="portal-est-days"
@@ -859,8 +877,8 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
               </div>
               <p className="text-xs text-muted-foreground max-w-prose">
                 {locale === "sq"
-                  ? "Afati SLA nga krijimi: ditë×8 orë + orë shtesë; maks. 4000 orë. Lëreni bosh për pa afat."
-                  : "SLA from created time: days×8h + hours; max 4000h. Leave empty for no deadline."}
+                  ? `Afati SLA nga krijimi: ditë×${WORKING_HOURS_PER_DAY} orë + orë shtesë; maks. ${MAX_RESOLUTION_HOURS} orë. Lëreni bosh për pa afat.`
+                  : `SLA from created time: days×${WORKING_HOURS_PER_DAY}h + hours; max ${MAX_RESOLUTION_HOURS}h. Leave empty for no deadline.`}
               </p>
             </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { adminTicketsListWhere } from "@/lib/admin-tickets-list-query";
 import { mapTicketToAdminRow } from "@/lib/admin-tickets-list-dto";
 
@@ -20,10 +21,12 @@ const listOrderBy = [
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number])) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const denied = await assertAdminApiAcl(session.user.id, "tickets", "read");
+  if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10) || 1);

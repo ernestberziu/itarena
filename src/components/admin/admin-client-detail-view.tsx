@@ -1,0 +1,280 @@
+import Link from "next/link";
+import { Building2, Shield, StickyNote, Ticket, ShoppingBag, FileText } from "lucide-react";
+import { formatDate, timeAgo } from "@/lib/utils";
+import {
+  AdminStatCard,
+  UserAvatar,
+  UserStatusBadges,
+  AdminClientQuickActions,
+  AdminClientAccountPanel,
+  AdminClientRowActions,
+  type UserStatusBadgeInput,
+} from "@/components/admin/users";
+
+export type AdminClientDetailModel = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  language: string;
+  isActive: boolean;
+  emailVerified: string | null;
+  twoFactorEnabled: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  role: string;
+  company: {
+    name: string;
+    tier: string | null;
+    isApproved: boolean;
+    vatNumber: string | null;
+    city: string | null;
+    country: string | null;
+  } | null;
+  _count: { tickets: number; orders: number; quotes: number };
+  recentTickets: { id: string; number: string; title: string; status: string; createdAt: string }[];
+  recentOrders: {
+    id: string;
+    orderNumber: string;
+    status: string;
+    total: string;
+    createdAt: string;
+  }[];
+};
+
+export function AdminClientDetailView({
+  user,
+  locale,
+  lp,
+}: {
+  user: AdminClientDetailModel;
+  locale: string;
+  lp: string;
+}) {
+  const en = locale === "en";
+  const t = (sq: string, e: string) => (en ? e : sq);
+  const badgeInput: UserStatusBadgeInput = {
+    isActive: user.isActive,
+    emailVerified: user.emailVerified,
+    company: user.company,
+  };
+  const detailHref = `${lp}/admin/clients/${user.id}`;
+  const ticketsHref = `${lp}/admin/tickets?requester=${encodeURIComponent(user.id)}`;
+  const ordersHref = `${lp}/admin/orders?userId=${encodeURIComponent(user.id)}`;
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col-reverse gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="space-y-8 min-w-0">
+          <div className="rounded-2xl border border-border/60 bg-gradient-to-b from-card to-muted/15 p-6 shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 flex-1 items-start gap-4">
+                <UserAvatar firstName={user.firstName} lastName={user.lastName} size="lg" />
+                <div className="min-w-0 space-y-2">
+                  <h1 className="text-2xl font-bold tracking-tight">
+                    {user.firstName} {user.lastName}
+                  </h1>
+                  <p className="text-sm text-muted-foreground break-all">{user.email}</p>
+                  <UserStatusBadges user={badgeInput} locale={locale} />
+                  <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <div>
+                      <dt className="inline font-medium text-foreground">{t("Roli", "Role")}: </dt>
+                      <dd className="inline">
+                        {user.role === "COMPANY_ADMIN" ? t("B2B Admin", "B2B Admin") : t("Klient", "Client")}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-medium text-foreground">{t("Gjuha", "Language")}: </dt>
+                      <dd className="inline">{user.language}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-medium text-foreground">{t("Hyrja e fundit", "Last login")}: </dt>
+                      <dd className="inline">
+                        {user.lastLoginAt ? timeAgo(new Date(user.lastLoginAt)) : "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="inline font-medium text-foreground">{t("Krijuar", "Created")}: </dt>
+                      <dd className="inline">{formatDate(new Date(user.createdAt))}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+              <div className="flex shrink-0 justify-end">
+                <AdminClientRowActions
+                  user={{
+                    id: user.id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    isActive: user.isActive,
+                  }}
+                  locale={locale}
+                  detailHref={detailHref}
+                  ticketsHref={ticketsHref}
+                  ordersHref={ordersHref}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <AdminStatCard label={t("Biletat", "Tickets")} value={user._count.tickets} icon={Ticket} />
+            <AdminStatCard label={t("Porositë", "Orders")} value={user._count.orders} icon={ShoppingBag} />
+            <AdminStatCard label={t("Ofertat", "Quotes")} value={user._count.quotes} icon={FileText} />
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
+              <h2 className="text-sm font-semibold tracking-tight mb-3">{t("Kontakti", "Contact")}</h2>
+              <dl className="space-y-2 text-sm">
+                <div>
+                  <dt className="text-muted-foreground">{t("Telefoni", "Phone")}</dt>
+                  <dd>{user.phone ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Email</dt>
+                  <dd className="break-all">{user.email}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-tight">
+                <Building2 className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+                {t("Kompania", "Company")}
+              </h2>
+              {user.company ? (
+                <dl className="space-y-2 text-sm">
+                  <div>
+                    <dt className="text-muted-foreground">{t("Emri", "Name")}</dt>
+                    <dd className="font-medium">{user.company.name}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">{t("Niveli", "Tier")}</dt>
+                    <dd>{user.company.tier ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">{t("NIPT / TVSH", "VAT")}</dt>
+                    <dd>{user.company.vatNumber ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">{t("Vendndodhja", "Location")}</dt>
+                    <dd>
+                      {[user.company.city, user.company.country].filter(Boolean).join(", ") || "—"}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("Pa kompani të lidhur", "No linked company")}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-tight">
+              <Shield className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+              {t("Siguria", "Security")}
+            </h2>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>
+                {user.twoFactorEnabled
+                  ? t("2FA është aktivizuar", "Two-factor authentication is on")
+                  : t("2FA është i fikur", "Two-factor authentication is off")}
+              </li>
+              <li>
+                {user.emailVerified
+                  ? t("Email i verifikuar", "Email verified")
+                  : t("Email pa verifikuar", "Email not verified")}
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-5">
+            <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold tracking-tight text-muted-foreground">
+              <StickyNote className="h-4 w-4" strokeWidth={2} />
+              {t("Shënime", "Notes")}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {t("Nuk ka shënime të ruajtura për këtë klient.", "No saved notes for this client yet.")}
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
+              <div className="border-b bg-muted/30 px-4 py-3">
+                <h2 className="text-sm font-semibold">{t("Biletat e fundit", "Recent tickets")}</h2>
+              </div>
+              <ul className="divide-y">
+                {user.recentTickets.length === 0 ? (
+                  <li className="px-4 py-6 text-sm text-muted-foreground">{t("Asnjë", "None")}</li>
+                ) : (
+                  user.recentTickets.map((tk) => (
+                    <li key={tk.id} className="px-4 py-3">
+                      <Link
+                        href={`${lp}/admin/tickets/${tk.id}`}
+                        className="text-sm font-medium hover:underline"
+                      >
+                        {tk.number}
+                      </Link>
+                      <p className="text-xs text-muted-foreground line-clamp-1">{tk.title}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {tk.status} · {formatDate(new Date(tk.createdAt))}
+                      </p>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
+              <div className="border-b bg-muted/30 px-4 py-3">
+                <h2 className="text-sm font-semibold">{t("Porositë e fundit", "Recent orders")}</h2>
+              </div>
+              <ul className="divide-y">
+                {user.recentOrders.length === 0 ? (
+                  <li className="px-4 py-6 text-sm text-muted-foreground">{t("Asnjë", "None")}</li>
+                ) : (
+                  user.recentOrders.map((o) => (
+                    <li key={o.id} className="px-4 py-3 text-sm">
+                      <span className="font-medium">{o.orderNumber}</span>
+                      <span className="text-muted-foreground"> · {o.status}</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDate(new Date(o.createdAt))}
+                      </p>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+          </div>
+
+          <AdminClientAccountPanel
+            userId={user.id}
+            locale={locale}
+            userLanguage={user.language}
+            initialFirstName={user.firstName}
+            initialLastName={user.lastName}
+            initialEmail={user.email}
+          />
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-4 h-fit">
+          <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+              {t("Veprime të shpejta", "Quick actions")}
+            </p>
+            <AdminClientQuickActions
+              locale={locale}
+              userId={user.id}
+              email={user.email}
+              ticketsHref={ticketsHref}
+              ordersHref={ordersHref}
+            />
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}

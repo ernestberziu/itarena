@@ -22,6 +22,8 @@ import {
 import { adminTicketsListWhere } from "@/lib/admin-tickets-list-query";
 import { mapTicketToAdminRow } from "@/lib/admin-tickets-list-dto";
 import { cn } from "@/lib/utils";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 const TICKETS_PAGE_SIZE = 25;
 
@@ -33,9 +35,13 @@ export default async function AdminTicketsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const session = await auth();
-  if (!session) redirect("/hyr");
+  if (!session?.user?.id) redirect("/hyr");
 
   const { locale } = await params;
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageRead(locale, acl, "tickets");
+
   const sp = await searchParams;
   const lp = locale === "sq" ? "" : `/${locale}`;
 
@@ -45,6 +51,7 @@ export default async function AdminTicketsPage({
   const q = sp.q?.trim();
 
   const assigneeFilter = sp.assignee?.trim();
+  const requesterFilter = sp.requester?.trim();
 
   const listQuery = {
     q,
@@ -52,6 +59,7 @@ export default async function AdminTicketsPage({
     priority: priorityFilter,
     filter: breachedOnly ? ("breached" as const) : null,
     assignee: assigneeFilter,
+    requester: requesterFilter,
   };
   const where = adminTicketsListWhere(listQuery);
 
@@ -97,6 +105,7 @@ export default async function AdminTicketsPage({
   if (priorityFilter) filterQueryParts.set("priority", priorityFilter);
   if (breachedOnly) filterQueryParts.set("filter", "breached");
   if (assigneeFilter) filterQueryParts.set("assignee", assigneeFilter);
+  if (requesterFilter) filterQueryParts.set("requester", requesterFilter);
   const filterQuery = filterQueryParts.toString();
 
   const statusLabel =
@@ -132,6 +141,7 @@ export default async function AdminTicketsPage({
     if (key !== "priority" && priorityFilter) p.set("priority", priorityFilter);
     if (key !== "filter" && breachedOnly) p.set("filter", "breached");
     if (key !== "assignee" && assigneeFilter) p.set("assignee", assigneeFilter);
+    if (key !== "requester" && requesterFilter) p.set("requester", requesterFilter);
     if (value) p.set(key, value);
     const qs = p.toString();
     return qs ? `${lp}/admin/tickets?${qs}` : `${lp}/admin/tickets`;
@@ -144,6 +154,7 @@ export default async function AdminTicketsPage({
     if (priorityFilter) p.set("priority", priorityFilter);
     if (breachedOnly) p.set("filter", "breached");
     if (assigneeFilter) p.set("assignee", assigneeFilter);
+    if (requesterFilter) p.set("requester", requesterFilter);
     for (const [k, v] of Object.entries(extra)) {
       if (v === undefined) p.delete(k);
       else if (v === "") p.delete(k);
@@ -233,7 +244,7 @@ export default async function AdminTicketsPage({
 
             <AdminTicketsFilterDeck
               defaultOpen={Boolean(
-                q || statusFilter || priorityFilter || breachedOnly || assigneeFilter
+                q || statusFilter || priorityFilter || breachedOnly || assigneeFilter || requesterFilter
               )}
               title={locale === "sq" ? "Filtro rezultatet" : "Filter results"}
               hint={
@@ -242,7 +253,12 @@ export default async function AdminTicketsPage({
                   : "Search, then narrow by status, priority, assignee, or SLA."
               }
               clearAll={
-                (q || statusFilter || priorityFilter || breachedOnly || assigneeFilter) ? (
+                (q ||
+                  statusFilter ||
+                  priorityFilter ||
+                  breachedOnly ||
+                  assigneeFilter ||
+                  requesterFilter) ? (
                   <Link
                     href={`${lp}/admin/tickets`}
                     className="inline-flex rounded-lg border border-transparent px-2 py-1.5 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:border-border/60 hover:bg-background/80 hover:text-foreground hover:underline"
@@ -283,6 +299,7 @@ export default async function AdminTicketsPage({
                     {priorityFilter && <input type="hidden" name="priority" value={priorityFilter} />}
                     {breachedOnly && <input type="hidden" name="filter" value="breached" />}
                     {assigneeFilter && <input type="hidden" name="assignee" value={assigneeFilter} />}
+                    {requesterFilter && <input type="hidden" name="requester" value={requesterFilter} />}
                     <Button
                       type="submit"
                       className="h-10 shrink-0 gap-2 rounded-xl px-5 shadow-sm sm:w-auto w-full"
@@ -352,6 +369,7 @@ export default async function AdminTicketsPage({
                       listPrefix={lp}
                       engineers={assigneeOptions}
                       assignee={assigneeFilter}
+                      requester={requesterFilter}
                       q={q}
                       status={statusFilter}
                       priority={priorityFilter}

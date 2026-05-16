@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { AdminAppShell } from "@/components/admin/admin-app-shell";
 import { shopUrl } from "@/lib/shop-url";
 import { getShopUrlRequestContext } from "@/lib/shop-url-request";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import sqMessages from "../../../../messages/sq.json";
 
 export default async function ShopAdminLayout({
@@ -24,6 +25,8 @@ export default async function ShopAdminLayout({
     .join("")
     .toUpperCase();
 
+  const effectiveAcl = session.user.id ? await getCachedEffectiveAcl(session.user.id) : null;
+
   return (
     <NextIntlClientProvider locale="sq" messages={sqMessages}>
       <AdminAppShell
@@ -33,6 +36,7 @@ export default async function ShopAdminLayout({
         userEmail={session.user.email ?? undefined}
         contextApp="shop"
         locale="sq"
+        effectiveAcl={effectiveAcl}
       >
         {children}
       </AdminAppShell>

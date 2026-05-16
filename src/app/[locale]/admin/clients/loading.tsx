@@ -2,9 +2,10 @@ import { SkeletonTable, SkeletonPageHeader, SkeletonStatGrid } from "@/component
 
 export default function Loading() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <SkeletonPageHeader />
-      <SkeletonTable />
+      <SkeletonStatGrid count={4} />
+      <SkeletonTable rows={8} />
     </div>
   );
 }

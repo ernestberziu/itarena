@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { NewTicketForm } from "@/components/portal/new-ticket-form";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageWrite } from "@/lib/admin-acl/page-guard";
 
 export async function generateMetadata({
   params,
@@ -20,9 +22,13 @@ export default async function AdminNewTicketPage({
   params: Promise<{ locale: string }>;
 }) {
   const session = await auth();
-  if (!session) redirect("/hyr");
+  if (!session?.user?.id) redirect("/hyr");
 
   const { locale } = await params;
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageWrite(locale, acl, "tickets");
+
   const t = await getTranslations({ locale, namespace: "tickets" });
   const lp = locale === "sq" ? "" : `/${locale}`;
 

@@ -24,6 +24,8 @@ import { timeAgo, formatPrice } from "@/lib/utils";
 import { RevenueChart, TicketBarChart, SlaRing } from "@/components/admin/dashboard-charts";
 import { subDays, format } from "date-fns";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
   const [
@@ -100,9 +102,13 @@ export default async function AdminDashboardPage({
   params: Promise<{ locale: string }>;
 }) {
   const session = await auth();
-  if (!session) redirect("/hyr");
+  if (!session?.user?.id) redirect("/hyr");
 
   const { locale } = await params;
+  const acl = await getCachedEffectiveAcl(session.user.id);
+  if (!acl) redirect("/hyr");
+  requireAdminPageRead(locale, acl, "dashboard");
+
   const lp = locale === "sq" ? "" : `/${locale}`;
   const now = new Date();
   const thirtyDaysAgo = subDays(now, 30);

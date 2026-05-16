@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 
 const patchSchema = z.object({
   status: z.enum(["PENDING", "REVIEWING", "SENT", "ACCEPTED", "REJECTED", "REVISION_REQUESTED"]).optional(),
@@ -16,7 +17,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json();
@@ -33,6 +34,11 @@ export async function PATCH(
   if (!isStaff && !isOwner) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isStaff && parsed.data.status && !["ACCEPTED", "REJECTED"].includes(parsed.data.status)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "quotes", "write");
+    if (denied) return denied;
   }
 
   const updateData: Record<string, unknown> = {};
@@ -61,7 +67,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const quote = await db.quote.findUnique({ where: { id } });
@@ -70,6 +76,11 @@ export async function GET(
   const isStaff = ["ADMIN", "SALES"].includes(session.user.role);
   if (!isStaff && quote.requestedById !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (isStaff) {
+    const denied = await assertAdminApiAcl(session.user.id, "quotes", "read");
+    if (denied) return denied;
   }
 
   return NextResponse.json(quote);

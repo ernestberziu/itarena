@@ -112,8 +112,8 @@ export function AdminTicketOpsForm({
     if (sum > MAX_RESOLUTION_HOURS) {
       toast.error(
         t(
-          `Shuma ditë×${WORKING_HOURS_PER_DAY} + orë nuk mund të kalojë ${MAX_RESOLUTION_HOURS} orë pune`,
-          `Combined estimate (days×${WORKING_HOURS_PER_DAY} + hours) cannot exceed ${MAX_RESOLUTION_HOURS} working hours`
+          `Shuma ditë×${WORKING_HOURS_PER_DAY} + orë nuk mund të kalojë ${MAX_RESOLUTION_HOURS} orë gjithsej`,
+          `Combined estimate (days×${WORKING_HOURS_PER_DAY}h + hours) cannot exceed ${MAX_RESOLUTION_HOURS} total hours`
         )
       );
       return;
@@ -196,7 +196,7 @@ export function AdminTicketOpsForm({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor={`ops-est-days-${ticketId}`} className="text-xs font-normal text-muted-foreground">
-                {t("Ditë pune", "Working days")}
+                {t("Ditë kalendari", "Calendar days")}
               </Label>
               <Input
                 id={`ops-est-days-${ticketId}`}

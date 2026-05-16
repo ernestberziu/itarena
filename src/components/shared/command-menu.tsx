@@ -96,6 +96,18 @@ export function CommandMenu({
         href
       );
       if (resolved.startsWith("http://") || resolved.startsWith("https://")) {
+        if (typeof window !== "undefined") {
+          try {
+            const u = new URL(resolved);
+            if (u.origin === window.location.origin) {
+              router.push(`${u.pathname}${u.search}${u.hash}`);
+              onOpenChange(false);
+              return;
+            }
+          } catch {
+            /* fall through */
+          }
+        }
         window.location.assign(resolved);
       } else {
         router.push(resolved);

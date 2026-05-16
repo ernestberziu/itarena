@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // TODO: Send email to info@itarena.al with contact details via Resend
+  // TODO: Send email to info@itarena.al with contact details (e.g. SMTP / Nodemailer)
 
   return NextResponse.json({ success: true });
 }

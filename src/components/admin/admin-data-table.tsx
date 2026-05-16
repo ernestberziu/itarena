@@ -9,7 +9,8 @@ type AdminDataTableProps<TData, TValue> = DataTableProps<TData, TValue> & {
 
 export function AdminDataTable<TData, TValue>({
   stickyHeader = true,
+  variant = "default",
   ...props
 }: AdminDataTableProps<TData, TValue>) {
-  return <DataTable {...props} stickyHeader={stickyHeader} />;
+  return <DataTable {...props} stickyHeader={stickyHeader} variant={variant} />;
 }

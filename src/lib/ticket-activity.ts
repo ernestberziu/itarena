@@ -1,5 +1,34 @@
 import type { Priority, Role, TicketStatus } from "@/types/domain";
 
+/** Status transitions visible to portal clients (timeline, API, future client notifications). */
+export const CLIENT_VISIBLE_STATUS_NEW_VALUES = [
+  "OPEN",
+  "IN_PROGRESS",
+  "PENDING_CLIENT",
+  "RESOLVED",
+  "CLOSED",
+] as const satisfies readonly TicketStatus[];
+
+const clientVisibleStatusSet = new Set<string>(CLIENT_VISIBLE_STATUS_NEW_VALUES);
+
+/**
+ * Whether a ticket history row may be shown to the portal client or used for client-targeted
+ * notifications. Assignment, estimate, SLA, priority, and non–client-facing status transitions stay internal.
+ */
+export function isClientVisibleTicketHistoryRow(h: {
+  field: string;
+  newValue: string | null;
+}): boolean {
+  if (h.field !== "status" || h.newValue == null) return false;
+  return clientVisibleStatusSet.has(h.newValue);
+}
+
+export function filterTicketHistoryForClient<
+  T extends { field: string; newValue: string | null },
+>(history: T[]): T[] {
+  return history.filter(isClientVisibleTicketHistoryRow);
+}
+
 const STATUS_LABELS: Record<TicketStatus, { sq: string; en: string }> = {
   OPEN: { sq: "Hapur", en: "Open" },
   ASSIGNED: { sq: "Caktuar", en: "Assigned" },

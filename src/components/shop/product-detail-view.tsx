@@ -26,7 +26,6 @@ interface Product {
   stock: number;
   lowStockAt: number;
   images: string[];
-  specs: Record<string, string>;
   isFeatured: boolean;
   brand?: string | null;
   barcode?: string | null;
@@ -37,7 +36,7 @@ interface Product {
 
 interface ProductDetailViewProps {
   product: Product;
-  related: Omit<Product, "specs" | "descSq" | "descEn">[];
+  related: Omit<Product, "descSq" | "descEn">[];
   isB2b: boolean;
   isLoggedIn: boolean;
 }
@@ -54,7 +53,6 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
   const price = isB2b ? product.priceB2b : product.priceRetail;
   const inStock = product.stock > 0;
   const images = product.images.length > 0 ? product.images : [];
-  const specs = Object.entries(product.specs ?? {});
 
   function handleAddToCart() {
     if (!inStock) return;
@@ -213,9 +211,7 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
                 {inStock ? (
                   <>
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span className="font-semibold text-emerald-700">
-                      Në stok ({product.stock} njësi)
-                    </span>
+                    <span className="font-semibold text-emerald-700">Në stok</span>
                   </>
                 ) : (
                   <span className="text-red-600 font-semibold">Jashtë stoku</span>
@@ -284,27 +280,6 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
             )}
           </div>
         </div>
-
-        {/* Specs table */}
-        {specs.length > 0 && (
-          <div className="mb-16">
-            <h2 className="text-xl font-extrabold mb-5">Specifikimet Teknike</h2>
-            <div className="rounded-2xl bg-white border border-border/60 overflow-hidden shadow-sm">
-              <table className="w-full">
-                <tbody>
-                  {specs.map(([key, val], i) => (
-                    <tr key={key} className={i % 2 === 0 ? "bg-slate-50/60" : "bg-white"}>
-                      <td className="px-5 py-3 text-sm font-semibold text-muted-foreground w-1/3 border-r border-border/30">
-                        {key}
-                      </td>
-                      <td className="px-5 py-3 text-sm">{val}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
 
         {/* B2B Quote section */}
         <div id="b2b-quote" className="mb-16">
@@ -437,7 +412,6 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
                     descSq: "",
                     descEn: "",
                     lowStockAt: 5,
-                    specs: {},
                   } as never}
                   isB2b={isB2b}
                   lang="sq"
