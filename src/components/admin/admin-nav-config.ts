@@ -12,6 +12,7 @@ import {
   Settings,
   Bell,
   FolderKanban,
+  MessageSquare,
 } from "lucide-react";
 import type { Role } from "@/types/domain";
 
@@ -50,6 +51,13 @@ export const MAIN_NAV: AdminNavItem[] = [
     transKey: "projects",
     href: "/admin/projects",
     icon: FolderKanban,
+    roles: ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"],
+  },
+  {
+    id: "messages",
+    transKey: "messages",
+    href: "/admin/messages",
+    icon: MessageSquare,
     roles: ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"],
   },
   {

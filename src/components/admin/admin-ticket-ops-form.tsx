@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/select";
 import type { Priority } from "@/types/domain";
 import { MAX_RESOLUTION_HOURS, WORKING_HOURS_PER_DAY } from "@/lib/ticket-estimate";
+import { TICKET_PROJECT_STAFF_CONFLICT } from "@/lib/ticket-project";
 
 export type EngineerOption = { id: string; firstName: string; lastName: string };
+export type ProjectOption = { id: string; title: string };
 
 function inputsFromEstimate(days: number | null, hours: number | null) {
   return {
@@ -30,7 +32,9 @@ export function AdminTicketOpsForm({
   ticketId,
   locale,
   engineers,
+  projects,
   assignedToId,
+  projectId,
   priority,
   estimatedDays,
   estimatedHours,
@@ -40,7 +44,9 @@ export function AdminTicketOpsForm({
   ticketId: string;
   locale: string;
   engineers: EngineerOption[];
+  projects: ProjectOption[];
   assignedToId: string | null;
+  projectId: string | null;
   priority: Priority;
   estimatedDays: number | null;
   estimatedHours: number | null;
@@ -51,18 +57,22 @@ export function AdminTicketOpsForm({
   const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
   const [loading, setLoading] = useState(false);
   const [assignee, setAssignee] = useState<string | null>(assignedToId);
+  const [project, setProject] = useState<string | null>(projectId);
   const [pri, setPri] = useState<Priority>(priority);
   const init = inputsFromEstimate(estimatedDays, estimatedHours);
   const [daysInput, setDaysInput] = useState(init.days);
   const [hoursInput, setHoursInput] = useState(init.hours);
+
+  const staffAssignBlocked = Boolean(project?.trim());
 
   useEffect(() => {
     const next = inputsFromEstimate(estimatedDays, estimatedHours);
     setDaysInput(next.days);
     setHoursInput(next.hours);
     setAssignee(assignedToId);
+    setProject(projectId);
     setPri(priority);
-  }, [estimatedDays, estimatedHours, assignedToId, priority]);
+  }, [estimatedDays, estimatedHours, assignedToId, projectId, priority]);
 
   const priorityLabels: Record<Priority, { sq: string; en: string }> = {
     LOW: { sq: "E Ulët", en: "Low" },
@@ -79,7 +89,26 @@ export function AdminTicketOpsForm({
   const priorityTriggerLabel =
     priorityLabels[pri]?.[locale === "sq" ? "sq" : "en"] ?? pri;
 
+  const selectedProject = project ? projects.find((p) => p.id === project) : undefined;
+  const projectNoneLabel = t("Pa projekt", "No project");
+  const projectTriggerLabel = selectedProject?.title ?? projectNoneLabel;
+
+  function onProjectChange(value: string) {
+    const next = value === "__none__" ? null : value;
+    setProject(next);
+    if (next) setAssignee(null);
+  }
+
   async function save() {
+    if (staffAssignBlocked && assignee) {
+      toast.error(
+        locale === "sq"
+          ? TICKET_PROJECT_STAFF_CONFLICT
+          : TICKET_PROJECT_STAFF_CONFLICT
+      );
+      return;
+    }
+
     let estimatedDaysOut: number | undefined;
     let estimatedHoursOut: number | undefined;
     const rawDays = daysInput.trim();
@@ -129,7 +158,8 @@ export function AdminTicketOpsForm({
     try {
       const body: Record<string, unknown> = {
         priority: pri,
-        assignedToId: assignee,
+        projectId: project,
+        assignedToId: staffAssignBlocked ? null : assignee,
         estimatedDays: d,
         estimatedHours: h,
       };
@@ -139,12 +169,16 @@ export function AdminTicketOpsForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(err.error ?? "save_failed");
+      }
       toast.success(t("Ops u ruajtën", "Ops settings saved"));
       onSaved?.();
       router.refresh();
-    } catch {
-      toast.error(t("Gabim", "Something went wrong"));
+    } catch (e) {
+      const msg = e instanceof Error && e.message !== "save_failed" ? e.message : null;
+      toast.error(msg ?? t("Gabim", "Something went wrong"));
     } finally {
       setLoading(false);
     }
@@ -153,19 +187,48 @@ export function AdminTicketOpsForm({
   return (
     <div className={className}>
       <div className="space-y-5">
+        {(projects.length > 0 || project) && (
+          <div className="space-y-2">
+            <Label>{t("Projekti", "Project")}</Label>
+            <Select
+              value={project ?? "__none__"}
+              onValueChange={(v) => onProjectChange(v ?? "__none__")}
+            >
+              <SelectTrigger className="h-10 w-full">
+                <SelectValue placeholder={projectNoneLabel}>{projectTriggerLabel}</SelectValue>
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false} className="min-w-[var(--anchor-width)]">
+                <SelectItem value="__none__">{projectNoneLabel}</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t(
+                "Biletat e projektit përdorin ekipin e projektit, jo caktimin individual të stafit.",
+                "Project tickets use the project team, not an individual staff assignee."
+              )}
+            </p>
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label>{t("Cakto teknikun", "Assign engineer")}</Label>
           <Select
             value={assignee ?? "__none__"}
             onValueChange={(v) => setAssignee(v === "__none__" ? null : v)}
+            disabled={staffAssignBlocked}
           >
-            <SelectTrigger className="h-10 w-full">
+            <SelectTrigger className="h-10 w-full" disabled={staffAssignBlocked}>
               <SelectValue placeholder={assigneeUnassignedLabel}>
-                {assigneeTriggerLabel}
+                {staffAssignBlocked ? assigneeUnassignedLabel : assigneeTriggerLabel}
               </SelectValue>
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false} className="min-w-[var(--anchor-width)]">
-              <SelectItem value="__none__">{t("I pacaktuar", "Unassigned")}</SelectItem>
+              <SelectItem value="__none__">{assigneeUnassignedLabel}</SelectItem>
               {engineers.map((e) => (
                 <SelectItem key={e.id} value={e.id}>
                   {e.firstName} {e.lastName}
@@ -173,6 +236,14 @@ export function AdminTicketOpsForm({
               ))}
             </SelectContent>
           </Select>
+          {staffAssignBlocked && (
+            <p className="text-xs text-muted-foreground">
+              {t(
+                "Hiqni projektin për të caktuar një inxhinier individual.",
+                "Remove the project to assign an individual engineer."
+              )}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">

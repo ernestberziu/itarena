@@ -46,6 +46,9 @@ model User {
   projectMembers  ProjectMember[]
   projectMessages ProjectMessage[]
   projectClients  ProjectClient[]
+  conversationsCreated Conversation[]        @relation("ConversationCreator")
+  conversationParticipants ConversationParticipant[]
+  conversationMessages ConversationMessage[] @relation("ConversationMessageAuthor")
 
   @@map("users")
 }
@@ -155,7 +158,7 @@ model Ticket {
 }
 
 // ─── Projects ────────────────────────────────────────────────────────────────
-// status: ACTIVE | ARCHIVED
+// status: ACTIVE | COMPLETED | ARCHIVED
 // member access: read | write | admin
 
 model Project {
@@ -171,8 +174,9 @@ model Project {
   createdBy User             @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   members   ProjectMember[]
   clients   ProjectClient[]
-  tickets   Ticket[]
-  messages  ProjectMessage[]
+  tickets        Ticket[]
+  messages       ProjectMessage[]
+  conversation   Conversation?
 
   @@index([status])
   @@map("projects")
@@ -197,6 +201,8 @@ model ProjectClient {
   projectId String
   companyId String?
   userId    String?
+  /// Display name when not linked to a portal user or company (name-only client).
+  label     String?
   createdAt DateTime @default(now())
 
   project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -222,6 +228,61 @@ model ProjectMessage {
 
   @@index([projectId, createdAt])
   @@map("project_messages")
+}
+
+// ─── Conversations (admin messaging) ─────────────────────────────────────────
+
+model Conversation {
+  id            String    @id @default(cuid())
+  type          String    // PROJECT | DIRECT | GROUP
+  title         String?
+  projectId     String?   @unique
+  createdById   String
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  project      Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy    User                      @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  participants ConversationParticipant[]
+  messages     ConversationMessage[]
+
+  @@index([type, lastMessageAt])
+  @@index([createdById])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String    @id @default(cuid())
+  conversationId String
+  userId         String
+  role           String    @default("member") // member | admin
+  lastReadAt     DateTime?
+  joinedAt       DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+model ConversationMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  authorId       String
+  body           String   @db.Text
+  isInternal     Boolean  @default(false)
+  attachments    String   @default("[]") @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User         @relation("ConversationMessageAuthor", fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([conversationId, createdAt])
+  @@map("conversation_messages")
 }
 
 model TicketComment {

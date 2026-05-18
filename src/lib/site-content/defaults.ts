@@ -1,3 +1,4 @@
+import { DEFAULT_SHOP_PATH } from "@/lib/shop-url";
 import type {
   MarketingServiceRecord,
   SiteSettingsBundle,
@@ -38,7 +39,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     ctaPrimaryText: { sq: "Kërko Ofertë Falas", en: "Get Free Quote" },
     ctaPrimaryLink: "/kerko-oferte",
     ctaSecondaryText: { sq: "Vizito Dyqanin", en: "Visit Shop" },
-    ctaSecondaryLink: "https://shop.itarena.al",
+    ctaSecondaryLink: DEFAULT_SHOP_PATH,
     ctaTertiaryText: { sq: "Shiko Shërbimet", en: "View Services" },
     ctaTertiaryLink: "/sherbime",
     backgroundImageUrl: "",

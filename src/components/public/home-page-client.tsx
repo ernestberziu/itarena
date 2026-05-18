@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { shopUrl } from "@/lib/shop-url";
+import { resolveMarketingHref, shopUrl } from "@/lib/shop-url";
 
 const serviceIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   it_support: Monitor,
@@ -148,7 +148,7 @@ export function HomePageClient({ content }: { content: PublishedSiteContent }) {
               </Link>
             </Button>
             <Button variant="accent" asChild>
-              <Link href={hero.ctaSecondaryLink.startsWith("http") ? hero.ctaSecondaryLink : `${lp}${hero.ctaSecondaryLink}`}>
+              <Link href={resolveMarketingHref(hero.ctaSecondaryLink, lp)}>
                 <ShoppingBag className="h-5 w-5" />
                 {pl(hero.ctaSecondaryText)}
               </Link>

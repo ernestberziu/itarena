@@ -10,13 +10,19 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { Priority } from "@/types/domain";
-import { AdminTicketOpsForm, type EngineerOption } from "@/components/admin/admin-ticket-ops-form";
+import {
+  AdminTicketOpsForm,
+  type EngineerOption,
+  type ProjectOption,
+} from "@/components/admin/admin-ticket-ops-form";
 
 export function AdminTicketOpsSheet({
   ticketId,
   locale,
   engineers,
+  projects,
   assignedToId,
+  projectId,
   priority,
   estimatedDays,
   estimatedHours,
@@ -24,7 +30,9 @@ export function AdminTicketOpsSheet({
   ticketId: string;
   locale: string;
   engineers: EngineerOption[];
+  projects: ProjectOption[];
   assignedToId: string | null;
+  projectId: string | null;
   priority: Priority;
   estimatedDays: number | null;
   estimatedHours: number | null;
@@ -53,11 +61,13 @@ export function AdminTicketOpsSheet({
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-5 py-5 pb-8">
             <AdminTicketOpsForm
-              key={`${ticketId}-${assignedToId ?? "none"}-${priority}-${estimatedDays ?? "n"}-${estimatedHours ?? "n"}`}
+              key={`${ticketId}-${assignedToId ?? "none"}-${projectId ?? "np"}-${priority}-${estimatedDays ?? "n"}-${estimatedHours ?? "n"}`}
               ticketId={ticketId}
               locale={locale}
               engineers={engineers}
+              projects={projects}
               assignedToId={assignedToId}
+              projectId={projectId}
               priority={priority}
               estimatedDays={estimatedDays}
               estimatedHours={estimatedHours}

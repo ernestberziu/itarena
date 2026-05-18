@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { adminTicketsListWhere } from "@/lib/admin-tickets-list-query";
 import { mapTicketToAdminRow } from "@/lib/admin-tickets-list-dto";
+import { paginatedResponse, parseListPageParams } from "@/lib/admin-list-pagination";
 
 const STAFF_ROLES = ["ADMIN", "ENGINEER", "SALES", "OPS"] as const;
 
@@ -30,9 +31,7 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
-  const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10) || 1);
-  const rawSize = Number.parseInt(searchParams.get("pageSize") ?? "25", 10) || 25;
-  const pageSize = Math.min(50, Math.max(1, rawSize));
+  const { page, pageSize, skip } = parseListPageParams(searchParams);
 
   const where = adminTicketsListWhere({
     q: searchParams.get("q"),
@@ -40,13 +39,15 @@ export async function GET(req: NextRequest) {
     priority: searchParams.get("priority"),
     filter: searchParams.get("filter"),
     assignee: searchParams.get("assignee"),
+    requester: searchParams.get("requester"),
+    projectId: searchParams.get("projectId"),
   });
 
   const [rows, total] = await Promise.all([
     db.ticket.findMany({
       where,
       orderBy: listOrderBy,
-      skip: (page - 1) * pageSize,
+      skip,
       take: pageSize,
       include: ticketInclude,
     }),
@@ -54,13 +55,5 @@ export async function GET(req: NextRequest) {
   ]);
 
   const items = rows.map(mapTicketToAdminRow);
-  const hasMore = page * pageSize < total;
-
-  return NextResponse.json({
-    items,
-    total,
-    page,
-    pageSize,
-    hasMore,
-  });
+  return NextResponse.json(paginatedResponse(items, total, page, pageSize));
 }

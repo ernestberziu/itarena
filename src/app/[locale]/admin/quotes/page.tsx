@@ -24,6 +24,8 @@ import { AdminStatCard } from "@/components/admin/users";
 import { formatPrice } from "@/lib/utils";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
+import { adminQuotesListWhere, mapQuoteToAdminRow } from "@/lib/admin-quotes-list-dto";
 
 export default async function AdminQuotesPage({
   params,
@@ -47,15 +49,17 @@ export default async function AdminQuotesPage({
   const statusFilter = sp.status;
   const q = sp.q?.trim();
 
-  const listWhere = {
-    ...(statusFilter && QUOTE_STATUSES.includes(statusFilter) ? { status: statusFilter } : {}),
-    ...(q ? { OR: [{ quoteNumber: { contains: q } }, { title: { contains: q } }] } : {}),
-  };
+  const listWhere = adminQuotesListWhere({ q, status: statusFilter });
+  const filterQueryParts = new URLSearchParams();
+  if (q) filterQueryParts.set("q", q);
+  if (statusFilter && QUOTE_STATUSES.includes(statusFilter)) filterQueryParts.set("status", statusFilter);
+  const filterQuery = filterQueryParts.toString();
 
   const now = new Date();
 
   const [
     quotes,
+    filteredTotal,
     totalQuotes,
     pendingQuotes,
     approvedQuotes,
@@ -70,7 +74,10 @@ export default async function AdminQuotesPage({
         requestedBy: { select: { firstName: true, lastName: true } },
         company: { select: { name: true } },
       },
+      take: ADMIN_LIST_PAGE_SIZE,
+      skip: 0,
     }),
+    db.quote.count({ where: listWhere }),
     db.quote.count(),
     db.quote.count({ where: { status: "PENDING" } }),
     db.quote.count({ where: { status: "ACCEPTED" } }),
@@ -112,21 +119,7 @@ export default async function AdminQuotesPage({
     })),
   ];
 
-  const rows: AdminQuoteRow[] = quotes.map((quote) => ({
-    id: quote.id,
-    quoteNumber: quote.quoteNumber,
-    title: quote.title,
-    status: quote.status,
-    total: quote.total != null ? String(quote.total) : null,
-    createdAt: quote.createdAt.toISOString(),
-    validUntil: quote.validUntil ? quote.validUntil.toISOString() : null,
-    services: quote.services,
-    contactName: quote.contactName,
-    contactEmail: quote.contactEmail,
-    pdfUrl: quote.pdfUrl,
-    requestedBy: quote.requestedBy,
-    company: quote.company,
-  }));
+  const initialQuotes = quotes.map(mapQuoteToAdminRow);
 
   /** Conversion = accepted / (accepted + rejected) — pipeline win rate on closed decisions. */
   const conversionPct =
@@ -141,8 +134,8 @@ export default async function AdminQuotesPage({
       <AdminPageHeader
         title={t("Ofertat", "Quotes")}
         description={t(
-          `${quotes.length} oferta në këtë pamje · ${totalQuotes} gjithsej`,
-          `${quotes.length} quotes in this view · ${totalQuotes} total`
+          `${filteredTotal} oferta në këtë pamje · ${totalQuotes} gjithsej`,
+          `${filteredTotal} quotes in this view · ${totalQuotes} total`
         )}
         actions={
           <Button size="sm" asChild>
@@ -219,7 +212,7 @@ export default async function AdminQuotesPage({
         />
       </div>
 
-      {quotes.length === 0 ? (
+      {filteredTotal === 0 ? (
         <EmptyState
           icon={FileText}
           className="rounded-2xl border border-border/50 bg-card/40 py-16"
@@ -240,7 +233,16 @@ export default async function AdminQuotesPage({
           }
         />
       ) : (
-        <AdminQuotesTable quotes={rows} locale={locale} lp={lp} />
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+          <AdminQuotesTable
+            initialQuotes={initialQuotes}
+            totalCount={filteredTotal}
+            pageSize={ADMIN_LIST_PAGE_SIZE}
+            locale={locale}
+            lp={lp}
+            filterQuery={filterQuery}
+          />
+        </div>
       )}
     </div>
   );

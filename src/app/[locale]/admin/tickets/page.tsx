@@ -14,6 +14,8 @@ import {
 } from "@/components/admin/admin-filter-segments";
 import { AdminTicketsTable } from "@/components/admin/admin-tickets-table";
 import { AdminTicketsAssigneeSelect } from "@/components/admin/admin-tickets-filters-assignee";
+import { AdminTicketsProjectSelect } from "@/components/admin/admin-tickets-filters-project";
+import { projectsListWhere } from "@/lib/projects";
 import { Separator } from "@/components/ui/separator";
 import {
   ADMIN_TICKET_STATUS_OPTIONS,
@@ -25,8 +27,7 @@ import { getMissedSlaTicketIds } from "@/lib/sla";
 import { cn } from "@/lib/utils";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
-
-const TICKETS_PAGE_SIZE = 25;
+import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
 
 export default async function AdminTicketsPage({
   params,
@@ -86,11 +87,13 @@ export default async function AdminTicketsPage({
     project: { select: { id: true, title: true } },
   } as const;
 
-  const [tickets, totalCount, openCount, breachedCount, assigneeOptions] = await Promise.all([
+  const projectWhere = await projectsListWhere(session.user.id, { status: "ACTIVE" });
+  const [tickets, totalCount, openCount, breachedCount, assigneeOptions, projectOptions] =
+    await Promise.all([
     db.ticket.findMany({
       where,
       orderBy: listOrderBy,
-      take: TICKETS_PAGE_SIZE,
+      take: ADMIN_LIST_PAGE_SIZE,
       skip: 0,
       include: ticketInclude,
     }),
@@ -106,7 +109,24 @@ export default async function AdminTicketsPage({
       select: { id: true, firstName: true, lastName: true },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     }),
+    db.project.findMany({
+      where: projectWhere,
+      select: { id: true, title: true },
+      orderBy: { title: "asc" },
+    }),
   ]);
+
+  if (
+    projectIdFilter &&
+    projectIdFilter !== "none" &&
+    !projectOptions.some((p) => p.id === projectIdFilter)
+  ) {
+    const selected = await db.project.findUnique({
+      where: { id: projectIdFilter },
+      select: { id: true, title: true },
+    });
+    if (selected) projectOptions.push(selected);
+  }
 
   const rows = tickets.map(mapTicketToAdminRow);
 
@@ -117,6 +137,7 @@ export default async function AdminTicketsPage({
   if (breachedOnly) filterQueryParts.set("filter", "breached");
   if (assigneeFilter) filterQueryParts.set("assignee", assigneeFilter);
   if (requesterFilter) filterQueryParts.set("requester", requesterFilter);
+  if (projectIdFilter) filterQueryParts.set("projectId", projectIdFilter);
   const filterQuery = filterQueryParts.toString();
 
   const statusLabel =
@@ -153,6 +174,7 @@ export default async function AdminTicketsPage({
     if (key !== "filter" && breachedOnly) p.set("filter", "breached");
     if (key !== "assignee" && assigneeFilter) p.set("assignee", assigneeFilter);
     if (key !== "requester" && requesterFilter) p.set("requester", requesterFilter);
+    if (key !== "projectId" && projectIdFilter) p.set("projectId", projectIdFilter);
     if (value) p.set(key, value);
     const qs = p.toString();
     return qs ? `${lp}/admin/tickets?${qs}` : `${lp}/admin/tickets`;
@@ -166,6 +188,7 @@ export default async function AdminTicketsPage({
     if (breachedOnly) p.set("filter", "breached");
     if (assigneeFilter) p.set("assignee", assigneeFilter);
     if (requesterFilter) p.set("requester", requesterFilter);
+    if (projectIdFilter) p.set("projectId", projectIdFilter);
     for (const [k, v] of Object.entries(extra)) {
       if (v === undefined) p.delete(k);
       else if (v === "") p.delete(k);
@@ -255,13 +278,19 @@ export default async function AdminTicketsPage({
 
             <AdminTicketsFilterDeck
               defaultOpen={Boolean(
-                q || statusFilter || priorityFilter || breachedOnly || assigneeFilter || requesterFilter
+                q ||
+                  statusFilter ||
+                  priorityFilter ||
+                  breachedOnly ||
+                  assigneeFilter ||
+                  requesterFilter ||
+                  projectIdFilter
               )}
               title={locale === "sq" ? "Filtro rezultatet" : "Filter results"}
               hint={
                 locale === "sq"
-                  ? "Kërko, filtro sipas statusit, prioritetit, inxhinierit ose SLA-së."
-                  : "Search, then narrow by status, priority, assignee, or SLA."
+                  ? "Kërko, filtro sipas statusit, prioritetit, projektit, inxhinierit ose SLA-së."
+                  : "Search, then narrow by status, priority, project, assignee, or SLA."
               }
               clearAll={
                 (q ||
@@ -269,7 +298,8 @@ export default async function AdminTicketsPage({
                   priorityFilter ||
                   breachedOnly ||
                   assigneeFilter ||
-                  requesterFilter) ? (
+                  requesterFilter ||
+                  projectIdFilter) ? (
                   <Link
                     href={`${lp}/admin/tickets`}
                     className="inline-flex rounded-lg border border-transparent px-2 py-1.5 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:border-border/60 hover:bg-background/80 hover:text-foreground hover:underline"
@@ -311,6 +341,7 @@ export default async function AdminTicketsPage({
                     {breachedOnly && <input type="hidden" name="filter" value="breached" />}
                     {assigneeFilter && <input type="hidden" name="assignee" value={assigneeFilter} />}
                     {requesterFilter && <input type="hidden" name="requester" value={requesterFilter} />}
+                    {projectIdFilter && <input type="hidden" name="projectId" value={projectIdFilter} />}
                     <Button
                       type="submit"
                       className="h-10 shrink-0 gap-2 rounded-xl px-5 shadow-sm sm:w-auto w-full"
@@ -323,7 +354,7 @@ export default async function AdminTicketsPage({
 
                 <Separator className="bg-border/60" />
 
-                <div className="grid gap-6 lg:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="space-y-2">
                     <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {locale === "sq" ? "Statusi" : "Status"}
@@ -374,6 +405,28 @@ export default async function AdminTicketsPage({
 
                   <div className="space-y-2">
                     <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {locale === "sq" ? "Projekti" : "Project"}
+                    </span>
+                    <AdminTicketsProjectSelect
+                      listPrefix={lp}
+                      projects={projectOptions}
+                      projectId={projectIdFilter}
+                      assignee={assigneeFilter}
+                      requester={requesterFilter}
+                      q={q}
+                      status={statusFilter}
+                      priority={priorityFilter}
+                      breached={breachedOnly}
+                      labels={{
+                        placeholder: locale === "sq" ? "Zgjidh projektin" : "Choose project",
+                        all: locale === "sq" ? "Të gjitha" : "All projects",
+                        none: locale === "sq" ? "Pa projekt" : "No project",
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {locale === "sq" ? "Inxhinieri" : "Assignee"}
                     </span>
                     <AdminTicketsAssigneeSelect
@@ -381,6 +434,7 @@ export default async function AdminTicketsPage({
                       engineers={assigneeOptions}
                       assignee={assigneeFilter}
                       requester={requesterFilter}
+                      projectId={projectIdFilter}
                       q={q}
                       status={statusFilter}
                       priority={priorityFilter}
@@ -448,11 +502,11 @@ export default async function AdminTicketsPage({
           action={{ label: locale === "sq" ? "Hiq filtrat" : "Clear filters", href: `${lp}/admin/tickets` }}
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/30 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
           <AdminTicketsTable
             initialTickets={rows}
             totalCount={totalCount}
-            pageSize={TICKETS_PAGE_SIZE}
+            pageSize={ADMIN_LIST_PAGE_SIZE}
             locale={locale}
             listPrefix={lp}
             filterQuery={filterQuery}

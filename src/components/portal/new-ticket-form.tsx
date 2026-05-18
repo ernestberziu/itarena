@@ -59,7 +59,17 @@ function formatRequesterLabel(u: RequesterRow, locale: string) {
   return bits.join(" · ");
 }
 
-export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "admin" }) {
+type ProjectOption = { id: string; title: string };
+
+export function NewTicketForm({
+  variant = "portal",
+  projects = [],
+  initialProjectId = null,
+}: {
+  variant?: "portal" | "admin";
+  projects?: ProjectOption[];
+  initialProjectId?: string | null;
+}) {
   const t = useTranslations("tickets");
   const locale = useLocale();
   const router = useRouter();
@@ -92,6 +102,8 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
   const [estimatedHoursInput, setEstimatedHoursInput] = useState("");
   const [assignees, setAssignees] = useState<AssigneeRow[]>([]);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(initialProjectId);
+  const staffAssignBlocked = Boolean(projectId?.trim());
 
   const requesterPopoverHandle = useMemo(() => createPopoverHandle(), []);
 
@@ -255,7 +267,8 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
             ...(requesterUserId ? { requesterUserId } : {}),
             ...(externalRequesterName ? { externalRequesterName } : {}),
             ...(inviteRequester ? { inviteRequester } : {}),
-            ...(assigneeId ? { assignedToId: assigneeId } : {}),
+            ...(projectId ? { projectId } : {}),
+            ...(assigneeId && !projectId ? { assignedToId: assigneeId } : {}),
             ...estimatePayload,
           }
         : { ...values, ...estimatePayload };
@@ -732,15 +745,58 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 pt-6">
+              {projects.length > 0 && (
+                <div className="space-y-2">
+                  <Label>{locale === "sq" ? "Projekti (opsionale)" : "Project (optional)"}</Label>
+                  <Select
+                    value={projectId ?? "__none__"}
+                    onValueChange={(v) => {
+                      const next = v === "__none__" ? null : v;
+                      setProjectId(next);
+                      if (next) setAssigneeId(null);
+                    }}
+                  >
+                    <SelectTrigger className="w-full max-w-md">
+                      <SelectValue
+                        placeholder={locale === "sq" ? "Pa projekt" : "No project"}
+                      >
+                        {projectId
+                          ? (projects.find((p) => p.id === projectId)?.title ??
+                            (locale === "sq" ? "Pa projekt" : "No project"))
+                          : locale === "sq"
+                            ? "Pa projekt"
+                            : "No project"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">
+                        {locale === "sq" ? "Pa projekt" : "No project"}
+                      </SelectItem>
+                      {projects.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground max-w-prose">
+                    {locale === "sq"
+                      ? "Biletat e projektit përdorin ekipin e projektit, jo caktimin individual të stafit."
+                      : "Project tickets use the project team, not an individual staff assignee."}
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>{locale === "sq" ? "Cakto te stafi (opsionale)" : "Assign to staff (optional)"}</Label>
                 <Select
                   value={assigneeId ?? "__none__"}
                   onValueChange={(v) => setAssigneeId(v === "__none__" ? null : v)}
+                  disabled={staffAssignBlocked}
                 >
-                  <SelectTrigger className="w-full max-w-md">
+                  <SelectTrigger className="w-full max-w-md" disabled={staffAssignBlocked}>
                     <SelectValue placeholder={assigneeUnassignedLabel}>
-                      {assigneeTriggerLabel}
+                      {staffAssignBlocked ? assigneeUnassignedLabel : assigneeTriggerLabel}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -753,9 +809,13 @@ export function NewTicketForm({ variant = "portal" }: { variant?: "portal" | "ad
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground max-w-prose">
-                  {locale === "sq"
-                    ? "Nëse zgjidhni dikë, bileta krijohet si e CAKTUAR për atë përdorues."
-                    : "If you pick someone, the ticket is created in ASSIGNED state for that user."}
+                  {staffAssignBlocked
+                    ? locale === "sq"
+                      ? "Hiqni projektin për të caktuar një anëtar stafi."
+                      : "Remove the project to assign a staff member."
+                    : locale === "sq"
+                      ? "Nëse zgjidhni dikë, bileta krijohet si e CAKTUAR për atë përdorues."
+                      : "If you pick someone, the ticket is created in ASSIGNED state for that user."}
                 </p>
               </div>
 

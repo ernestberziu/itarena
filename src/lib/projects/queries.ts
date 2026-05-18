@@ -22,7 +22,7 @@ export async function projectsListWhere(
   }
 
   const status = input.status?.trim();
-  if (status === "ACTIVE" || status === "ARCHIVED") {
+  if (status === "ACTIVE" || status === "COMPLETED" || status === "ARCHIVED") {
     where.status = status;
   }
 

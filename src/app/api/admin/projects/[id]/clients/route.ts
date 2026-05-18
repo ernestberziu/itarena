@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import {
   assertProjectAccess,
-  projectClientSchema,
+  projectClientInputSchema,
   revalidateProjectPaths,
 } from "@/lib/projects";
+import { linkProjectClient } from "@/lib/projects/client-link";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -49,42 +50,28 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = projectClientSchema.safeParse(body);
+  const parsed = projectClientInputSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const companyId = parsed.data.companyId?.trim() || null;
-  const userId = parsed.data.userId?.trim() || null;
+  const locale = session.user.language === "en" ? "en" : "sq";
 
-  if (companyId) {
-    const company = await db.company.findUnique({ where: { id: companyId } });
-    if (!company) return NextResponse.json({ error: "Company not found" }, { status: 400 });
+  try {
+    const client = await linkProjectClient(projectId, parsed.data, { locale });
+    revalidateProjectPaths(projectId);
+    return NextResponse.json(client, { status: 201 });
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === "EMAIL_EXISTS") {
+        return NextResponse.json({ error: "Email already registered" }, { status: 409 });
+      }
+      if (err.message === "COMPANY_NOT_FOUND" || err.message === "USER_NOT_FOUND") {
+        return NextResponse.json({ error: err.message }, { status: 400 });
+      }
+    }
+    throw err;
   }
-  if (userId) {
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) return NextResponse.json({ error: "User not found" }, { status: 400 });
-  }
-
-  const duplicate = await db.projectClient.findFirst({
-    where: {
-      projectId,
-      companyId: companyId ?? undefined,
-      userId: userId ?? undefined,
-    },
-  });
-  if (duplicate) return NextResponse.json(duplicate);
-
-  const client = await db.projectClient.create({
-    data: { projectId, companyId, userId },
-    include: {
-      company: { select: { id: true, name: true } },
-      user: { select: { id: true, firstName: true, lastName: true, email: true } },
-    },
-  });
-
-  revalidateProjectPaths(projectId);
-  return NextResponse.json(client, { status: 201 });
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {

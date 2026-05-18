@@ -19,7 +19,7 @@ Optional blocks are documented in `.env.example` (email, Cloudinary, `PRISMA_LOG
 
 ## Shop URL (single domain)
 
-The storefront lives at **`/shop`** on the same host as the marketing site (e.g. `https://example.com/shop`). [`src/lib/shop-url.ts`](src/lib/shop-url.ts) builds links from `NEXT_PUBLIC_APP_URL` + `/shop` by default.
+The storefront lives at **`/shop`** on the same host as the marketing site (e.g. `https://example.com/shop`). [`src/lib/shop-url.ts`](src/lib/shop-url.ts) builds absolute shop URLs from `PUBLIC_URL` or `NEXT_PUBLIC_APP_URL` + `/shop`.
 
 **Legacy `shop.example.com` hostnames:** [`src/proxy.ts`](src/proxy.ts) (Next.js **proxy** convention) responds with a **308 redirect** to the apex host and `/shop…` path. For traffic that never hits Next (CDN-only), add the same rule at the edge — see [`docs/shop-subdomain-redirects.md`](docs/shop-subdomain-redirects.md).
 

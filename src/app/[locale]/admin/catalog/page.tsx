@@ -1,4 +1,3 @@
-import type { ShopProductOverlay } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AlertTriangle, Layers, Package } from "lucide-react";
@@ -12,9 +11,8 @@ import { AdminQuickFilterChips } from "@/components/admin/admin-quick-filter-chi
 import { EmptyState } from "@/components/shared/empty-state";
 import { AdminCatalogTable } from "@/components/admin/admin-catalog-table";
 import type { AdminCatalogRow } from "@/components/admin/admin-catalog-types";
-import { getFinanca5Client } from "@/lib/financa5-client";
-import { adaptProducts } from "@/lib/erp-adapters";
-import { getShopProductOverlaysByKods, mergeShopProducts } from "@/lib/shop-product-overlay";
+import { loadAdminCatalogRows } from "@/lib/admin-catalog-list";
+import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
 import { AdminStatCard } from "@/components/admin/users";
 import { Input } from "@/components/ui/input";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
@@ -43,50 +41,24 @@ export default async function AdminCatalogPage({
   /** ERP category id (LISTE.KOD), same as slug in shop URLs. */
   const categorySlug = sp.category?.trim() || undefined;
 
-  let products: AdminCatalogRow[] = [];
-  let categories: ReturnType<typeof adaptProducts>["categories"] = [];
+  let allProducts: AdminCatalogRow[] = [];
+  let categories: Awaited<ReturnType<typeof loadAdminCatalogRows>>["categories"] = [];
   let catalogError = false;
+  const filterQueryParts = new URLSearchParams();
+  if (q) filterQueryParts.set("q", q);
+  if (categorySlug) filterQueryParts.set("category", categorySlug);
+  const filterQuery = filterQueryParts.toString();
 
   try {
-    const client = getFinanca5Client();
-    const [erpProducts, erpCategories] = await Promise.all([
-      client.getAllProducts(),
-      client.getAllCategories(),
-    ]);
-    const adapted = adaptProducts(erpProducts, erpCategories, {
-      categorySlug,
-      search: q,
-    });
-    let overlayMap = new Map<string, ShopProductOverlay>();
-    try {
-      overlayMap = await getShopProductOverlaysByKods(adapted.products.map((p) => p.id));
-    } catch (e) {
-      console.error("[admin/catalog] overlay load failed:", e);
-    }
-    const merged = mergeShopProducts(adapted.products, overlayMap);
-    products = merged.map((product) => {
-      const ov = overlayMap.get(product.erpKod);
-      return {
-        id: product.id,
-        sku: product.sku,
-        nameSq: product.nameSq,
-        nameEn: product.nameEn,
-        brand: product.brand,
-        stock: product.stock,
-        lowStockAt: product.lowStockAt,
-        isActive: product.isActive,
-        imagesJson: JSON.stringify(product.images),
-        priceRetail: String(product.priceRetail),
-        priceB2b: String(product.priceB2b),
-        category: { nameSq: product.category.nameSq, nameEn: product.category.nameEn },
-        overlayDescriptionSq: ov?.descriptionSq ?? null,
-        overlayDescriptionEn: ov?.descriptionEn ?? null,
-      };
-    });
-    categories = adapted.categories;
+    const loaded = await loadAdminCatalogRows({ q, categorySlug });
+    allProducts = loaded.rows;
+    categories = loaded.categories;
   } catch {
     catalogError = true;
   }
+
+  const totalCount = allProducts.length;
+  const initialProducts = allProducts.slice(0, ADMIN_LIST_PAGE_SIZE);
 
   if (catalogError) {
     return (
@@ -110,8 +82,8 @@ export default async function AdminCatalogPage({
 
   const baseHref = `${lp}/admin/catalog`;
   const hasActiveFilters = Boolean(q || categorySlug);
-  const lowStock = products.filter((p) => p.stock <= p.lowStockAt).length;
-  const inactive = products.filter((p) => !p.isActive).length;
+  const lowStock = allProducts.filter((p) => p.stock <= p.lowStockAt).length;
+  const inactive = allProducts.filter((p) => !p.isActive).length;
 
   function categoryHref(slug: string | null) {
     const p = new URLSearchParams();
@@ -138,8 +110,8 @@ export default async function AdminCatalogPage({
       <AdminPageHeader
         title={t("Katalog Produktesh", "Product Catalog")}
         description={t(
-          `${products.length} produkte në këtë pamje (Financa5 + përshkrime/figura lokale)`,
-          `${products.length} products in this view (Financa5 + local descriptions/images)`
+          `${totalCount} produkte në këtë pamje (Financa5 + përshkrime/figura lokale)`,
+          `${totalCount} products in this view (Financa5 + local descriptions/images)`
         )}
         toolbar={
           <AdminListToolbar>
@@ -191,13 +163,13 @@ export default async function AdminCatalogPage({
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <AdminStatCard label={t("Produkte", "Products")} value={products.length} icon={Package} />
+        <AdminStatCard label={t("Produkte", "Products")} value={totalCount} icon={Package} />
         <AdminStatCard label={t("Stok i ulët", "Low stock")} value={lowStock} icon={AlertTriangle} />
         <AdminStatCard label={t("Jo aktivë", "Inactive")} value={inactive} icon={Layers} />
         <AdminStatCard label={t("Kategori (filtër)", "Categories")} value={categories.length} icon={Layers} />
       </div>
 
-      {products.length === 0 ? (
+      {totalCount === 0 ? (
         <EmptyState
           icon={Package}
           className="rounded-2xl border border-border/50 bg-card/40 py-16"
@@ -210,7 +182,15 @@ export default async function AdminCatalogPage({
           action={hasActiveFilters ? { label: t("Pastro filtrat", "Clear filters"), href: baseHref } : undefined}
         />
       ) : (
-        <AdminCatalogTable products={products} locale={locale} />
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+          <AdminCatalogTable
+            initialProducts={initialProducts}
+            totalCount={totalCount}
+            pageSize={ADMIN_LIST_PAGE_SIZE}
+            locale={locale}
+            filterQuery={filterQuery}
+          />
+        </div>
       )}
     </div>
   );

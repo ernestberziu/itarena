@@ -61,7 +61,11 @@ import {
 import { cn } from "@/lib/utils";
 import { STAFF_ROLES, type Role, type TicketStatus } from "@/types/domain";
 import type { Priority } from "@/types/domain";
-import { AdminTicketOpsForm, type EngineerOption } from "@/components/admin/admin-ticket-ops-form";
+import {
+  AdminTicketOpsForm,
+  type EngineerOption,
+  type ProjectOption,
+} from "@/components/admin/admin-ticket-ops-form";
 import { AdminTicketOpsSheet } from "@/components/admin/admin-ticket-ops-sheet";
 
 export type AdminTicketDetailModel = {
@@ -84,6 +88,8 @@ export type AdminTicketDetailModel = {
   createdBy: { id: string; firstName: string; lastName: string; email: string; role: Role };
   assignedTo: { id: string; firstName: string; lastName: string } | null;
   assignedToId: string | null;
+  projectId: string | null;
+  project: { id: string; title: string; slug: string } | null;
   company: { name: string } | null;
   comments: TicketCommentRow[];
   history: TicketHistoryRow[];
@@ -104,17 +110,20 @@ export function AdminTicketDetailView({
   currentUserRole,
   locale,
   engineers,
+  projects,
   ticketsListHref,
 }: {
   ticket: AdminTicketDetailModel;
   currentUserRole: Role;
   locale: string;
   engineers: EngineerOption[];
+  projects: ProjectOption[];
   ticketsListHref: string;
 }) {
   const router = useRouter();
   const isStaff = STAFF_ROLES.includes(currentUserRole);
   const lang = locale === "en" ? "en" : "sq";
+  const lp = locale === "sq" ? "" : `/${locale}`;
 
   const [comment, setComment] = useState("");
   const [isInternal, setIsInternal] = useState(false);
@@ -290,7 +299,20 @@ export function AdminTicketDetailView({
             <div className="flex items-center py-2 sm:px-4 sm:py-0">
               <span className="leading-none">{divLabel}</span>
             </div>
-            {ticket.assignedTo && (
+            {ticket.project && (
+              <div className="flex items-center py-2 sm:px-4 sm:py-0">
+                <span className="leading-none">
+                  <span className="text-muted-foreground">{t("Projekti", "Project")}: </span>
+                  <Link
+                    href={`${lp}/admin/projects/${ticket.project.id}`}
+                    className="font-medium text-foreground/90 hover:underline"
+                  >
+                    {ticket.project.title}
+                  </Link>
+                </span>
+              </div>
+            )}
+            {ticket.assignedTo && !ticket.projectId && (
               <div className="flex items-center py-2 sm:px-4 sm:py-0">
                 <span className="leading-none">
                   <span className="text-muted-foreground">{t("Inxhinieri", "Engineer")}: </span>
@@ -318,7 +340,9 @@ export function AdminTicketDetailView({
             ticketId={ticket.id}
             locale={locale}
             engineers={engineers}
+            projects={projects}
             assignedToId={ticket.assignedToId ?? null}
+            projectId={ticket.projectId ?? null}
             priority={ticket.priority}
             estimatedDays={ticket.estimatedDays}
             estimatedHours={ticket.estimatedHours}
@@ -751,11 +775,13 @@ export function AdminTicketDetailView({
               {t("Operacione", "Operations")}
             </h3>
             <AdminTicketOpsForm
-              key={`${ticket.id}-${ticket.assignedToId ?? "x"}-${ticket.priority}-${ticket.estimatedDays ?? "n"}-${ticket.estimatedHours ?? "n"}-${ticket.slaDeadline?.toISOString() ?? ""}`}
+              key={`${ticket.id}-${ticket.assignedToId ?? "x"}-${ticket.projectId ?? "np"}-${ticket.priority}-${ticket.estimatedDays ?? "n"}-${ticket.estimatedHours ?? "n"}-${ticket.slaDeadline?.toISOString() ?? ""}`}
               ticketId={ticket.id}
               locale={locale}
               engineers={engineers}
+              projects={projects}
               assignedToId={ticket.assignedToId ?? null}
+              projectId={ticket.projectId ?? null}
               priority={ticket.priority}
               estimatedDays={ticket.estimatedDays}
               estimatedHours={ticket.estimatedHours}
@@ -785,6 +811,22 @@ export function AdminTicketDetailView({
                 <dt className="text-xs text-muted-foreground">{t("Divizioni", "Division")}</dt>
                 <dd className="mt-1 font-medium text-foreground">{divLabel}</dd>
               </div>
+              {ticket.project && (
+                <>
+                  <Separator />
+                  <div>
+                    <dt className="text-xs text-muted-foreground">{t("Projekti", "Project")}</dt>
+                    <dd className="mt-1">
+                      <Link
+                        href={`${lp}/admin/projects/${ticket.project.id}`}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {ticket.project.title}
+                      </Link>
+                    </dd>
+                  </div>
+                </>
+              )}
               {ticket.slaDeadline && (
                 <>
                   <Separator />

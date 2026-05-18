@@ -128,6 +128,10 @@ export function formatHistoryActivity(
       return lang === "sq"
         ? `${who}: caktimi ${engineerName(h.oldValue, engineerById, lang)} → ${engineerName(h.newValue, engineerById, lang)}`
         : `${who}: assignee ${engineerName(h.oldValue, engineerById, lang)} → ${engineerName(h.newValue, engineerById, lang)}`;
+    case "projectId":
+      return lang === "sq"
+        ? `${who}: projekti ${h.oldValue ?? "—"} → ${h.newValue ?? "—"}`
+        : `${who}: project ${h.oldValue ?? "—"} → ${h.newValue ?? "—"}`;
     case "estimatedDays": {
       const label = lang === "sq" ? "ditë vlerësimi" : "estimated days";
       return lang === "sq"

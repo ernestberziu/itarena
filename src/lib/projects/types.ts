@@ -1,4 +1,4 @@
-export const PROJECT_STATUSES = ["ACTIVE", "ARCHIVED"] as const;
+export const PROJECT_STATUSES = ["ACTIVE", "COMPLETED", "ARCHIVED"] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 export const PROJECT_ACCESS_LEVELS = ["read", "write", "admin"] as const;

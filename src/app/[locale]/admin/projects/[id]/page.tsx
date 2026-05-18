@@ -5,6 +5,8 @@ import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 import { hasAclLevel } from "@/lib/admin-acl/features";
 import { canAccessProject, projectDetailInclude } from "@/lib/projects";
+import { ensureProjectConversation } from "@/lib/messages/project-channel";
+import type { ProjectListRow } from "@/lib/projects/types";
 import { ProjectWorkspace } from "@/components/admin/projects/project-workspace";
 
 export default async function AdminProjectDetailPage({
@@ -29,14 +31,12 @@ export default async function AdminProjectDetailPage({
   });
   if (!project) notFound();
 
-  const [messages, tickets] = await Promise.all([
-    db.projectMessage.findMany({
-      where: { projectId: id },
-      include: {
-        author: { select: { id: true, firstName: true, lastName: true, role: true } },
-      },
-      orderBy: { createdAt: "asc" },
-    }),
+  const conv = await ensureProjectConversation(id, session.user.id);
+
+  const [messageCount, tickets] = await Promise.all([
+    conv
+      ? db.conversationMessage.count({ where: { conversationId: conv.id } })
+      : Promise.resolve(0),
     db.ticket.findMany({
       where: { projectId: id },
       orderBy: { updatedAt: "desc" },
@@ -55,6 +55,10 @@ export default async function AdminProjectDetailPage({
     hasAclLevel(acl, "projects", "write") &&
     (await canAccessProject(session.user.id, id, "write"));
 
+  const canMessageWrite =
+    hasAclLevel(acl, "messages", "write") &&
+    (await canAccessProject(session.user.id, id, "read"));
+
   const lp = locale === "sq" ? "" : `/${locale}`;
 
   return (
@@ -62,13 +66,15 @@ export default async function AdminProjectDetailPage({
       locale={locale}
       listPrefix={lp}
       canWrite={canWrite}
+      canMessageWrite={canMessageWrite}
+      currentUserId={session.user.id}
+      messageCount={messageCount}
       project={{
         id: project.id,
         title: project.title,
         slug: project.slug,
-        status: project.status as "ACTIVE" | "ARCHIVED",
+        status: project.status as ProjectListRow["status"],
         description: project.description,
-        createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
         createdBy: project.createdBy,
         members: project.members.map((m) => ({
@@ -78,13 +84,6 @@ export default async function AdminProjectDetailPage({
         })),
         clients: project.clients,
       }}
-      messages={messages.map((m) => ({
-        id: m.id,
-        body: m.body,
-        isInternal: m.isInternal,
-        createdAt: m.createdAt.toISOString(),
-        author: m.author,
-      }))}
       tickets={tickets.map((t) => ({
         ...t,
         updatedAt: t.updatedAt.toISOString(),

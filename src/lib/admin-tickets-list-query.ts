@@ -26,7 +26,9 @@ export function adminTicketsListWhere(input: AdminTicketsListQuery): Prisma.Tick
   const requesterRaw = input.requester?.trim();
   const projectIdRaw = input.projectId?.trim();
 
-  if (projectIdRaw && /^c[a-z0-9]{24}$/i.test(projectIdRaw)) {
+  if (projectIdRaw === "none") {
+    where.projectId = null;
+  } else if (projectIdRaw && /^c[a-z0-9]{24}$/i.test(projectIdRaw)) {
     where.projectId = projectIdRaw;
   }
 

@@ -22,6 +22,8 @@ import { AdminStatCard } from "@/components/admin/users";
 import { formatPrice } from "@/lib/utils";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
+import { adminOrdersListWhere, mapOrderToAdminRow } from "@/lib/admin-orders-list-dto";
 
 export default async function AdminOrdersPage({
   params,
@@ -66,21 +68,27 @@ export default async function AdminOrdersPage({
   let cancelledCount = 0;
   let gmvOpen = 0;
 
-  try {
-    orders = await db.order.findMany({
-      where: {
-        ...(userIdFilter ? { userId: userIdFilter } : {}),
-        ...(statusFilter && ORDER_STATUSES.includes(statusFilter) ? { status: statusFilter } : {}),
-        ...(q ? { OR: [{ orderNumber: { contains: q } }] } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { firstName: true, lastName: true } },
-        company: { select: { name: true } },
-      },
-    });
+  const listWhere = adminOrdersListWhere({ q, status: statusFilter, userId: userIdFilter });
+  const filterQueryParts = new URLSearchParams();
+  if (q) filterQueryParts.set("q", q);
+  if (statusFilter && ORDER_STATUSES.includes(statusFilter)) filterQueryParts.set("status", statusFilter);
+  if (userIdFilter) filterQueryParts.set("userId", userIdFilter);
+  const filterQuery = filterQueryParts.toString();
+  let filteredTotal = 0;
 
-    const [tc, pc, cc, dc, kc, agg] = await Promise.all([
+  try {
+    const [orderRows, ft, tc, pc, cc, dc, kc, agg] = await Promise.all([
+      db.order.findMany({
+        where: listWhere,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { firstName: true, lastName: true } },
+          company: { select: { name: true } },
+        },
+        take: ADMIN_LIST_PAGE_SIZE,
+        skip: 0,
+      }),
+      db.order.count({ where: listWhere }),
       db.order.count(),
       db.order.count({ where: { status: "PLACED" } }),
       db.order.count({ where: { status: "CONFIRMED" } }),
@@ -91,6 +99,8 @@ export default async function AdminOrdersPage({
         _sum: { total: true },
       }),
     ]);
+    orders = orderRows;
+    filteredTotal = ft;
     totalOrders = tc;
     placedCount = pc;
     confirmedCount = cc;
@@ -127,24 +137,15 @@ export default async function AdminOrdersPage({
     })),
   ];
 
-  const rows: AdminOrderListRow[] = orders.map((order) => ({
-    id: order.id,
-    orderNumber: order.orderNumber,
-    status: order.status,
-    total: String(order.total),
-    itemsJson: order.items as string,
-    createdAt: order.createdAt.toISOString(),
-    user: order.user,
-    company: order.company,
-  }));
+  const initialOrders = orders.map(mapOrderToAdminRow);
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title={t("Porositë", "Orders")}
         description={t(
-          `${orders.length} porosi në këtë pamje`,
-          `${orders.length} orders in this view`
+          `${filteredTotal} porosi në këtë pamje`,
+          `${filteredTotal} orders in this view`
         )}
         toolbar={
           <AdminListToolbar>
@@ -205,7 +206,7 @@ export default async function AdminOrdersPage({
               : "Cannot load orders. Start Postgres (docker compose up -d postgres), set DATABASE_URL to match docker-compose (e.g. postgresql://itarena:itarena@localhost:5432/itarena), then npx prisma migrate deploy."
           }
         />
-      ) : orders.length === 0 ? (
+      ) : filteredTotal === 0 ? (
         <EmptyState
           icon={ShoppingBag}
           className="rounded-2xl border border-border/50 bg-card/40 py-16"
@@ -222,7 +223,15 @@ export default async function AdminOrdersPage({
           action={hasActiveFilters ? { label: t("Pastro filtrat", "Clear filters"), href: baseListHref } : undefined}
         />
       ) : (
-        <AdminOrdersTable orders={rows} locale={locale} />
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+          <AdminOrdersTable
+            initialOrders={initialOrders}
+            totalCount={filteredTotal}
+            pageSize={ADMIN_LIST_PAGE_SIZE}
+            locale={locale}
+            filterQuery={filterQuery}
+          />
+        </div>
       )}
     </div>
   );

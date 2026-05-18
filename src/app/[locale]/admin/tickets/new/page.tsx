@@ -5,6 +5,8 @@ import { NewTicketForm } from "@/components/portal/new-ticket-form";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageWrite } from "@/lib/admin-acl/page-guard";
+import { db } from "@/lib/db";
+import { projectsListWhere } from "@/lib/projects";
 
 export async function generateMetadata({
   params,
@@ -18,16 +20,31 @@ export async function generateMetadata({
 
 export default async function AdminNewTicketPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ projectId?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/hyr");
 
   const { locale } = await params;
+  const sp = await searchParams;
   const acl = await getCachedEffectiveAcl(session.user.id);
   if (!acl) redirect("/hyr");
   requireAdminPageWrite(locale, acl, "tickets");
+
+  const projects = await db.project.findMany({
+    where: await projectsListWhere(session.user.id, { status: "ACTIVE" }),
+    select: { id: true, title: true },
+    orderBy: { title: "asc" },
+  });
+
+  const initialProjectId = sp.projectId?.trim() || null;
+  const projectValid =
+    initialProjectId && projects.some((p) => p.id === initialProjectId)
+      ? initialProjectId
+      : null;
 
   const t = await getTranslations({ locale, namespace: "tickets" });
   const lp = locale === "sq" ? "" : `/${locale}`;
@@ -46,7 +63,7 @@ export default async function AdminNewTicketPage({
           { label: t("new") },
         ]}
       />
-      <NewTicketForm variant="admin" />
+      <NewTicketForm variant="admin" projects={projects} initialProjectId={projectValid} />
     </div>
   );
 }

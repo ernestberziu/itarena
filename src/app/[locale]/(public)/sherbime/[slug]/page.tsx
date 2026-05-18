@@ -15,6 +15,7 @@ import {
   serviceName,
   serviceShortDesc,
 } from "@/lib/site-content/locale";
+import { DEFAULT_MARKETING_SERVICES } from "@/lib/site-content/defaults";
 
 const PRINTER_SLUG = "printere" as const;
 const LEGACY_PRINTER_SLUG = "printerë";
@@ -27,8 +28,18 @@ function resolveServiceSlug(slug: string): string {
 }
 
 export async function generateStaticParams() {
-  const services = await listMarketingServices(false);
-  return services.map((s) => ({ slug: s.slug }));
+  if (!process.env.DATABASE_URL?.trim()) {
+    return DEFAULT_MARKETING_SERVICES.map((s) => ({ slug: s.slug }));
+  }
+  try {
+    const services = await listMarketingServices(false);
+    if (services.length > 0) {
+      return services.map((s) => ({ slug: s.slug }));
+    }
+  } catch {
+    /* build without DB — fall through to defaults */
+  }
+  return DEFAULT_MARKETING_SERVICES.map((s) => ({ slug: s.slug }));
 }
 
 export async function generateMetadata({

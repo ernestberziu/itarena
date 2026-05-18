@@ -13,6 +13,8 @@ import {
 import { filterTicketHistoryForClient } from "@/lib/ticket-activity";
 import { computeSlaBreachedFlag } from "@/lib/sla";
 import { canAccessProject } from "@/lib/projects";
+import { STAFF_ROLES } from "@/types/domain";
+import { TICKET_PROJECT_STAFF_CONFLICT, ticketStaffAssigneeBlocked } from "@/lib/ticket-project";
 
 const patchSchema = z.object({
   status: z
@@ -41,7 +43,7 @@ export async function PATCH(
   const ticket = await db.ticket.findUnique({ where: { id } });
   if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const isStaff = ["ADMIN", "ENGINEER", "SALES", "OPS"].includes(session.user.role);
+  const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
   const isOwner = ticket.createdById === session.user.id;
 
   if (!isStaff && !isOwner) {
@@ -86,8 +88,14 @@ export async function PATCH(
     }
   }
 
+  const effectiveProjectId =
+    parsed.data.projectId !== undefined ? parsed.data.projectId : ticket.projectId;
+
   if (parsed.data.assignedToId !== undefined && isStaff) {
     const nextAssignee = parsed.data.assignedToId ?? null;
+    if (nextAssignee && ticketStaffAssigneeBlocked(effectiveProjectId)) {
+      return NextResponse.json({ error: TICKET_PROJECT_STAFF_CONFLICT }, { status: 400 });
+    }
     const prevAssignee = ticket.assignedToId ?? null;
     if (nextAssignee !== prevAssignee) {
       updateData.assignedToId = nextAssignee;
@@ -204,6 +212,24 @@ export async function PATCH(
         newValue: nextProjectId,
       });
       updateData.projectId = nextProjectId;
+
+      if (nextProjectId && ticket.assignedToId) {
+        const prevAssignee = ticket.assignedToId;
+        updateData.assignedToId = null;
+        historyEntries.push({
+          field: "assignedTo",
+          oldValue: prevAssignee,
+          newValue: null,
+        });
+        if (ticket.status === "ASSIGNED") {
+          updateData.status = "OPEN";
+          historyEntries.push({
+            field: "status",
+            oldValue: ticket.status,
+            newValue: "OPEN",
+          });
+        }
+      }
     }
   }
 
@@ -278,7 +304,7 @@ export async function GET(
 
   if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const isStaff = ["ADMIN", "ENGINEER", "SALES", "OPS"].includes(session.user.role);
+  const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
   if (!isStaff && ticket.createdById !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

@@ -1,14 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ColumnDef } from "@tanstack/react-table";
-import type { RowSelectionState } from "@tanstack/react-table";
+import {
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type RowSelectionState,
+  type SortingState,
+} from "@tanstack/react-table";
 import { AnimatePresence, motion } from "framer-motion";
 import { Building2, Eye, ShoppingBag, Ticket } from "lucide-react";
 import { toast } from "sonner";
-import { AdminDataTable } from "@/components/admin/admin-data-table";
+import { AdminInfiniteTable } from "@/components/admin/admin-infinite-table";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { AdminClientPreviewSheet } from "@/components/admin/admin-client-preview-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,25 +68,60 @@ function toCsvRow(u: AdminClientRow): Record<string, string | number | boolean> 
 }
 
 export function AdminClientsTable({
-  users,
+  initialClients,
+  totalCount,
+  pageSize,
   locale,
   lp,
+  filterQuery,
+  currentUserId,
+  canMessage,
 }: {
-  users: AdminClientRow[];
+  initialClients: AdminClientRow[];
+  totalCount: number;
+  pageSize: number;
   locale: string;
   lp: string;
+  filterQuery: string;
+  currentUserId: string;
+  canMessage: boolean;
 }) {
   const router = useRouter();
   const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
-  const paginationLocale = locale === "en" ? "en" : "sq";
-
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUser, setPreviewUser] = useState<AdminClientRow | null>(null);
 
+  const mobileSentinelRef = useRef<HTMLDivElement>(null);
+
+  const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount, loadNext } =
+    useInfiniteList({
+      initialItems: initialClients,
+      totalCount,
+      pageSize,
+      filterQuery,
+      fetchUrl: "/api/admin/clients",
+      getRowId: (r) => r.id,
+      locale,
+    });
+
+  useEffect(() => {
+    const target = mobileSentinelRef.current;
+    if (!target) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadNext();
+      },
+      { rootMargin: "120px", threshold: 0 }
+    );
+    obs.observe(target);
+    return () => obs.disconnect();
+  }, [loadNext]);
+
   useEffect(() => {
     setRowSelection({});
-  }, [users]);
+  }, [filterQuery, initialClients]);
 
   const openPreview = useCallback((u: AdminClientRow) => {
     setPreviewUser(u);
@@ -87,8 +129,8 @@ export function AdminClientsTable({
   }, []);
 
   const selectedFromState = useCallback(() => {
-    return users.filter((u) => rowSelection[u.id]);
-  }, [users, rowSelection]);
+    return rows.filter((u) => rowSelection[u.id]);
+  }, [rows, rowSelection]);
 
   const selectionCount = selectedFromState().length;
 
@@ -154,16 +196,41 @@ export function AdminClientsTable({
         type="button"
         variant="secondary"
         size="sm"
-        onClick={() => runExport(users)}
+        onClick={() => runExport(rows)}
         className="text-muted-foreground"
       >
-        {th("Eksporto të gjithë listën", "Export full list")}
+        {hasMore
+          ? th("Eksporto të ngarkuara", "Export loaded")
+          : th("Eksporto të gjithë listën", "Export full list")}
       </Button>
     </div>
   );
 
   const columns = useMemo<ColumnDef<AdminClientRow>[]>(() => {
     return [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={table.getIsAllPageRowsSelected()}
+              onCheckedChange={(v) => table.toggleAllPageRowsSelected(v === true)}
+              aria-label={th("Zgjidh të gjithë", "Select all")}
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(v) => row.toggleSelected(v === true)}
+              aria-label={th("Zgjidh rreshtin", "Select row")}
+            />
+          </div>
+        ),
+        enableSorting: false,
+        size: 40,
+      },
       {
         id: "client",
         accessorFn: (row) => `${row.firstName} ${row.lastName}`.toLowerCase(),
@@ -306,35 +373,60 @@ export function AdminClientsTable({
               detailHref={`${lp}/admin/clients/${row.original.id}`}
               ticketsHref={`${lp}/admin/tickets?requester=${encodeURIComponent(row.original.id)}`}
               ordersHref={`${lp}/admin/orders?userId=${encodeURIComponent(row.original.id)}`}
+              messagesBasePath={lp}
+              currentUserId={currentUserId}
+              canMessage={canMessage}
             />
           </div>
         ),
       },
     ];
-  }, [locale, lp, th, openPreview]);
+  }, [locale, lp, th, openPreview, currentUserId, canMessage]);
+
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: { sorting, rowSelection },
+    onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
+    getRowId: (row) => row.id,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
 
   return (
     <>
       {selectionCount > 0 ? <div className="md:hidden">{bulkBar}</div> : null}
 
       <div className="hidden md:block">
-        <AdminDataTable
-          columns={columns}
-          data={users}
-          pageSize={50}
-          variant="adminSaaS"
-          paginationLocale={paginationLocale}
-          enableRowSelection
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          bulkActions={selectionCount > 0 ? () => bulkBar : undefined}
+        <AdminInfiniteTable
+          table={table}
+          locale={locale}
+          labels={{
+            entitySq: "klientë",
+            entityEn: "clients",
+            emptySq: "Nuk u gjetën klientë",
+            emptyEn: "No clients found",
+          }}
+          totalCount={totalCount}
+          loadedCount={loadedCount}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          error={error}
+          scrollRef={scrollRef}
+          sentinelRef={sentinelRef}
+          bulkActions={selectionCount > 0 ? bulkBar : undefined}
           onRowClick={(row) => router.push(`${lp}/admin/clients/${row.id}`)}
+          getRowId={(r) => r.id}
+          minTableWidth="920px"
+          firstColumnId="select"
         />
       </div>
 
       <div className="md:hidden space-y-3">
         <AnimatePresence initial={false}>
-          {users.map((u, i) => {
+          {rows.map((u, i) => {
             const badgeInput: UserStatusBadgeInput = {
               isActive: u.isActive,
               emailVerified: u.emailVerified,
@@ -398,6 +490,9 @@ export function AdminClientsTable({
                       detailHref={`${lp}/admin/clients/${u.id}`}
                       ticketsHref={`${lp}/admin/tickets?requester=${encodeURIComponent(u.id)}`}
                       ordersHref={`${lp}/admin/orders?userId=${encodeURIComponent(u.id)}`}
+                      messagesBasePath={lp}
+                      currentUserId={currentUserId}
+                      canMessage={canMessage}
                     />
                   </div>
                 </div>
@@ -423,6 +518,12 @@ export function AdminClientsTable({
             );
           })}
         </AnimatePresence>
+        <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />
+        {loadingMore ? (
+          <p className="text-center text-xs text-muted-foreground">
+            {th("Duke ngarkuar…", "Loading more…")}
+          </p>
+        ) : null}
       </div>
 
       <AdminClientPreviewSheet

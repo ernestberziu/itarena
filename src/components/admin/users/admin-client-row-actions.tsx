@@ -16,6 +16,10 @@ import {
   UserX,
   UserCheck,
 } from "lucide-react";
+import {
+  StartDirectMessageButton,
+  StartDirectMessageMenuItem,
+} from "@/components/admin/messages/start-direct-message-action";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -48,12 +52,18 @@ export function AdminClientRowActions({
   detailHref,
   ticketsHref,
   ordersHref,
+  messagesBasePath,
+  currentUserId,
+  canMessage,
 }: {
   user: AdminClientActionRow;
   locale: string;
   detailHref: string;
   ticketsHref: string;
   ordersHref: string;
+  messagesBasePath: string;
+  currentUserId: string;
+  canMessage: boolean;
 }) {
   const router = useRouter();
   const en = locale === "en";
@@ -145,6 +155,14 @@ export function AdminClientRowActions({
         <Mail className="mr-2 h-4 w-4" />
         {t("Dërgo email", "Send email")}
       </DropdownMenuItem>
+      <StartDirectMessageMenuItem
+        participantId={user.id}
+        currentUserId={currentUserId}
+        locale={locale}
+        messagesBasePath={messagesBasePath}
+        enabled={canMessage}
+        withSeparatorBefore
+      />
       <DropdownMenuSeparator />
       {user.isActive ? (
         <DropdownMenuItem
@@ -227,6 +245,15 @@ export function AdminClientRowActions({
           {t("Dërgo email", "Send email")}
         </a>
       </Button>
+      <StartDirectMessageButton
+        participantId={user.id}
+        currentUserId={currentUserId}
+        locale={locale}
+        messagesBasePath={messagesBasePath}
+        enabled={canMessage}
+        className="h-auto w-full justify-start py-2.5 font-normal"
+        variant="secondary"
+      />
       {user.isActive ? (
         <Button
           variant="secondary"

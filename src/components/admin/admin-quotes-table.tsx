@@ -1,11 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ColumnDef } from "@tanstack/react-table";
+import {
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
 import { motion, useReducedMotion } from "framer-motion";
-import { AdminDataTable } from "@/components/admin/admin-data-table";
+import { AdminInfiniteTable } from "@/components/admin/admin-infinite-table";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { AdminQuoteRowActions } from "@/components/admin/admin-quote-row-actions";
 import { QuoteStatusBadge } from "@/components/admin/quote-status-badge";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -30,19 +37,50 @@ export type AdminQuoteRow = {
 };
 
 export function AdminQuotesTable({
-  quotes,
+  initialQuotes,
+  totalCount,
+  pageSize,
   locale,
   lp,
+  filterQuery,
 }: {
-  quotes: AdminQuoteRow[];
+  initialQuotes: AdminQuoteRow[];
+  totalCount: number;
+  pageSize: number;
   locale: string;
   lp: string;
+  filterQuery: string;
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
-  const paginationLocale = locale === "en" ? "en" : "sq";
   const emptyMessage = th("Nuk ka rezultate për këtë kërkim.", "No results for this search.");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const mobileSentinelRef = useRef<HTMLDivElement>(null);
+
+  const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount, loadNext } =
+    useInfiniteList({
+      initialItems: initialQuotes,
+      totalCount,
+      pageSize,
+      filterQuery,
+      fetchUrl: "/api/admin/quotes",
+      getRowId: (r) => r.id,
+      locale,
+    });
+
+  useEffect(() => {
+    const target = mobileSentinelRef.current;
+    if (!target) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadNext();
+      },
+      { rootMargin: "120px", threshold: 0 }
+    );
+    obs.observe(target);
+    return () => obs.disconnect();
+  }, [loadNext]);
 
   const columns = useMemo<ColumnDef<AdminQuoteRow>[]>(() => {
     return [
@@ -180,28 +218,57 @@ export function AdminQuotesTable({
     ];
   }, [locale, lp, th]);
 
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
   return (
     <>
       <div className="hidden lg:block">
-        <AdminDataTable
-          columns={columns}
-          data={quotes}
-          pageSize={50}
-          variant="adminSaaS"
-          stickyHeader
-          paginationLocale={paginationLocale}
-          emptyMessage={emptyMessage}
+        <AdminInfiniteTable
+          table={table}
+          locale={locale}
+          labels={{
+            entitySq: "oferta",
+            entityEn: "quotes",
+            emptySq: emptyMessage,
+            emptyEn: emptyMessage,
+          }}
+          totalCount={totalCount}
+          loadedCount={loadedCount}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          error={error}
+          scrollRef={scrollRef}
+          sentinelRef={sentinelRef}
           onRowClick={(row) => router.push(`${lp}/admin/quotes/${row.id}`)}
+          getRowId={(r) => r.id}
+          minTableWidth="920px"
         />
       </div>
 
-      <div className="space-y-3 lg:hidden">
-        {quotes.length === 0 ? (
+      <div className="space-y-3 lg:hidden border-t border-border/60 px-4 py-3">
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium tabular-nums text-foreground">{loadedCount}</span>
+          <span className="text-muted-foreground/70"> / </span>
+          <span className="tabular-nums">{totalCount}</span>
+          {hasMore ? (
+            <span className="ml-2 text-muted-foreground/70">
+              · {th("lëviz për më shumë", "scroll for more")}
+            </span>
+          ) : null}
+        </p>
+        {rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-16 text-center text-sm text-muted-foreground">
             {emptyMessage}
           </div>
         ) : (
-          quotes.map((q, i) => (
+          rows.map((q, i) => (
             <motion.article
               key={q.id}
               layout
@@ -252,6 +319,7 @@ export function AdminQuotesTable({
             </motion.article>
           ))
         )}
+        <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />
       </div>
     </>
   );

@@ -3,8 +3,8 @@
  *
  * Resolution order for absolute shop base:
  * 1. `NEXT_PUBLIC_SHOP_URL` — optional override if the shop is hosted on a different origin (rare).
- * 2. `NEXT_PUBLIC_APP_URL` + `/shop` — default production shape (`https://domain.com/shop`).
- * 3. Optional request context (server) when `NEXT_PUBLIC_APP_URL` is unset.
+ * 2. `PUBLIC_URL` or `NEXT_PUBLIC_APP_URL` + `/shop` — default production shape (`https://domain.com/shop`).
+ * 3. Optional request context (server) when public URL env is unset.
  * 4. Browser `origin/shop` on the client.
  * 5. `VERCEL_URL` preview: `https://{host}/shop` (no separate shop subdomain).
  * 6. Dev fallback: `http://localhost:3000/shop`.
@@ -12,6 +12,57 @@
 
 function stripTrailingSlash(s: string) {
   return s.replace(/\/$/, "");
+}
+
+/** Canonical public site origin (no trailing slash). */
+export function getPublicAppBaseUrl(): string {
+  const base =
+    process.env.PUBLIC_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim();
+  return stripTrailingSlash(base || "https://itarena.al");
+}
+
+/** Default hero / CMS shop CTA path (same-origin `/shop`). */
+export const DEFAULT_SHOP_PATH = "/shop";
+
+/**
+ * Maps legacy `https://shop.example.com/...` to `/shop...`.
+ * Leaves other absolute URLs unchanged.
+ */
+export function normalizeShopMarketingLink(link: string): string {
+  const trimmed = link.trim();
+  if (!trimmed) return DEFAULT_SHOP_PATH;
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const u = new URL(trimmed);
+      if (u.hostname.toLowerCase().startsWith("shop.")) {
+        const rest =
+          u.pathname === "/" || u.pathname === ""
+            ? ""
+            : u.pathname.replace(/^\/shop\/?/i, "").replace(/^\/+/, "");
+        const path = rest ? `${DEFAULT_SHOP_PATH}/${rest}` : DEFAULT_SHOP_PATH;
+        return u.search ? `${path}${u.search}` : path;
+      }
+    } catch {
+      /* keep original */
+    }
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("/shop")) return trimmed;
+  return trimmed;
+}
+
+/**
+ * Resolves CMS/marketing hrefs: shop stays at `/shop` (no locale prefix);
+ * other internal paths get the locale prefix (`/en/...`).
+ */
+export function resolveMarketingHref(href: string, localePrefix = ""): string {
+  const normalized = normalizeShopMarketingLink(href);
+  if (/^https?:\/\//i.test(normalized)) return normalized;
+  if (normalized.startsWith("/shop")) return normalized;
+  return `${localePrefix}${normalized.startsWith("/") ? normalized : `/${normalized}`}`;
 }
 
 export type ShopUrlRequestContext = {
@@ -23,14 +74,11 @@ export type ShopUrlRequestContext = {
 
 /** Human-readable shop entry point for UI badges, e.g. `example.com/shop`. */
 export function shopHostLabel(requestHost: string): string {
-  const app = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (app) {
-    try {
-      const u = new URL(app);
-      return `${u.host}/shop`;
-    } catch {
-      /* fall through */
-    }
+  try {
+    const u = new URL(getPublicAppBaseUrl());
+    return `${u.host}/shop`;
+  } catch {
+    /* fall through */
   }
   const hostname = requestHost.split(":")[0].split(",")[0].trim().toLowerCase().replace(/^shop\./, "");
   return hostname ? `${hostname}/shop` : "/shop";
@@ -60,13 +108,10 @@ export function getShopBaseUrl(opts?: ShopUrlRequestContext): string {
   const explicit = process.env.NEXT_PUBLIC_SHOP_URL?.trim();
   if (explicit) return stripTrailingSlash(explicit);
 
-  const app = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (app) {
-    try {
-      return `${stripTrailingSlash(app)}/shop`;
-    } catch {
-      /* fall through */
-    }
+  try {
+    return `${getPublicAppBaseUrl()}/shop`;
+  } catch {
+    /* fall through */
   }
 
   if (opts?.requestHost) {
@@ -118,22 +163,21 @@ export function shopUrlWithLang(
   return u.toString();
 }
 
-/** Main marketing site (not shop). */
+/** Main marketing site (not shop). @deprecated alias — use `getPublicAppBaseUrl`. */
 export function getMainAppBaseUrl(): string {
-  const app = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return stripTrailingSlash(app || "https://itarena.al");
+  return getPublicAppBaseUrl();
 }
 
 export function mainSiteHostname(): string {
   try {
-    return new URL(getMainAppBaseUrl()).hostname;
+    return new URL(getPublicAppBaseUrl()).hostname;
   } catch {
     return "itarena.al";
   }
 }
 
 export function mainSiteUrl(path = ""): string {
-  const base = getMainAppBaseUrl();
+  const base = getPublicAppBaseUrl();
   const p = path.replace(/^\/+/, "");
   if (!p) return `${base}/`;
   return `${base}/${p}`;

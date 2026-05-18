@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { adminClientsListWhere } from "@/lib/admin-clients-list-where";
+import { mapClientToAdminRow } from "@/lib/admin-clients-list-dto";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
+import { paginatedResponse, parseListPageParams } from "@/lib/admin-list-pagination";
+
+const clientInclude = {
+  company: { select: { name: true, tier: true, isApproved: true } },
+  _count: { select: { tickets: true, orders: true } },
+} as const;
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -16,6 +23,7 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
+  const { page, pageSize, skip } = parseListPageParams(searchParams);
   const where = adminClientsListWhere({
     q: searchParams.get("q"),
     tier: searchParams.get("tier"),
@@ -23,18 +31,17 @@ export async function GET(req: NextRequest) {
     active: searchParams.get("active") ?? "all",
   });
 
-  const users = await db.user.findMany({
-    where,
-    include: {
-      company: {
-        select: { name: true, tier: true, isApproved: true },
-      },
-      _count: {
-        select: { tickets: true, orders: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [users, total] = await Promise.all([
+    db.user.findMany({
+      where,
+      include: clientInclude,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: pageSize,
+    }),
+    db.user.count({ where }),
+  ]);
 
-  return NextResponse.json(users);
+  const items = users.map(mapClientToAdminRow);
+  return NextResponse.json(paginatedResponse(items, total, page, pageSize));
 }

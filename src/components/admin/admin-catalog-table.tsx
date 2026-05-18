@@ -3,19 +3,50 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import type { ColumnDef } from "@tanstack/react-table";
+import {
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
 import { CheckCircle2, ExternalLink, Package, Pencil, XCircle } from "lucide-react";
-import { AdminDataTable } from "@/components/admin/admin-data-table";
+import { AdminInfiniteTable } from "@/components/admin/admin-infinite-table";
 import { AdminCatalogProductEditSheet } from "@/components/admin/admin-catalog-product-edit-sheet";
 import { formatPrice } from "@/lib/utils";
 import { shopUrl } from "@/lib/shop-url";
 import { Button } from "@/components/ui/button";
 import type { AdminCatalogRow } from "@/components/admin/admin-catalog-types";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 
 export type { AdminCatalogRow } from "@/components/admin/admin-catalog-types";
 
-export function AdminCatalogTable({ products, locale }: { products: AdminCatalogRow[]; locale: string }) {
+export function AdminCatalogTable({
+  initialProducts,
+  totalCount,
+  pageSize,
+  locale,
+  filterQuery,
+}: {
+  initialProducts: AdminCatalogRow[];
+  totalCount: number;
+  pageSize: number;
+  locale: string;
+  filterQuery: string;
+}) {
   const [editRow, setEditRow] = useState<AdminCatalogRow | null>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount } =
+    useInfiniteList({
+      initialItems: initialProducts,
+      totalCount,
+      pageSize,
+      filterQuery,
+      fetchUrl: "/api/admin/catalog/products",
+      getRowId: (r) => r.id,
+      locale,
+    });
 
   const columns = useMemo<ColumnDef<AdminCatalogRow>[]>(() => {
     const th = (sq: string, en: string) => (locale === "en" ? en : sq);
@@ -38,7 +69,7 @@ export function AdminCatalogTable({ products, locale }: { products: AdminCatalog
           }
           const title = locale === "sq" ? row.original.nameSq : row.original.nameEn;
           return (
-            <div className="flex items-center gap-3 min-w-[10rem] max-w-[min(100vw,20rem)]">
+            <div className="flex min-w-[10rem] max-w-[min(100vw,20rem)] items-center gap-3">
               {firstImage ? (
                 <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-lg border bg-muted">
                   <Image src={firstImage} alt={title} fill className="object-cover" sizes="36px" unoptimized />
@@ -168,15 +199,36 @@ export function AdminCatalogTable({ products, locale }: { products: AdminCatalog
     ];
   }, [locale]);
 
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
   return (
     <>
-      <AdminDataTable
-        columns={columns}
-        data={products}
-        pageSize={50}
-        variant="adminSaaS"
-        stickyHeader
-        paginationLocale={locale === "en" ? "en" : "sq"}
+      <AdminInfiniteTable
+        table={table}
+        locale={locale}
+        labels={{
+          entitySq: "produkte",
+          entityEn: "products",
+          emptySq: "Nuk ka produkte",
+          emptyEn: "No products",
+        }}
+        totalCount={totalCount}
+        loadedCount={loadedCount}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        error={error}
+        scrollRef={scrollRef}
+        sentinelRef={sentinelRef}
+        getRowId={(r) => r.id}
+        minTableWidth="960px"
+        firstColumnId="product"
       />
       <AdminCatalogProductEditSheet
         row={editRow}

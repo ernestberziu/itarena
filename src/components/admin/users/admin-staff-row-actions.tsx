@@ -3,6 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Copy, Eye, Mail, MoreHorizontal, Pencil } from "lucide-react";
+import {
+  StartDirectMessageButton,
+  StartDirectMessageMenuItem,
+} from "@/components/admin/messages/start-direct-message-action";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,11 +35,18 @@ export function AdminStaffRowActions({
   member,
   locale,
   adminHrefPrefix,
+  messagesBasePath,
+  currentUserId,
+  canMessage,
 }: {
   member: AdminStaffActionRow;
   locale: string;
   /** e.g. `/admin` or `/en/admin` (no trailing slash). */
   adminHrefPrefix: string;
+  /** Locale prefix for messages routes, e.g. `` or `/en`. */
+  messagesBasePath: string;
+  currentUserId: string;
+  canMessage: boolean;
 }) {
   const en = locale === "en";
   const t = (sq: string, e: string) => (en ? e : sq);
@@ -65,6 +76,14 @@ export function AdminStaffRowActions({
         <Mail className="mr-2 h-4 w-4" />
         {t("Dërgo email", "Send email")}
       </DropdownMenuItem>
+      <StartDirectMessageMenuItem
+        participantId={member.id}
+        currentUserId={currentUserId}
+        locale={locale}
+        messagesBasePath={messagesBasePath}
+        enabled={canMessage}
+        withSeparatorBefore
+      />
     </>
   );
 
@@ -110,6 +129,15 @@ export function AdminStaffRowActions({
           {t("Dërgo email", "Send email")}
         </a>
       </Button>
+      <StartDirectMessageButton
+        participantId={member.id}
+        currentUserId={currentUserId}
+        locale={locale}
+        messagesBasePath={messagesBasePath}
+        enabled={canMessage}
+        className="h-auto w-full justify-start py-2.5 font-normal"
+        variant="secondary"
+      />
     </div>
   );
 

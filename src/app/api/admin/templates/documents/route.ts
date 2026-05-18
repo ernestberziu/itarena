@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
+import { loadAdminDocumentsList } from "@/lib/admin-documents-list";
 import { createDocumentSchema } from "@/lib/templates/schemas";
 import { generateContractNumber } from "@/lib/templates/document-number";
 import {
@@ -11,6 +12,18 @@ import {
   employmentPartyFromPayload,
 } from "@/lib/templates/compose-body";
 import type { ContractParty, EmploymentPayload, ServiceContractPayload } from "@/lib/templates/types";
+import { paginatedResponse, parseListPageParams } from "@/lib/admin-list-pagination";
+
+export type DocumentListRow = {
+  id: string;
+  documentNumber: string;
+  type: string;
+  status: string;
+  language: string;
+  partyJson: ContractParty;
+  pdfUrl: string | null;
+  createdAt: string;
+};
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -19,33 +32,16 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
-  const type = searchParams.get("type");
-  const status = searchParams.get("status");
-  const q = searchParams.get("q")?.trim();
-
-  const where: Prisma.ContractDocumentWhereInput = {};
-  if (type) where.type = type;
-  if (status) where.status = status;
-
-  const docs = await db.contractDocument.findMany({
-    where,
-    orderBy: { updatedAt: "desc" },
-    take: 100,
+  const { page, pageSize, skip } = parseListPageParams(searchParams);
+  const { items, total } = await loadAdminDocumentsList({
+    type: searchParams.get("type"),
+    status: searchParams.get("status"),
+    q: searchParams.get("q"),
+    skip,
+    take: pageSize,
   });
 
-  const filtered = q
-    ? docs.filter((d) => {
-        const party = d.partyJson as ContractParty;
-        const num = d.documentNumber.toLowerCase();
-        return (
-          num.includes(q.toLowerCase()) ||
-          party.fullName?.toLowerCase().includes(q.toLowerCase()) ||
-          party.companyName?.toLowerCase().includes(q.toLowerCase())
-        );
-      })
-    : docs;
-
-  return NextResponse.json(filtered);
+  return NextResponse.json(paginatedResponse(items, total, page, pageSize));
 }
 
 export async function POST(req: NextRequest) {

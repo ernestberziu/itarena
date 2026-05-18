@@ -12,7 +12,27 @@ import type {
   SiteSettingsSectionKey,
   TestimonialRecord,
 } from "./types";
+import { normalizeShopMarketingLink } from "@/lib/shop-url";
 import { sectionSchemas } from "./schemas";
+
+/** Build/static environments (e.g. Vercel) may not have DATABASE_URL; use CMS defaults. */
+function hasDatabaseUrl(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim());
+}
+
+function defaultMarketingServices(): MarketingServiceRecord[] {
+  return DEFAULT_MARKETING_SERVICES.map((s) => ({
+    ...s,
+    id: `default-${s.slug}`,
+  }));
+}
+
+function defaultTestimonials(): TestimonialRecord[] {
+  return DEFAULT_TESTIMONIALS.map((t, i) => ({
+    ...t,
+    id: `default-t-${i}`,
+  }));
+}
 
 function parseJson<T>(value: unknown, fallback: T): T {
   if (value === null || value === undefined) return fallback;
@@ -88,10 +108,14 @@ function rowToBundle(row: {
   landingJson: unknown;
 }): SiteSettingsBundle {
   const d = DEFAULT_SITE_SETTINGS;
+  const hero = parseJson(row.heroJson, d.hero);
   return {
     general: parseJson(row.generalJson, d.general),
     branding: parseJson(row.brandingJson, d.branding),
-    hero: parseJson(row.heroJson, d.hero),
+    hero: {
+      ...hero,
+      ctaSecondaryLink: normalizeShopMarketingLink(hero.ctaSecondaryLink),
+    },
     contact: parseJson(row.contactJson, d.contact),
     social: parseJson(row.socialJson, d.social),
     footer: parseJson(row.footerJson, d.footer),
@@ -101,6 +125,7 @@ function rowToBundle(row: {
 }
 
 export async function ensureSiteSettingsRow(): Promise<void> {
+  if (!hasDatabaseUrl()) return;
   const existing = await db.siteSettings.findUnique({ where: { id: "default" } });
   if (existing) return;
 
@@ -121,6 +146,7 @@ export async function ensureSiteSettingsRow(): Promise<void> {
 }
 
 export async function getSiteSettingsBundle(): Promise<SiteSettingsBundle> {
+  if (!hasDatabaseUrl()) return DEFAULT_SITE_SETTINGS;
   await ensureSiteSettingsRow();
   const row = await db.siteSettings.findUniqueOrThrow({ where: { id: "default" } });
   return rowToBundle(row);
@@ -153,15 +179,13 @@ export async function patchSiteSettingsSection(
 }
 
 export async function listMarketingServices(admin = false): Promise<MarketingServiceRecord[]> {
+  if (!hasDatabaseUrl()) return defaultMarketingServices();
   const rows = await db.marketingService.findMany({
     where: admin ? undefined : { enabled: true },
     orderBy: { sortOrder: "asc" },
   });
   if (rows.length === 0 && !admin) {
-    return DEFAULT_MARKETING_SERVICES.map((s, i) => ({
-      ...s,
-      id: `default-${s.slug}`,
-    }));
+    return defaultMarketingServices();
   }
   return rows.map(mapService);
 }
@@ -169,6 +193,11 @@ export async function listMarketingServices(admin = false): Promise<MarketingSer
 export async function getMarketingServiceBySlug(
   slug: string
 ): Promise<MarketingServiceRecord | null> {
+  if (!hasDatabaseUrl()) {
+    const fallback = DEFAULT_MARKETING_SERVICES.find((s) => s.slug === slug);
+    if (!fallback) return null;
+    return { ...fallback, id: `default-${fallback.slug}` };
+  }
   const row = await db.marketingService.findFirst({
     where: { slug, enabled: true },
   });
@@ -179,15 +208,13 @@ export async function getMarketingServiceBySlug(
 }
 
 export async function listTestimonials(admin = false): Promise<TestimonialRecord[]> {
+  if (!hasDatabaseUrl()) return defaultTestimonials();
   const rows = await db.testimonial.findMany({
     where: admin ? undefined : { enabled: true },
     orderBy: { sortOrder: "asc" },
   });
   if (rows.length === 0 && !admin) {
-    return DEFAULT_TESTIMONIALS.map((t, i) => ({
-      ...t,
-      id: `default-t-${i}`,
-    }));
+    return defaultTestimonials();
   }
   return rows.map(mapTestimonial);
 }

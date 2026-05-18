@@ -47,10 +47,14 @@ export function AdminClientDetailView({
   user,
   locale,
   lp,
+  currentUserId,
+  canMessage,
 }: {
   user: AdminClientDetailModel;
   locale: string;
   lp: string;
+  currentUserId: string;
+  canMessage: boolean;
 }) {
   const en = locale === "en";
   const t = (sq: string, e: string) => (en ? e : sq);
@@ -114,6 +118,9 @@ export function AdminClientDetailView({
                   detailHref={detailHref}
                   ticketsHref={ticketsHref}
                   ordersHref={ordersHref}
+                  messagesBasePath={lp}
+                  currentUserId={currentUserId}
+                  canMessage={canMessage}
                 />
               </div>
             </div>

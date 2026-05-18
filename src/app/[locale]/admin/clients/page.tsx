@@ -10,7 +10,10 @@ import { AdminClientsTable, type AdminClientRow } from "@/components/admin/admin
 import { AdminStatCard, AdminUsersToolbar } from "@/components/admin/users";
 import { adminClientsListWhere } from "@/lib/admin-clients-list-where";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { hasAclLevel } from "@/lib/admin-acl/features";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
+import { mapClientToAdminRow } from "@/lib/admin-clients-list-dto";
 
 export default async function AdminClientsPage({
   params,
@@ -27,6 +30,7 @@ export default async function AdminClientsPage({
   const acl = await getCachedEffectiveAcl(userId);
   if (!acl) redirect("/hyr");
   requireAdminPageRead(locale, acl, "clients");
+  const canMessage = hasAclLevel(acl, "messages", "write");
 
   const sp = await searchParams;
   const lp = locale === "sq" ? "" : `/${locale}`;
@@ -44,6 +48,13 @@ export default async function AdminClientsPage({
 
   const thirtyDaysAgo = subDays(new Date(), 30);
 
+  const filterQueryParts = new URLSearchParams();
+  if (q) filterQueryParts.set("q", q);
+  if (tier) filterQueryParts.set("tier", tier);
+  if (approved) filterQueryParts.set("approved", approved);
+  if (active && active !== "all") filterQueryParts.set("active", active);
+  const filterQuery = filterQueryParts.toString();
+
   const [users, totalCount, activeCount, suspendedCount, newCount] = await Promise.all([
     db.user.findMany({
       where,
@@ -52,6 +63,8 @@ export default async function AdminClientsPage({
         _count: { select: { tickets: true, orders: true } },
       },
       orderBy: { createdAt: "desc" },
+      take: ADMIN_LIST_PAGE_SIZE,
+      skip: 0,
     }),
     db.user.count({ where }),
     db.user.count({ where: { ...where, isActive: true } }),
@@ -64,19 +77,7 @@ export default async function AdminClientsPage({
     }),
   ]);
 
-  const rows: AdminClientRow[] = users.map((u) => ({
-    id: u.id,
-    firstName: u.firstName,
-    lastName: u.lastName,
-    email: u.email,
-    isActive: u.isActive,
-    emailVerified: u.emailVerified?.toISOString() ?? null,
-    role: u.role,
-    createdAt: u.createdAt.toISOString(),
-    lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
-    company: u.company,
-    _count: u._count,
-  }));
+  const initialClients = users.map(mapClientToAdminRow);
 
   const hasFilters = Boolean(q || tier || approved || (active && active !== "all"));
 
@@ -126,7 +127,7 @@ export default async function AdminClientsPage({
         />
       </div>
 
-      {users.length === 0 ? (
+      {totalCount === 0 ? (
         <EmptyState
           icon={Users}
           title={locale === "sq" ? "Nuk u gjetën klientë" : "No clients found"}
@@ -143,7 +144,18 @@ export default async function AdminClientsPage({
           }
         />
       ) : (
-        <AdminClientsTable users={rows} locale={locale} lp={lp} />
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+          <AdminClientsTable
+            initialClients={initialClients}
+            totalCount={totalCount}
+            pageSize={ADMIN_LIST_PAGE_SIZE}
+            locale={locale}
+            lp={lp}
+            filterQuery={filterQuery}
+            currentUserId={userId}
+            canMessage={canMessage}
+          />
+        </div>
       )}
     </div>
   );

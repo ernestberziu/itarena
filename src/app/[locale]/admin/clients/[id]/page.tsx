@@ -8,6 +8,7 @@ import {
   type AdminClientDetailModel,
 } from "@/components/admin/admin-client-detail-view";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
+import { hasAclLevel } from "@/lib/admin-acl/features";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
 export default async function AdminClientDetailPage({
@@ -22,6 +23,7 @@ export default async function AdminClientDetailPage({
   const acl = await getCachedEffectiveAcl(session.user.id);
   if (!acl) redirect("/hyr");
   requireAdminPageRead(locale, acl, "clients");
+  const canMessage = hasAclLevel(acl, "messages", "write");
 
   const lp = locale === "sq" ? "" : `/${locale}`;
 
@@ -103,7 +105,13 @@ export default async function AdminClientDetailPage({
           </Link>
         }
       />
-      <AdminClientDetailView user={model} locale={locale} lp={lp} />
+      <AdminClientDetailView
+        user={model}
+        locale={locale}
+        lp={lp}
+        currentUserId={session.user.id}
+        canMessage={canMessage}
+      />
     </div>
   );
 }

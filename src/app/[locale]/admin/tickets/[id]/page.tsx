@@ -5,6 +5,7 @@ import { AdminTicketDetailView } from "@/components/admin/admin-ticket-detail-vi
 import type { TicketStatus, Priority, Role } from "@/types/domain";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { projectsListWhere } from "@/lib/projects";
 
 export default async function AdminTicketDetailPage({
   params,
@@ -21,12 +22,13 @@ export default async function AdminTicketDetailPage({
 
   const lp = locale === "sq" ? "" : `/${locale}`;
 
-  const [ticket, engineers] = await Promise.all([
+  const [ticket, engineers, projects] = await Promise.all([
     db.ticket.findUnique({
       where: { id },
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true, email: true, role: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        project: { select: { id: true, title: true, slug: true } },
         company: { select: { name: true } },
         comments: {
           include: {
@@ -47,9 +49,19 @@ export default async function AdminTicketDetailPage({
       select: { id: true, firstName: true, lastName: true },
       orderBy: { firstName: "asc" },
     }),
+    db.project.findMany({
+      where: await projectsListWhere(session.user.id, { status: "ACTIVE" }),
+      select: { id: true, title: true },
+      orderBy: { title: "asc" },
+    }),
   ]);
 
   if (!ticket) notFound();
+
+  const projectOptions = [...projects];
+  if (ticket.project && !projectOptions.some((p) => p.id === ticket.project!.id)) {
+    projectOptions.push({ id: ticket.project.id, title: ticket.project.title });
+  }
 
   const typedTicket = {
     ...ticket,
@@ -73,6 +85,7 @@ export default async function AdminTicketDetailPage({
       currentUserRole={session.user.role as Role}
       locale={locale}
       engineers={engineers}
+      projects={projectOptions}
       ticketsListHref={`${lp}/admin/tickets`}
     />
   );

@@ -14,6 +14,7 @@ import { STAFF_ROLES } from "@/types/domain";
 import { sendPortalAccountInviteEmail } from "@/lib/portal-invite-email";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { canAccessProject } from "@/lib/projects";
+import { TICKET_PROJECT_STAFF_CONFLICT } from "@/lib/ticket-project";
 
 const baseSchema = z
   .object({
@@ -137,6 +138,9 @@ export async function POST(req: NextRequest) {
   const slaDeadline = slaDeadlineFromEstimate(createdAtForSla, estimate.resolutionHours);
 
   let assigneeId: string | null = assignedToId ?? null;
+  if (resolvedProjectId && assigneeId) {
+    return NextResponse.json({ error: TICKET_PROJECT_STAFF_CONFLICT }, { status: 400 });
+  }
   if (assigneeId) {
     const assignee = await db.user.findUnique({
       where: { id: assigneeId },

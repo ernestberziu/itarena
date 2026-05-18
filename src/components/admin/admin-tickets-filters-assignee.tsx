@@ -8,38 +8,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { buildAdminTicketsListHref } from "@/lib/admin-tickets-list-href";
 
 export type AssigneeFilterOption = { id: string; firstName: string; lastName: string };
-
-function buildTicketsListHref(
-  listPrefix: string,
-  params: {
-    q?: string | null;
-    status?: string | null;
-    priority?: string | null;
-    breached?: boolean;
-    assignee?: string | null;
-    requester?: string | null;
-  }
-) {
-  const p = new URLSearchParams();
-  if (params.q?.trim()) p.set("q", params.q.trim());
-  if (params.status?.trim()) p.set("status", params.status.trim());
-  if (params.priority?.trim()) p.set("priority", params.priority.trim());
-  if (params.breached) p.set("filter", "breached");
-  const a = params.assignee?.trim();
-  if (a && a !== "__all__") p.set("assignee", a);
-  const r = params.requester?.trim();
-  if (r) p.set("requester", r);
-  const qs = p.toString();
-  return `${listPrefix}/admin/tickets${qs ? `?${qs}` : ""}`;
-}
 
 export function AdminTicketsAssigneeSelect({
   listPrefix,
   engineers,
   assignee,
   requester,
+  projectId,
   q,
   status,
   priority,
@@ -50,6 +28,7 @@ export function AdminTicketsAssigneeSelect({
   engineers: AssigneeFilterOption[];
   assignee?: string | null;
   requester?: string | null;
+  projectId?: string | null;
   q?: string | null;
   status?: string | null;
   priority?: string | null;
@@ -78,13 +57,14 @@ export function AdminTicketsAssigneeSelect({
   function navigate(next: string) {
     const assigneeParam =
       next === "__all__" ? null : next === "__unassigned__" ? "unassigned" : next;
-    const href = buildTicketsListHref(listPrefix, {
+    const href = buildAdminTicketsListHref(listPrefix, {
       q,
       status,
       priority,
       breached,
       assignee: assigneeParam,
       requester,
+      projectId,
     });
     router.push(href);
   }

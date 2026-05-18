@@ -57,6 +57,7 @@ export default async function AdminStaffPage({
   const adminHrefPrefix = `${lp}/admin`;
   const canWriteStaff = hasAclLevel(acl, "staff", "write");
   const canCreateStaff = canWriteStaff && session.user.role === "ADMIN";
+  const canMessage = hasAclLevel(acl, "messages", "write");
 
   const staffWhere = { role: { in: STAFF_ROLES as unknown as string[] } };
 
@@ -175,6 +176,9 @@ export default async function AdminStaffPage({
                     }}
                     locale={locale}
                     adminHrefPrefix={adminHrefPrefix}
+                    messagesBasePath={lp}
+                    currentUserId={session.user.id}
+                    canMessage={canMessage}
                   />
                 </div>
                 <div className="flex items-start gap-3 pr-10">

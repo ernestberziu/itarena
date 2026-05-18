@@ -7,9 +7,12 @@ import {
   projectMessageSchema,
   revalidateProjectPaths,
 } from "@/lib/projects";
+import { ensureProjectConversation } from "@/lib/messages/project-channel";
+import { isStaffRole } from "@/lib/messages";
 
 type Params = { params: Promise<{ id: string }> };
 
+/** Legacy wrapper — posts to the project's conversation channel. */
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,15 +23,35 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const accessDenied = await assertProjectAccess(session.user.id, projectId, "read");
   if (accessDenied) return accessDenied;
 
-  const messages = await db.projectMessage.findMany({
-    where: { projectId },
+  const conv = await ensureProjectConversation(projectId, session.user.id);
+  if (!conv) return NextResponse.json([]);
+
+  const viewer = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+  const staff = isStaffRole(viewer?.role ?? "");
+
+  const messages = await db.conversationMessage.findMany({
+    where: {
+      conversationId: conv.id,
+      ...(staff ? {} : { isInternal: false }),
+    },
     include: {
       author: { select: { id: true, firstName: true, lastName: true, role: true } },
     },
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json(messages);
+  return NextResponse.json(
+    messages.map((m) => ({
+      id: m.id,
+      body: m.body,
+      isInternal: m.isInternal,
+      createdAt: m.createdAt.toISOString(),
+      author: m.author,
+    }))
+  );
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -53,9 +76,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const message = await db.projectMessage.create({
+  const conv = await ensureProjectConversation(projectId, session.user.id);
+  if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const message = await db.conversationMessage.create({
     data: {
-      projectId,
+      conversationId: conv.id,
       authorId: session.user.id,
       body: parsed.data.body.trim(),
       isInternal: parsed.data.isInternal ?? false,
@@ -65,11 +91,25 @@ export async function POST(req: NextRequest, { params }: Params) {
     },
   });
 
+  await db.conversation.update({
+    where: { id: conv.id },
+    data: { lastMessageAt: message.createdAt },
+  });
+
   await db.project.update({
     where: { id: projectId },
     data: { updatedAt: new Date() },
   });
 
   revalidateProjectPaths(projectId);
-  return NextResponse.json(message, { status: 201 });
+  return NextResponse.json(
+    {
+      id: message.id,
+      body: message.body,
+      isInternal: message.isInternal,
+      createdAt: message.createdAt.toISOString(),
+      author: message.author,
+    },
+    { status: 201 }
+  );
 }

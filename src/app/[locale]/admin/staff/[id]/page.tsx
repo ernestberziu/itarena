@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -6,6 +5,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AdminStaffAccountPanel,
   AdminStaffAclEditor,
+  AdminStaffDetailActions,
   AdminStaffProjectAssignments,
   UserAvatar,
   UserStatusBadges,
@@ -49,6 +49,7 @@ export default async function AdminStaffDetailPage({
 
   const lp = locale === "sq" ? "" : `/${locale}`;
   const canWriteStaff = hasAclLevel(acl, "staff", "write");
+  const canMessage = hasAclLevel(acl, "messages", "write");
   const canChangeRole = session.user.role === "ADMIN";
   const canEditAcl = session.user.role === "ADMIN" && user.role !== "ADMIN" && canWriteStaff;
   const staffRole = user.role as StaffRole;
@@ -59,12 +60,13 @@ export default async function AdminStaffDetailPage({
         title={`${user.firstName} ${user.lastName}`}
         description={user.email}
         actions={
-          <Link
-            href={`${lp}/admin/staff`}
-            className="text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-          >
-            {locale === "sq" ? "← Stafi" : "← Staff"}
-          </Link>
+          <AdminStaffDetailActions
+            staffId={user.id}
+            locale={locale}
+            lp={lp}
+            currentUserId={session.user.id}
+            canMessage={canMessage}
+          />
         }
       />
 
