@@ -13,6 +13,7 @@ import {
 import { STAFF_ROLES } from "@/types/domain";
 import { sendPortalAccountInviteEmail } from "@/lib/portal-invite-email";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
+import { canAccessProject } from "@/lib/projects";
 
 const baseSchema = z
   .object({
@@ -22,6 +23,7 @@ const baseSchema = z
     description: z.string().min(20),
     estimatedDays: z.coerce.number().int().min(0).max(62).optional(),
     estimatedHours: z.coerce.number().int().min(0).max(500).optional(),
+    projectId: z.string().cuid().optional().nullable(),
   })
   .superRefine((data, ctx) => {
     const d = data.estimatedDays ?? 0;
@@ -120,7 +122,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { title, division, priority, description, estimatedDays, estimatedHours } = parsedBase.data;
+  const { title, division, priority, description, estimatedDays, estimatedHours, projectId } =
+    parsedBase.data;
+
+  let resolvedProjectId: string | null = projectId ?? null;
+  if (resolvedProjectId) {
+    const ok = await canAccessProject(session.user.id, resolvedProjectId, "write");
+    if (!ok) {
+      return NextResponse.json({ error: "Invalid project" }, { status: 400 });
+    }
+  }
   const estimate = normalizeTicketEstimate(estimatedDays, estimatedHours);
   const createdAtForSla = new Date();
   const slaDeadline = slaDeadlineFromEstimate(createdAtForSla, estimate.resolutionHours);
@@ -188,6 +199,7 @@ export async function POST(req: NextRequest) {
           estimatedDays: estimate.estimatedDays,
           estimatedHours: estimate.estimatedHours,
           externalRequesterName: null,
+          projectId: resolvedProjectId,
         },
       });
 
@@ -277,6 +289,7 @@ export async function POST(req: NextRequest) {
       estimatedDays: estimate.estimatedDays,
       estimatedHours: estimate.estimatedHours,
       externalRequesterName: externalName ?? null,
+      projectId: resolvedProjectId,
     },
   });
 

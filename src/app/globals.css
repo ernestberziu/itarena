@@ -517,10 +517,84 @@ html[data-admin-ui] [data-command-palette] [cmdk-item]:focus-visible {
   }
 }
 
+/* Reports custom dialog — solid white panel (no glass) */
+html[data-admin-ui] [data-slot="dialog-content"].reports-custom-dialog {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: hsl(222 47% 8%);
+  backdrop-filter: none !important;
+}
+
+html.dark[data-admin-ui] [data-slot="dialog-content"].reports-custom-dialog {
+  background-color: #ffffff !important;
+  color: hsl(222 47% 8%);
+}
+
+.contract-preview-prose h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+}
+.contract-preview-prose h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0.85rem 0 0.4rem;
+}
+.contract-preview-prose p,
+.contract-preview-prose li {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: #334155;
+}
+.contract-preview-prose ul {
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.contract-preview-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin: 0.75rem 0 1rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.contract-preview-prose thead tr {
+  background: #F8FAFC;
+}
+.contract-preview-prose th {
+  padding: 7px 10px;
+  font-weight: 600;
+  color: #0F172A;
+  text-align: left;
+  border-bottom: 1px solid #CBD5E1;
+  border-right: 1px solid #E2E8F0;
+  white-space: nowrap;
+}
+.contract-preview-prose th:last-child {
+  border-right: none;
+}
+.contract-preview-prose td {
+  padding: 6px 10px;
+  color: #334155;
+  border-bottom: 1px solid #E2E8F0;
+  border-right: 1px solid #E2E8F0;
+}
+.contract-preview-prose td:last-child {
+  border-right: none;
+}
+.contract-preview-prose tr:last-child td {
+  border-bottom: none;
+}
+.contract-preview-prose tbody tr:nth-child(even) {
+  background: #FAFAFA;
+}
+
 @media print {
   [data-admin-shell] aside,
   [data-admin-shell] header,
-  .reports-dashboard .sticky {
+  .reports-dashboard .sticky,
+  .templates-subnav-hide-print {
     display: none !important;
   }
   .reports-dashboard {

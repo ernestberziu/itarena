@@ -151,7 +151,7 @@ export function ReportFunnelChart({
       {data.map((row) => (
         <div key={row.stage} className="group">
           <div className="mb-1 flex justify-between text-xs">
-            <span className="font-medium capitalize text-foreground">{row.stage}</span>
+            <span className="font-medium text-foreground">{row.stage}</span>
             <span className="text-muted-foreground tabular-nums">{row.count}</span>
           </div>
           <div

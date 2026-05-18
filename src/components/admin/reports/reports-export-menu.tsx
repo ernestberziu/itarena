@@ -28,7 +28,12 @@ export function ReportsExportMenu({
       const res = await fetch("/api/admin/reports/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section, format, ...rangeParams }),
+        body: JSON.stringify({
+          section,
+          format,
+          locale: locale === "en" ? "en" : "sq",
+          ...rangeParams,
+        }),
       });
       if (!res.ok) throw new Error("Export failed");
       const blob = await res.blob();

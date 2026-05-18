@@ -212,6 +212,7 @@ export default async function TicketsPage({
                       createdAt={ticket.createdAt}
                       deadline={new Date(ticket.slaDeadline)}
                       status={ticket.status as TicketStatus}
+                      resolvedAt={ticket.resolvedAt}
                       locale={locale}
                     />
                   )}

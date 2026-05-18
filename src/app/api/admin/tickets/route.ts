@@ -11,10 +11,11 @@ const ticketInclude = {
   createdBy: { select: { firstName: true, lastName: true, email: true } },
   assignedTo: { select: { firstName: true, lastName: true } },
   company: { select: { name: true } },
+  project: { select: { id: true, title: true } },
 } as const;
 
 const listOrderBy = [
-  { slaBreached: "desc" as const },
+  { slaDeadline: "asc" as const },
   { priority: "desc" as const },
   { updatedAt: "desc" as const },
 ];

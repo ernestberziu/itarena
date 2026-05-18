@@ -22,15 +22,17 @@ import { EmptyState } from "@/components/shared/empty-state";
 import type { TicketStatus, Priority } from "@/types/domain";
 import { timeAgo, formatPrice } from "@/lib/utils";
 import { RevenueChart, TicketBarChart, SlaRing } from "@/components/admin/dashboard-charts";
-import { subDays, format } from "date-fns";
+import { subDays, format, startOfDay } from "date-fns";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { countMissedSlaTickets, countSlaCompliance, isSlaBreached } from "@/lib/sla";
 
 async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
   const [
     openTickets,
     breachedTickets,
+    missedSlaTickets,
     resolvedToday,
     totalClients,
     pendingQuotes,
@@ -43,7 +45,11 @@ async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
     recentOrders30d,
   ] = await Promise.all([
     db.ticket.count({ where: { status: { notIn: ["RESOLVED", "CLOSED"] } } }),
-    db.ticket.count({ where: { slaBreached: true, status: { notIn: ["RESOLVED", "CLOSED"] } } }),
+    countMissedSlaTickets(db),
+    db.ticket.findMany({
+      where: { slaDeadline: { not: null }, status: { not: "CLOSED" } },
+      select: { slaDeadline: true, status: true, resolvedAt: true },
+    }),
     db.ticket.count({ where: { status: "RESOLVED", resolvedAt: { gte: todayStart } } }),
     db.user.count({ where: { role: { in: ["CLIENT", "COMPANY_ADMIN"] } } }),
     db.quote.count({ where: { status: "PENDING" } }),
@@ -51,9 +57,16 @@ async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
     db.order.aggregate({ _sum: { total: true }, where: { status: { notIn: ["CANCELLED"] } } }),
     db.ticket.findMany({
       where: { status: { notIn: ["RESOLVED", "CLOSED"] } },
-      orderBy: [{ slaBreached: "desc" }, { priority: "desc" }, { createdAt: "asc" }],
+      orderBy: [{ slaDeadline: "asc" }, { priority: "desc" }, { createdAt: "asc" }],
       take: 8,
-      include: {
+      select: {
+        id: true,
+        number: true,
+        title: true,
+        status: true,
+        priority: true,
+        slaDeadline: true,
+        resolvedAt: true,
         createdBy: { select: { firstName: true, lastName: true } },
         assignedTo: { select: { firstName: true, lastName: true } },
       },
@@ -80,6 +93,8 @@ async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
     }),
   ]);
 
+  const slaCompliance = countSlaCompliance(missedSlaTickets);
+
   return {
     openTickets,
     breachedTickets,
@@ -93,6 +108,7 @@ async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
     recentActivity,
     ticketsByStatus,
     recentOrders30d,
+    slaCompliance,
   };
 }
 
@@ -112,7 +128,7 @@ export default async function AdminDashboardPage({
   const lp = locale === "sq" ? "" : `/${locale}`;
   const now = new Date();
   const thirtyDaysAgo = subDays(now, 30);
-  const todayStart = new Date(now.setHours(0, 0, 0, 0));
+  const todayStart = startOfDay(now);
 
   let data: Awaited<ReturnType<typeof fetchAdminDashboardData>>;
   try {
@@ -164,6 +180,7 @@ export default async function AdminDashboardPage({
     recentActivity,
     ticketsByStatus,
     recentOrders30d,
+    slaCompliance,
   } = data;
 
   // Build 30-day revenue chart data
@@ -190,8 +207,6 @@ export default async function AdminDashboardPage({
     count: s._count,
     label: statusLabels[s.status] ?? s.status,
   }));
-
-  const compliantTickets = ticketsByStatus.reduce((s, t) => s + t._count, 0) - breachedTickets;
 
   const kpis = [
     {
@@ -310,7 +325,7 @@ export default async function AdminDashboardPage({
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center py-4">
-            <SlaRing compliant={compliantTickets} breached={breachedTickets} />
+            <SlaRing compliant={slaCompliance.compliant} breached={slaCompliance.breached} />
           </CardContent>
         </Card>
       </div>
@@ -353,7 +368,11 @@ export default async function AdminDashboardPage({
                     href={`${lp}/admin/tickets/${ticket.id}`}
                     className="group flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors"
                   >
-                    {ticket.slaBreached && (
+                    {isSlaBreached({
+                      slaDeadline: ticket.slaDeadline,
+                      status: ticket.status,
+                      resolvedAt: ticket.resolvedAt,
+                    }) && (
                       <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" strokeWidth={2} />
                     )}
                     <div className="flex-1 min-w-0">

@@ -1,6 +1,8 @@
 import "./ensure-database-url";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { seedSiteContent } from "./seed-site-content";
+import { seedProjects } from "./seed-projects";
 
 const prisma = new PrismaClient();
 
@@ -102,11 +104,15 @@ async function main() {
   });
   console.log("✅ Demo B2B client:", client.email);
 
+  await seedSiteContent(prisma);
+  await seedProjects(prisma);
+
   console.log("\n🎉 Seeding complete!");
   console.log("\nLogin credentials:");
   console.log("  Admin: admin@itarena.al / Admin@123!");
   console.log("  Engineer: engineer@itarena.al / Engineer@123!");
   console.log("  B2B Client: client@demo.al / Client@123!");
+  console.log("  Partner: partner@itarena.al / Partner@123!");
 }
 
 main()

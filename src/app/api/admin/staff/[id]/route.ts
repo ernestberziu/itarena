@@ -9,7 +9,7 @@ import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { adminAclOverlaySchema } from "@/lib/admin-acl/schema";
 import { STAFF_ROLES } from "@/types/domain";
 
-const staffRoleSchema = z.enum(["ADMIN", "ENGINEER", "SALES", "OPS"]);
+const staffRoleSchema = z.enum(["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"]);
 
 const patchSchema = z
   .object({

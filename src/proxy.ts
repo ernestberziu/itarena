@@ -9,7 +9,7 @@ const PORTAL_PATHS = ["/portal"];
 const ADMIN_PATHS = ["/admin"];
 const AUTH_PATHS = ["/hyr", "/regjistrohu"];
 
-const ADMIN_ROLES = ["ADMIN", "ENGINEER", "SALES", "OPS"];
+const ADMIN_ROLES = ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"];
 
 /** Albanian (default) has no URL prefix; English uses `/en`. */
 function localeUrlPrefix(pathname: string): string {

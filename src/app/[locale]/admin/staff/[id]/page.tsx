@@ -6,6 +6,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import {
   AdminStaffAccountPanel,
   AdminStaffAclEditor,
+  AdminStaffProjectAssignments,
   UserAvatar,
   UserStatusBadges,
 } from "@/components/admin/users";
@@ -119,6 +120,10 @@ export default async function AdminStaffDetailPage({
           initialAdminAclJson={user.adminAclJson}
           locale={locale}
         />
+      ) : null}
+
+      {canWriteStaff ? (
+        <AdminStaffProjectAssignments staffId={user.id} locale={locale} />
       ) : null}
     </div>
   );

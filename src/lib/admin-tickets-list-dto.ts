@@ -1,3 +1,5 @@
+import { isSlaBreached } from "@/lib/sla";
+
 export type AdminTicketRow = {
   id: string;
   number: string;
@@ -7,6 +9,9 @@ export type AdminTicketRow = {
   division: string;
   slaBreached: boolean;
   slaDeadline: string | null;
+  resolvedAt: string | null;
+  projectId: string | null;
+  project: { id: string; title: string } | null;
   createdAt: string;
   updatedAt: string;
   externalRequesterName: string | null;
@@ -25,6 +30,9 @@ export type AdminTicketListDb = {
   division: string;
   slaBreached: boolean;
   slaDeadline: Date | null;
+  resolvedAt: Date | null;
+  projectId: string | null;
+  project: { id: string; title: string } | null;
   createdAt: Date;
   updatedAt: Date;
   externalRequesterName: string | null;
@@ -41,8 +49,17 @@ export function mapTicketToAdminRow(ticket: AdminTicketListDb): AdminTicketRow {
     status: ticket.status,
     priority: ticket.priority,
     division: ticket.division,
-    slaBreached: ticket.slaBreached,
+    slaBreached: isSlaBreached({
+      slaDeadline: ticket.slaDeadline,
+      status: ticket.status,
+      resolvedAt: ticket.resolvedAt,
+    }),
     slaDeadline: ticket.slaDeadline ? ticket.slaDeadline.toISOString() : null,
+    resolvedAt: ticket.resolvedAt ? ticket.resolvedAt.toISOString() : null,
+    projectId: ticket.projectId ?? null,
+    project: ticket.project
+      ? { id: ticket.project.id, title: ticket.project.title }
+      : null,
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
     externalRequesterName: ticket.externalRequesterName,

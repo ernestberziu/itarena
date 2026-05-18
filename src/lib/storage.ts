@@ -136,3 +136,31 @@ export function getFileUrl(publicId: string, resourceType: "image" | "raw" = "im
   const cloud = resolveCloudName();
   return `https://res.cloudinary.com/${cloud}/${resourceType}/upload/${publicId}`;
 }
+
+/** Server-side upload of a buffer (e.g. generated PDF). */
+export async function uploadBuffer(
+  buffer: Buffer,
+  folder: string,
+  filename: string,
+  contentType = "application/pdf"
+): Promise<{ url: string; publicId: string }> {
+  const creds = getCredentials();
+  applyConfig(creds);
+  const public_id = `${folder.replace(/^\/+|\/+$/g, "")}/${filename.replace(/\.[^.]+$/, "")}-${uuid()}`;
+  const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        public_id,
+        format: "pdf",
+        content_type: contentType,
+      },
+      (err, res) => {
+        if (err || !res) reject(err ?? new Error("Upload failed"));
+        else resolve(res as { secure_url: string; public_id: string });
+      }
+    );
+    stream.end(buffer);
+  });
+  return { url: result.secure_url, publicId: result.public_id };
+}

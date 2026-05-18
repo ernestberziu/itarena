@@ -1,4 +1,5 @@
 import type { ReportsOverviewPayload, ReportSectionId } from "./types";
+import { formatExportCell, type ReportLocale } from "./labels";
 
 export function sectionToRows(
   section: ReportSectionId,
@@ -69,4 +70,24 @@ export function sectionToRows(
         rows: data.kpis.map((k) => ({ metric: k.key, value: k.formatted })),
       };
   }
+}
+
+/** Rows with human-readable labels for export formats. */
+export function sectionToLabeledRows(
+  section: ReportSectionId,
+  data: ReportsOverviewPayload,
+  locale: ReportLocale
+): { columns: { key: string; header: string }[]; rows: Record<string, string>[] } {
+  const { columns, rows } = sectionToRows(section, data);
+  return {
+    columns,
+    rows: rows.map((row) =>
+      Object.fromEntries(
+        columns.map((col) => [
+          col.key,
+          formatExportCell(section, col.key, row[col.key], locale),
+        ])
+      )
+    ),
+  };
 }

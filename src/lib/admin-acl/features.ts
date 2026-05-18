@@ -2,19 +2,21 @@ import type { Role } from "@/types/domain";
 import { STAFF_ROLES } from "@/types/domain";
 
 /** Non-client staff roles (subset of `Role`). */
-export type StaffRole = Extract<Role, "ADMIN" | "ENGINEER" | "SALES" | "OPS">;
+export type StaffRole = Extract<Role, "ADMIN" | "ENGINEER" | "SALES" | "OPS" | "PARTNER">;
 
 /** Keys align with `admin-nav-config` ids plus `profile` (always available in admin shell). */
 export const ADMIN_FEATURES = [
   "dashboard",
   "notifications",
   "tickets",
+  "projects",
   "clients",
   "quotes",
   "orders",
   "catalog",
   "staff",
   "reports",
+  "templates",
   "settings",
   "shop_products",
   "shop_orders",
@@ -27,6 +29,7 @@ export type AdminFeature = (typeof ADMIN_FEATURES)[number];
 export type AclLevel = "none" | "read" | "write";
 
 const W: AclLevel = "write";
+const R: AclLevel = "read";
 const N: AclLevel = "none";
 
 function allNone(): Record<AdminFeature, AclLevel> {
@@ -52,7 +55,14 @@ export const ROLE_DEFAULT_ACL: Record<StaffRole, Record<AdminFeature, AclLevel>>
     dashboard: W,
     notifications: W,
     tickets: W,
+    projects: R,
+    templates: R,
     view_shop: W,
+    profile: W,
+  }),
+  PARTNER: mergeDefaults({
+    dashboard: R,
+    projects: W,
     profile: W,
   }),
   SALES: mergeDefaults({
@@ -61,6 +71,7 @@ export const ROLE_DEFAULT_ACL: Record<StaffRole, Record<AdminFeature, AclLevel>>
     tickets: W,
     clients: W,
     quotes: W,
+    templates: W,
     view_shop: W,
     profile: W,
   }),
@@ -72,6 +83,7 @@ export const ROLE_DEFAULT_ACL: Record<StaffRole, Record<AdminFeature, AclLevel>>
     catalog: W,
     shop_products: W,
     shop_orders: W,
+    templates: R,
     view_shop: W,
     profile: W,
   }),

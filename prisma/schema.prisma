@@ -8,7 +8,7 @@ datasource db {
 }
 
 // ─── Users & Auth ────────────────────────────────────────────────────────────
-// Role values: CLIENT | COMPANY_ADMIN | ENGINEER | SALES | OPS | ADMIN
+// Role values: CLIENT | COMPANY_ADMIN | ENGINEER | SALES | OPS | PARTNER | ADMIN
 
 model User {
   id               String    @id @default(cuid())
@@ -42,6 +42,10 @@ model User {
   quotes          Quote[]
   notifications   Notification[]
   auditLogs       AuditLog[]
+  projectsCreated Project[]        @relation("ProjectCreator")
+  projectMembers  ProjectMember[]
+  projectMessages ProjectMessage[]
+  projectClients  ProjectClient[]
 
   @@map("users")
 }
@@ -98,10 +102,11 @@ model Company {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  users   User[]
-  tickets Ticket[]
-  quotes  Quote[]
-  orders  Order[]
+  users          User[]
+  tickets        Ticket[]
+  quotes         Quote[]
+  orders         Order[]
+  projectClients ProjectClient[]
 
   @@map("companies")
 }
@@ -128,6 +133,7 @@ model Ticket {
   createdById  String
   assignedToId String?
   companyId    String?
+  projectId    String?
   /// Estimated additional hours; with estimatedDays drives slaDeadline from createdAt (24h per calendar day + hours, wall-clock).
   estimatedHours         Int?
   /// Estimated calendar days; each day counts as 24 hours toward SLA deadline from createdAt.
@@ -140,10 +146,82 @@ model Ticket {
   createdBy  User            @relation("TicketCreator", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   assignedTo User?           @relation("TicketAssignee", fields: [assignedToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   company    Company?        @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  project    Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   comments   TicketComment[]
   history    TicketHistory[]
 
+  @@index([projectId])
   @@map("tickets")
+}
+
+// ─── Projects ────────────────────────────────────────────────────────────────
+// status: ACTIVE | ARCHIVED
+// member access: read | write | admin
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?  @db.Text
+  status      String   @default("ACTIVE")
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User             @relation("ProjectCreator", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  members   ProjectMember[]
+  clients   ProjectClient[]
+  tickets   Ticket[]
+  messages  ProjectMessage[]
+
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  access    String   @default("read")
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model ProjectClient {
+  id        String  @id @default(cuid())
+  projectId String
+  companyId String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([projectId])
+  @@map("project_clients")
+}
+
+model ProjectMessage {
+  id          String   @id @default(cuid())
+  projectId   String
+  authorId    String
+  body        String   @db.Text
+  isInternal  Boolean  @default(false)
+  attachments String   @default("[]") @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([projectId, createdAt])
+  @@map("project_messages")
 }
 
 model TicketComment {
@@ -372,4 +450,136 @@ model ReportShareLink {
   createdAt   DateTime  @default(now())
 
   @@map("report_share_links")
+}
+
+// ─── Admin document templates & contracts ─────────────────────────────────────
+
+model DocumentTemplate {
+  id              String   @id @default(cuid())
+  name            String
+  type            String
+  language        String   @default("sq")
+  bodyMarkdown    String   @db.Text
+  bodyMarkdownSq  String   @db.Text
+  bodyMarkdownEn  String   @db.Text
+  defaultLanguage String   @default("sq")
+  sectionsJson    Json?
+  isDefault       Boolean  @default(false)
+  createdById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  documents ContractDocument[]
+
+  @@index([type])
+  @@map("document_templates")
+}
+
+model ContractDocument {
+  id             String    @id @default(cuid())
+  documentNumber String    @unique
+  type           String
+  status         String    @default("DRAFT")
+  language       String    @default("sq")
+  templateId     String?
+  template       DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  partyJson      Json
+  payloadJson    Json
+  pdfUrl         String?
+  pdfGeneratedAt DateTime?
+  createdById    String
+  updatedById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([type, status])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("contract_documents")
+}
+
+model TemplateSettings {
+  id        String   @id @default("default")
+  configJson Json
+  updatedAt DateTime @updatedAt
+
+  @@map("template_settings")
+}
+
+// ─── Public site CMS (admin Settings) ─────────────────────────────────────────
+
+model SiteSettings {
+  id           String   @id @default("default")
+  generalJson  Json
+  brandingJson Json
+  heroJson     Json
+  contactJson  Json
+  socialJson   Json
+  footerJson   Json
+  seoJson      Json
+  landingJson  Json
+  updatedAt    DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model MarketingService {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  sortOrder      Int      @default(0)
+  enabled        Boolean  @default(true)
+  featured       Boolean  @default(false)
+  nameSq         String
+  nameEn         String
+  shortDescSq    String   @db.Text
+  shortDescEn    String   @db.Text
+  fullDescSq     String?  @db.Text
+  fullDescEn     String?  @db.Text
+  iconKey        String   @default("Monitor")
+  imageUrl       String?
+  bannerUrl      String?
+  ctaTextSq      String?
+  ctaTextEn      String?
+  ctaLink        String?
+  showOnHomepage Boolean  @default(true)
+  cardStyle      String?
+  gradientClass  String?
+  hoverEffect    String?
+  colorClass     String?
+  accentClass    String?
+  metaTitleSq    String?
+  metaTitleEn    String?
+  metaDescSq     String?
+  metaDescEn     String?
+  keywordsSq     String?
+  keywordsEn     String?
+  featuresJson   Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([enabled, sortOrder])
+  @@map("marketing_services")
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  sortOrder   Int      @default(0)
+  enabled     Boolean  @default(true)
+  featured    Boolean  @default(false)
+  clientName  String
+  roleSq      String?
+  roleEn      String?
+  companySq   String?
+  companyEn   String?
+  reviewSq    String   @db.Text
+  reviewEn    String   @db.Text
+  rating      Int      @default(5)
+  imageUrl    String?
+  avatarColor String?
+  initials    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([enabled, sortOrder])
+  @@map("testimonials")
 }

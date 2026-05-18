@@ -11,6 +11,8 @@ import {
   slaDeadlineFromEstimate,
 } from "@/lib/ticket-estimate";
 import { filterTicketHistoryForClient } from "@/lib/ticket-activity";
+import { computeSlaBreachedFlag } from "@/lib/sla";
+import { canAccessProject } from "@/lib/projects";
 
 const patchSchema = z.object({
   status: z
@@ -21,6 +23,7 @@ const patchSchema = z.object({
   rating: z.number().min(1).max(5).optional(),
   estimatedDays: z.coerce.number().int().min(0).max(62).optional(),
   estimatedHours: z.coerce.number().int().min(0).max(500).optional(),
+  projectId: z.union([z.string().cuid(), z.null()]).optional(),
 });
 
 export async function PATCH(
@@ -61,10 +64,25 @@ export async function PATCH(
     });
     updateData.status = parsed.data.status;
 
-    if (parsed.data.status === "RESOLVED") updateData.resolvedAt = new Date();
-    if (parsed.data.status === "CLOSED") updateData.closedAt = new Date();
-    if (parsed.data.status === "IN_PROGRESS" && ticket.status === "RESOLVED") {
+    const nextStatus = parsed.data.status;
+    if (nextStatus === "RESOLVED") {
+      const resolvedAt = new Date();
+      updateData.resolvedAt = resolvedAt;
+      updateData.slaBreached = computeSlaBreachedFlag(ticket.slaDeadline, nextStatus, resolvedAt);
+    }
+    if (nextStatus === "CLOSED") {
+      updateData.closedAt = new Date();
+      updateData.slaBreached = computeSlaBreachedFlag(
+        ticket.slaDeadline,
+        nextStatus,
+        (updateData.resolvedAt as Date | undefined) ?? ticket.resolvedAt
+      );
+    }
+    if (nextStatus === "IN_PROGRESS" && ticket.status === "RESOLVED") {
       updateData.resolvedAt = null;
+      updateData.slaBreached = computeSlaBreachedFlag(ticket.slaDeadline, nextStatus, null);
+    } else if (!["RESOLVED", "CLOSED"].includes(nextStatus)) {
+      updateData.slaBreached = computeSlaBreachedFlag(ticket.slaDeadline, nextStatus, null);
     }
   }
 
@@ -154,17 +172,38 @@ export async function PATCH(
       updateData.estimatedHours = estimate.estimatedHours ?? null;
       updateData.slaDeadline = nextDeadline;
 
-      const now = Date.now();
+      const effectiveStatus = (updateData.status as string | undefined) ?? ticket.status;
+      const effectiveResolvedAt =
+        (updateData.resolvedAt as Date | null | undefined) ?? ticket.resolvedAt;
+      updateData.slaBreached = computeSlaBreachedFlag(
+        nextDeadline,
+        effectiveStatus,
+        effectiveResolvedAt
+      );
       if (nextDeadline == null) {
-        updateData.slaBreached = false;
         updateData.slaWarned = false;
-      } else if (nextDeadline.getTime() > now) {
-        updateData.slaBreached = false;
+      } else if (nextDeadline.getTime() > Date.now()) {
         updateData.slaWarned = false;
       } else {
-        updateData.slaBreached = true;
         updateData.slaWarned = true;
       }
+    }
+  }
+
+  if (parsed.data.projectId !== undefined && isStaff) {
+    const nextProjectId = parsed.data.projectId;
+    if (nextProjectId) {
+      const ok = await canAccessProject(session.user.id, nextProjectId, "write");
+      if (!ok) return NextResponse.json({ error: "Invalid project" }, { status: 400 });
+    }
+    const prev = ticket.projectId ?? null;
+    if (prev !== nextProjectId) {
+      historyEntries.push({
+        field: "projectId",
+        oldValue: prev,
+        newValue: nextProjectId,
+      });
+      updateData.projectId = nextProjectId;
     }
   }
 

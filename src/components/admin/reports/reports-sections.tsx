@@ -3,6 +3,14 @@
 import { SlaRing } from "@/components/admin/dashboard-charts";
 import { formatPrice } from "@/lib/utils";
 import type { ReportsOverviewPayload } from "@/lib/reports/types";
+import {
+  labelAuditAction,
+  labelFunnelStage,
+  labelOrderStatus,
+  labelQuoteStatus,
+  labelTier,
+  type ReportLocale,
+} from "@/lib/reports/labels";
 import { ReportsSection } from "./reports-section";
 import {
   ReportAreaChart,
@@ -22,6 +30,7 @@ export function ReportsSections({
   rangeParams: Record<string, string>;
 }) {
   const en = locale === "en";
+  const loc: ReportLocale = en ? "en" : "sq";
   const t = (sq: string, e: string) => (en ? e : sq);
   const { sections } = data;
 
@@ -38,7 +47,7 @@ export function ReportsSections({
           <ReportAreaChart data={sections.revenue.dailyRevenue} />
           <ReportBarChart
             data={sections.revenue.byStatus.map((s) => ({
-              label: s.status,
+              label: labelOrderStatus(s.status, loc),
               value: s.total,
             }))}
             dataKey="value"
@@ -48,7 +57,7 @@ export function ReportsSections({
         <div className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-3">
           {sections.revenue.byTier.map((tier) => (
             <div key={tier.tier} className="rounded-xl border border-border/50 bg-muted/20 p-3">
-              <p className="text-xs text-muted-foreground">{tier.tier}</p>
+              <p className="text-xs text-muted-foreground">{labelTier(tier.tier, loc)}</p>
               <p className="font-semibold tabular-nums">{formatPrice(tier.total)}</p>
             </div>
           ))}
@@ -116,9 +125,17 @@ export function ReportsSections({
       <ReportsSection id="quotes" title={t("Oferta", "Quotes")} locale={locale} rangeParams={rangeParams}>
         <div className="grid gap-6 lg:grid-cols-2">
           <ReportDonutChart
-            data={sections.quotes.byStatus.map((s) => ({ name: s.status, value: s.count }))}
+            data={sections.quotes.byStatus.map((s) => ({
+              name: labelQuoteStatus(s.status, loc),
+              value: s.count,
+            }))}
           />
-          <ReportFunnelChart data={sections.quotes.funnel} />
+          <ReportFunnelChart
+            data={sections.quotes.funnel.map((s) => ({
+              stage: labelQuoteStatus(s.stage, loc),
+              count: s.count,
+            }))}
+          />
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
           {t("Pipeline", "Pipeline")}: {sections.quotes.pipelineCount} · {formatPrice(sections.quotes.pipelineValue)}
@@ -143,7 +160,12 @@ export function ReportsSections({
         locale={locale}
         rangeParams={rangeParams}
       >
-        <ReportFunnelChart data={sections.funnel.stages} />
+        <ReportFunnelChart
+          data={sections.funnel.stages.map((s) => ({
+            stage: labelFunnelStage(s.stage, loc),
+            count: s.count,
+          }))}
+        />
       </ReportsSection>
 
       <ReportsSection id="support" title={t("Mbështetje", "Support")} locale={locale} rangeParams={rangeParams}>
@@ -161,7 +183,10 @@ export function ReportsSections({
         {sections.support.auditByAction.length > 0 ? (
           <div className="mt-4">
             <ReportBarChart
-              data={sections.support.auditByAction.map((a) => ({ label: a.action, value: a.count }))}
+              data={sections.support.auditByAction.map((a) => ({
+                label: labelAuditAction(a.action, loc),
+                value: a.count,
+              }))}
             />
           </div>
         ) : null}

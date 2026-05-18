@@ -1,31 +1,12 @@
 import type { ReportsOverviewPayload } from "./types";
 
-export function buildInsights(
-  payload: ReportsOverviewPayload,
-  hasCompare: boolean
-): ReportsOverviewPayload["insights"] {
+import { labelTier } from "./labels";
+
+export function buildInsights(payload: ReportsOverviewPayload): ReportsOverviewPayload["insights"] {
   const out: ReportsOverviewPayload["insights"] = [];
-  const revenueKpi = payload.kpis.find((k) => k.key === "revenue");
   const winKpi = payload.kpis.find((k) => k.key === "quoteWinRate");
   const sla = payload.sections.support;
   const totalSla = sla.slaCompliant + sla.slaBreached;
-
-  if (hasCompare && revenueKpi?.deltaPct != null) {
-    const d = revenueKpi.deltaPct;
-    if (d >= 10) {
-      out.push({
-        tone: "positive",
-        textSq: `Xhiro u rrit ${d}% krahasuar me periudhën e mëparshme.`,
-        textEn: `Revenue increased ${d}% compared to the previous period.`,
-      });
-    } else if (d <= -10) {
-      out.push({
-        tone: "negative",
-        textSq: `Xhiro u ul ${Math.abs(d)}% krahasuar me periudhën e mëparshme.`,
-        textEn: `Revenue decreased ${Math.abs(d)}% compared to the previous period.`,
-      });
-    }
-  }
 
   if (winKpi && winKpi.value >= 40) {
     out.push({
@@ -56,8 +37,8 @@ export function buildInsights(
   if (topTier && topTier.total > 0) {
     out.push({
       tone: "neutral",
-      textSq: `Segmenti më i madh i xhiros: ${topTier.tier}.`,
-      textEn: `Largest revenue segment: ${topTier.tier}.`,
+      textSq: `Segmenti më i madh i xhiros: ${labelTier(topTier.tier, "sq")}.`,
+      textEn: `Largest revenue segment: ${labelTier(topTier.tier, "en")}.`,
     });
   }
 

@@ -267,6 +267,7 @@ export function AdminTicketDetailView({
                 createdAt={new Date(ticket.createdAt)}
                 deadline={new Date(ticket.slaDeadline)}
                 status={ticket.status}
+                resolvedAt={ticket.resolvedAt ? new Date(ticket.resolvedAt) : null}
                 locale={locale}
               />
             )}
@@ -794,6 +795,7 @@ export function AdminTicketDetailView({
                         createdAt={new Date(ticket.createdAt)}
                         deadline={new Date(ticket.slaDeadline)}
                         status={ticket.status}
+                        resolvedAt={ticket.resolvedAt ? new Date(ticket.resolvedAt) : null}
                         locale={locale}
                       />
                     </dd>

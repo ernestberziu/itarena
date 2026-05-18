@@ -4,7 +4,7 @@ import { countUnreadNotifications } from "@/lib/notification-count";
 import { AdminAppShell } from "@/components/admin/admin-app-shell";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 
-const ADMIN_ROLES = ["ADMIN", "ENGINEER", "SALES", "OPS"];
+const ADMIN_ROLES = ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"];
 
 export default async function AdminLayout({
   children,

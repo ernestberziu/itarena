@@ -8,9 +8,10 @@ import {
   Package,
   UserCog,
   BarChart3,
+  FileSignature,
   Settings,
-  Store,
   Bell,
+  FolderKanban,
 } from "lucide-react";
 import type { Role } from "@/types/domain";
 
@@ -43,6 +44,13 @@ export const MAIN_NAV: AdminNavItem[] = [
     href: "/admin/tickets",
     icon: Ticket,
     roles: ["ADMIN", "ENGINEER"],
+  },
+  {
+    id: "projects",
+    transKey: "projects",
+    href: "/admin/projects",
+    icon: FolderKanban,
+    roles: ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"],
   },
   {
     id: "clients",
@@ -87,6 +95,13 @@ export const MAIN_NAV: AdminNavItem[] = [
     roles: ["ADMIN"],
   },
   {
+    id: "templates",
+    transKey: "templates",
+    href: "/admin/templates",
+    icon: FileSignature,
+    roles: ["ADMIN", "SALES", "ENGINEER", "OPS"],
+  },
+  {
     id: "settings",
     transKey: "settings",
     href: "/admin/settings",
@@ -101,26 +116,4 @@ export const COMMERCE_NAV: {
   icon: LucideIcon;
   roles: Role[];
   path: "shopProducts" | "shopOrders" | "viewShop";
-}[] = [
-  {
-    id: "shop_products",
-    transKey: "shop_products",
-    icon: Package,
-    roles: ["ADMIN", "OPS"],
-    path: "shopProducts",
-  },
-  {
-    id: "shop_orders",
-    transKey: "shop_orders",
-    icon: ShoppingBag,
-    roles: ["ADMIN", "OPS"],
-    path: "shopOrders",
-  },
-  {
-    id: "view_shop",
-    transKey: "view_shop",
-    icon: Store,
-    roles: ["ADMIN", "ENGINEER", "SALES", "OPS"],
-    path: "viewShop",
-  },
-];
+}[] = [];

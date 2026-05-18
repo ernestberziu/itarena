@@ -21,6 +21,7 @@ import {
 } from "@/lib/admin-ticket-filters";
 import { adminTicketsListWhere } from "@/lib/admin-tickets-list-query";
 import { mapTicketToAdminRow } from "@/lib/admin-tickets-list-dto";
+import { getMissedSlaTicketIds } from "@/lib/sla";
 import { cn } from "@/lib/utils";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
@@ -52,6 +53,7 @@ export default async function AdminTicketsPage({
 
   const assigneeFilter = sp.assignee?.trim();
   const requesterFilter = sp.requester?.trim();
+  const projectIdFilter = sp.projectId?.trim();
 
   const listQuery = {
     q,
@@ -60,11 +62,19 @@ export default async function AdminTicketsPage({
     filter: breachedOnly ? ("breached" as const) : null,
     assignee: assigneeFilter,
     requester: requesterFilter,
+    projectId: projectIdFilter,
   };
-  const where = adminTicketsListWhere(listQuery);
+  let where = adminTicketsListWhere(listQuery);
+  const missedSlaIds = await getMissedSlaTicketIds(db);
+
+  if (breachedOnly) {
+    where = {
+      AND: [where, { id: { in: missedSlaIds.length > 0 ? missedSlaIds : [] } }],
+    };
+  }
 
   const listOrderBy = [
-    { slaBreached: "desc" as const },
+    { slaDeadline: "asc" as const },
     { priority: "desc" as const },
     { updatedAt: "desc" as const },
   ];
@@ -73,6 +83,7 @@ export default async function AdminTicketsPage({
     createdBy: { select: { firstName: true, lastName: true, email: true } },
     assignedTo: { select: { firstName: true, lastName: true } },
     company: { select: { name: true } },
+    project: { select: { id: true, title: true } },
   } as const;
 
   const [tickets, totalCount, openCount, breachedCount, assigneeOptions] = await Promise.all([
@@ -88,7 +99,7 @@ export default async function AdminTicketsPage({
       where: { AND: [where, { status: { notIn: ["RESOLVED", "CLOSED"] } }] },
     }),
     db.ticket.count({
-      where: { AND: [where, { slaBreached: true }] },
+      where: { AND: [where, { id: { in: missedSlaIds.length > 0 ? missedSlaIds : [] } }] },
     }),
     db.user.findMany({
       where: { role: { in: ["ADMIN", "ENGINEER", "SALES", "OPS"] } },

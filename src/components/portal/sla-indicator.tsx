@@ -17,14 +17,19 @@ export function SlaIndicator({
   createdAt,
   deadline,
   status,
+  resolvedAt,
   locale = "sq",
 }: {
   createdAt: Date;
   deadline: Date;
   status: TicketStatus;
+  resolvedAt?: Date | null;
   locale?: string;
 }) {
-  const slaStatus = getSlaStatus(createdAt, deadline, status);
+  const slaStatus = getSlaStatus(createdAt, deadline, status, resolvedAt);
+  const terminal = ["RESOLVED", "CLOSED"].includes(status);
+  const referenceMs =
+    terminal && resolvedAt ? resolvedAt.getTime() : Date.now();
 
   const labels = {
     on_track: { sq: "SLA në rregull", en: "SLA on track" },
@@ -32,7 +37,6 @@ export function SlaIndicator({
     breached: { sq: "SLA shkelur", en: "SLA breached" },
   };
 
-  /** Resolved / closed: no live SLA state, but keep deadline visible. */
   if (slaStatus === "none") {
     return (
       <span className="inline-flex max-w-full flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
@@ -45,7 +49,7 @@ export function SlaIndicator({
     );
   }
 
-  const remaining = deadline.getTime() - Date.now();
+  const remaining = deadline.getTime() - referenceMs;
   const hoursLeft = Math.max(0, Math.floor(remaining / (1000 * 60 * 60)));
   const minutesLeft = Math.max(
     0,
@@ -65,8 +69,7 @@ export function SlaIndicator({
   };
 
   const Icon = IconMap[slaStatus];
-
-  const overdueMs = Date.now() - deadline.getTime();
+  const overdueMs = referenceMs - deadline.getTime();
 
   const dueLine = (
     <span className="block text-[10px] leading-tight text-muted-foreground tabular-nums">

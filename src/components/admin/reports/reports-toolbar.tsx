@@ -1,32 +1,18 @@
 "use client";
 
-import { useCallback, useTransition, type ReactNode } from "react";
+import { useCallback, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  CalendarRange,
-  GitCompare,
-  RefreshCw,
-  Save,
-  Share2,
-} from "lucide-react";
+import { CalendarRange, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DATE_PRESET_IDS, DEFAULT_REPORT_TZ, type ReportDatePresetId } from "@/lib/reports/date-range";
 
 export function ReportsToolbar({
-  locale,
   lp,
-  onSavePreset,
-  scheduleTrigger,
-  onShare,
   onRefresh,
 }: {
-  locale: string;
   lp: string;
-  onSavePreset: () => void;
-  scheduleTrigger: React.ReactNode;
-  onShare: () => void;
   onRefresh: () => void;
 }) {
   const t = useTranslations("admin.reportsPage");
@@ -35,13 +21,14 @@ export function ReportsToolbar({
   const [pending, startTransition] = useTransition();
 
   const preset = (searchParams.get("preset") as ReportDatePresetId) || "last30";
-  const compare = searchParams.get("compare") === "1";
   const from = searchParams.get("from") ?? "";
   const to = searchParams.get("to") ?? "";
 
   const pushParams = useCallback(
     (patch: Record<string, string | null>) => {
       const p = new URLSearchParams(searchParams.toString());
+      p.delete("compare");
+      p.delete("share");
       for (const [k, v] of Object.entries(patch)) {
         if (v == null || v === "") p.delete(k);
         else p.set(k, v);
@@ -58,7 +45,7 @@ export function ReportsToolbar({
   return (
     <div
       className={cn(
-        "sticky top-14 z-30 -mx-4 mb-6 border-b border-border/60 bg-background/85 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6",
+        "sticky top-0 z-40 -mx-4 mb-6 border-b border-border/60 bg-background px-4 py-3 shadow-[var(--admin-shadow-sm)] backdrop-blur-md supports-[backdrop-filter]:bg-background/95 md:-mx-8 md:px-8",
         pending && "opacity-70"
       )}
     >
@@ -92,28 +79,9 @@ export function ReportsToolbar({
             value={to}
             onChange={(e) => pushParams({ preset: "custom", to: e.target.value })}
           />
-          <Button
-            type="button"
-            size="sm"
-            variant={compare ? "default" : "outline"}
-            className="h-8 gap-1 text-xs"
-            onClick={() => pushParams({ compare: compare ? null : "1" })}
-          >
-            <GitCompare className="h-3.5 w-3.5" />
-            {t("compare")}
-          </Button>
           <Button type="button" size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={onRefresh}>
             <RefreshCw className={cn("h-3.5 w-3.5", pending && "animate-spin")} />
             {t("refresh")}
-          </Button>
-          <Button type="button" size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={onSavePreset}>
-            <Save className="h-3.5 w-3.5" />
-            {t("save")}
-          </Button>
-          {scheduleTrigger}
-          <Button type="button" size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={onShare}>
-            <Share2 className="h-3.5 w-3.5" />
-            {t("share")}
           </Button>
         </div>
       </div>

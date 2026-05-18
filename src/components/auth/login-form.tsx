@@ -59,7 +59,7 @@ export function LoginForm() {
 
     const session = await getSession();
     const role = session?.user?.role;
-    const adminRoles = ["ADMIN", "ENGINEER", "SALES", "OPS"];
+    const adminRoles = ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"];
     const roleDefault =
       role && adminRoles.includes(role) ? `${lp}/admin/dashboard` : `${lp}/portal/dashboard`;
 

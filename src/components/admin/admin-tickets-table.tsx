@@ -193,6 +193,21 @@ export function AdminTicketsTable({
         ),
       },
       {
+        id: "project",
+        header: th("Projekti", "Project"),
+        cell: ({ row }) =>
+          row.original.project ? (
+            <Link
+              href={`${listPrefix}/admin/projects/${row.original.project.id}`}
+              className="text-xs text-muted-foreground hover:text-primary truncate max-w-[8rem] block"
+            >
+              {row.original.project.title}
+            </Link>
+          ) : (
+            <span className="text-xs text-muted-foreground/50">—</span>
+          ),
+      },
+      {
         accessorKey: "division",
         header: th("Divizioni", "Division"),
         cell: ({ row }) => (
@@ -222,6 +237,9 @@ export function AdminTicketsTable({
               createdAt={new Date(row.original.createdAt)}
               deadline={new Date(row.original.slaDeadline)}
               status={row.original.status as TicketStatus}
+              resolvedAt={
+                row.original.resolvedAt ? new Date(row.original.resolvedAt) : null
+              }
               locale={locale}
             />
           ) : (

@@ -10,3 +10,4 @@ export { AdminStaffRowActions, type AdminStaffActionRow } from "./admin-staff-ro
 export { AdminStaffAccountPanel } from "./admin-staff-account-panel";
 export { AdminStaffNewForm } from "./admin-staff-new-form";
 export { AdminStaffAclEditor } from "./admin-staff-acl-editor";
+export { AdminStaffProjectAssignments } from "./admin-staff-project-assignments";

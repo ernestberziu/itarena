@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const config = (sched.preset?.configJson ?? DEFAULT_PRESET_CONFIG) as ReportPresetConfig;
     const range = resolveReportRange({ preset: config.defaultRange ?? "last30", tz: null });
-    const data = await fetchReportsOverview(range, true);
+    const data = await fetchReportsOverview(range);
     const section = config.sections[0] ?? "overview";
     const { columns, rows } = sectionToRows(section as "overview", data);
     const csv = buildClientsCsv(rows, columns);

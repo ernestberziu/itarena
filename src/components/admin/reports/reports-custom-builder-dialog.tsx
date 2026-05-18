@@ -78,14 +78,18 @@ export function ReportsCustomBuilderDialog({
       {triggerLabel ? (
         <DialogTrigger render={<Button variant="outline" size="sm" />}>{triggerLabel}</DialogTrigger>
       ) : null}
-      <DialogContent className="max-w-md">
+      <DialogContent className="reports-custom-dialog max-w-md border-border/60 bg-white text-slate-900 shadow-xl backdrop-blur-none dark:bg-white dark:text-slate-900">
         <DialogHeader>
           <DialogTitle>{t("Raport i personalizuar", "Custom report")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>{t("Emri", "Name")}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              className="border-input bg-white text-slate-900 dark:bg-white dark:text-slate-900"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div>
             <Label className="mb-2 block">{t("Metrikat", "Metrics")}</Label>
@@ -104,7 +108,7 @@ export function ReportsCustomBuilderDialog({
           <div>
             <Label className="mb-2 block">{t("Lloji i grafikut", "Chart type")}</Label>
             <select
-              className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
+              className="h-9 w-full rounded-lg border border-input bg-white px-2 text-sm text-slate-900 dark:bg-white dark:text-slate-900"
               value={config.chartType}
               onChange={(e) =>
                 setConfig((c) => ({ ...c, chartType: e.target.value as ReportPresetConfig["chartType"] }))

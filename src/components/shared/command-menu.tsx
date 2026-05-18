@@ -49,6 +49,7 @@ const adminNav = [
   { label: "Katalog", href: "/admin/catalog", icon: Package },
   { label: "Stafi", href: "/admin/staff", icon: UserCog },
   { label: "Raportet", href: "/admin/reports", icon: BarChart3 },
+  { label: "Shabllonet", href: "/admin/templates", icon: FileText },
   { label: "Cilësimet", href: "/admin/settings", icon: Settings },
 ];
 

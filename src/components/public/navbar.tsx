@@ -17,7 +17,11 @@ import { cn } from "@/lib/utils";
 import { ItArenaLogo } from "@/components/brand/logo";
 import { shopUrl } from "@/lib/shop-url";
 
-const services = [
+import type { MarketingServiceRecord, SiteSettingsBundle } from "@/lib/site-content/types";
+import { getLucideIcon } from "@/lib/site-content/icons";
+import { serviceName, serviceShortDesc } from "@/lib/site-content/locale";
+
+const fallbackServices = [
   { key: "it_support", href: "/sherbime/it-support", icon: Monitor, color: "text-blue-500" },
   { key: "cloud", href: "/sherbime/cloud", icon: Cloud, color: "text-sky-500" },
   { key: "telecom", href: "/sherbime/telekomunikacion", icon: Wifi, color: "text-violet-500" },
@@ -28,7 +32,12 @@ const services = [
   { key: "printers", href: "/sherbime/printere", icon: Printer, color: "text-teal-500" },
 ];
 
-export function Navbar() {
+export function Navbar({
+  services: cmsServices,
+}: {
+  services?: MarketingServiceRecord[];
+  siteSettings?: SiteSettingsBundle;
+}) {
   const t = useTranslations();
   const locale = useLocale();
   const pathname = usePathname();
@@ -53,6 +62,23 @@ export function Navbar() {
   }
 
   const navLink = (href: string) => `${localePath}${href}`;
+
+  const menuServices = cmsServices?.length
+    ? cmsServices
+        .filter((s) => s.enabled)
+        .map((s) => ({
+          key: s.slug,
+          href: `/sherbime/${s.slug}`,
+          icon: getLucideIcon(s.iconKey),
+          color: s.colorClass?.split(" ")[1] ?? "text-primary",
+          name: serviceName(s, locale),
+          desc: serviceShortDesc(s, locale),
+        }))
+    : fallbackServices.map((s) => ({
+        ...s,
+        name: t(`services.${s.key}.name`),
+        desc: t(`services.${s.key}.desc`),
+      }));
 
   const dashboardPath =
     session?.user && isStaff(session.user.role)
@@ -158,7 +184,7 @@ export function Navbar() {
                 </div>
                 {/* Grid of services */}
                 <div className="grid grid-cols-2 gap-0.5 p-3">
-                  {services.map((s) => {
+                  {menuServices.map((s) => {
                     const Icon = s.icon;
                     return (
                       <Link
@@ -171,10 +197,10 @@ export function Navbar() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground leading-tight">
-                            {t(`services.${s.key}.name`)}
+                            {s.name}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed truncate">
-                            {t(`services.${s.key}.desc`)}
+                            {s.desc}
                           </p>
                         </div>
                       </Link>

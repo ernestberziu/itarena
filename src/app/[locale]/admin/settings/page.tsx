@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { AdminSettingsTabs } from "@/components/admin/admin-settings-tabs";
+import { SiteSettingsWorkspace } from "@/components/admin/site-settings/site-settings-workspace";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 
@@ -20,12 +20,7 @@ export default async function AdminSettingsPage({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title={locale === "sq" ? "Cilësimet" : "Settings"}
-        description={locale === "sq" ? "Konfiguroni platformën" : "Configure the platform"}
-      />
-
-      <AdminSettingsTabs locale={locale} />
+      <SiteSettingsWorkspace locale={locale} />
     </div>
   );
 }

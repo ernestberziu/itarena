@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { subDays, startOfDay } from "date-fns";
+import { isSlaBreached } from "@/lib/sla";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
         status: { in: ["RESOLVED", "CLOSED"] },
         resolvedAt: { not: null },
       },
-      select: { createdAt: true, resolvedAt: true, slaBreached: true },
+      select: { createdAt: true, resolvedAt: true, slaDeadline: true, status: true },
     }),
   ]);
 
@@ -48,7 +49,13 @@ export async function GET(req: NextRequest) {
       }, 0) / slaStats.length
     : 0;
 
-  const breachedCount = slaStats.filter((t) => t.slaBreached).length;
+  const breachedCount = slaStats.filter((t) =>
+    isSlaBreached({
+      slaDeadline: t.slaDeadline,
+      status: t.status,
+      resolvedAt: t.resolvedAt,
+    })
+  ).length;
 
   return NextResponse.json({
     orders: orderStats,

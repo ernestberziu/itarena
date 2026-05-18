@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import type { Role } from "@/types/domain";
 
-const STAFF_ROLE_OPTIONS: Role[] = ["ADMIN", "ENGINEER", "SALES", "OPS"];
+const STAFF_ROLE_OPTIONS: Role[] = ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"];
 
 export function AdminStaffNewForm({ locale }: { locale: string }) {
   const router = useRouter();

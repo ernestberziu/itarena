@@ -6,6 +6,7 @@ export type Role =
   | "ENGINEER"
   | "SALES"
   | "OPS"
+  | "PARTNER"
   | "ADMIN";
 
 export type Tier = "RETAIL" | "B2B";
@@ -36,7 +37,7 @@ export type QuoteStatus =
   | "REJECTED"
   | "REVISION_REQUESTED";
 
-export const STAFF_ROLES: Role[] = ["ADMIN", "ENGINEER", "SALES", "OPS"];
+export const STAFF_ROLES: Role[] = ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"];
 
 export function isStaff(role: Role): boolean {
   return STAFF_ROLES.includes(role);

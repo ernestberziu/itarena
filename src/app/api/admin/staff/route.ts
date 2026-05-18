@@ -12,7 +12,7 @@ const postSchema = z
     firstName: z.string().min(1).max(120),
     lastName: z.string().min(1).max(120),
     email: z.string().email().max(255),
-    role: z.enum(["ADMIN", "ENGINEER", "SALES", "OPS"]),
+    role: z.enum(["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"]),
     isActive: z.boolean().optional().default(true),
     newPassword: z.string().min(8).max(128).optional(),
     generateTemporaryPassword: z.boolean().optional(),

@@ -9,6 +9,7 @@ export type AdminTicketsListQuery = {
   status?: string | null;
   priority?: string | null;
   filter?: string | null;
+  projectId?: string | null;
   /** User id (cuid) — filter tickets created by this portal user */
   requester?: string | null;
   /** User id (cuid) or literal `unassigned` for tickets with no assignee */
@@ -20,10 +21,14 @@ export function adminTicketsListWhere(input: AdminTicketsListQuery): Prisma.Tick
   const where: Prisma.TicketWhereInput = {};
   const status = input.status?.trim();
   const priority = input.priority?.trim();
-  const breachedOnly = input.filter === "breached";
   const q = input.q?.trim();
   const assigneeRaw = input.assignee?.trim();
   const requesterRaw = input.requester?.trim();
+  const projectIdRaw = input.projectId?.trim();
+
+  if (projectIdRaw && /^c[a-z0-9]{24}$/i.test(projectIdRaw)) {
+    where.projectId = projectIdRaw;
+  }
 
   if (status && (ADMIN_TICKET_STATUS_OPTIONS as readonly string[]).includes(status)) {
     where.status = status;
@@ -31,10 +36,8 @@ export function adminTicketsListWhere(input: AdminTicketsListQuery): Prisma.Tick
   if (priority && (ADMIN_TICKET_PRIORITY_OPTIONS as readonly string[]).includes(priority)) {
     where.priority = priority;
   }
-  if (breachedOnly) {
-    where.slaBreached = true;
-    where.status = { notIn: ["RESOLVED", "CLOSED"] };
-  }
+  // Breached SLA filter is applied in the page handler via getMissedSlaTicketIds()
+  // (includes resolved tickets that missed SLA, not only open past-deadline).
   if (assigneeRaw === "unassigned") {
     where.assignedToId = null;
   } else if (assigneeRaw) {

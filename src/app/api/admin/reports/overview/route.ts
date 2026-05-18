@@ -20,12 +20,11 @@ export async function GET(req: NextRequest) {
     to: searchParams.get("to"),
     tz: searchParams.get("tz"),
   });
-  const compare = searchParams.get("compare") === "1";
-  const cacheKey = `${range.from}|${range.to}|${range.tz}|${compare}`;
+  const cacheKey = `${range.from}|${range.to}|${range.tz}`;
 
   try {
     const getOverview = unstable_cache(
-      async () => fetchReportsOverview(range, compare),
+      async () => fetchReportsOverview(range),
       [cacheKey],
       { revalidate: 60, tags: ["reports-overview"] }
     );

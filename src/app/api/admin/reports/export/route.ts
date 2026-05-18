@@ -5,7 +5,8 @@ import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { buildClientsCsv } from "@/lib/csv-download";
 import { resolveReportRange } from "@/lib/reports/date-range";
 import { fetchReportsOverview } from "@/lib/reports/fetch-overview";
-import { sectionToRows } from "@/lib/reports/export-data";
+import { sectionToLabeledRows } from "@/lib/reports/export-data";
+import type { ReportLocale } from "@/lib/reports/labels";
 import { buildXlsxBuffer } from "@/lib/reports/export-xlsx";
 import { buildPdfBuffer } from "@/lib/reports/export-pdf";
 import type { ReportSectionId } from "@/lib/reports/types";
@@ -18,7 +19,7 @@ const bodySchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   tz: z.string().optional(),
-  compare: z.union([z.boolean(), z.literal("1"), z.literal("0")]).optional(),
+  locale: z.enum(["sq", "en"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -41,15 +42,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const compare = parsed.data.compare === true || parsed.data.compare === "1";
+  const locale: ReportLocale = parsed.data.locale === "en" ? "en" : "sq";
   const range = resolveReportRange({
     preset: parsed.data.preset,
     from: parsed.data.from,
     to: parsed.data.to,
     tz: parsed.data.tz,
   });
-  const data = await fetchReportsOverview(range, compare);
-  const { columns, rows } = sectionToRows(parsed.data.section as ReportSectionId, data);
+  const data = await fetchReportsOverview(range);
+  const section = parsed.data.section as ReportSectionId;
+  const { columns, rows } = sectionToLabeledRows(section, data, locale);
   const rangeLabel = `${format(new Date(range.from), "PP")} — ${format(new Date(range.to), "PP")}`;
   const baseName = `itarena-report-${parsed.data.section}-${format(new Date(), "yyyy-MM-dd")}`;
 
@@ -73,8 +75,15 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const tableRows = rows.map((r) => columns.map((c) => String(r[c.key] ?? "")));
-  const buf = await buildPdfBuffer(parsed.data.section, rangeLabel, data, columns.map((c) => c.header), tableRows);
+  const tableRows = rows.map((r) => columns.map((c) => r[c.key] ?? ""));
+  const buf = await buildPdfBuffer(
+    section,
+    rangeLabel,
+    data,
+    locale,
+    columns.map((c) => c.header),
+    tableRows
+  );
   return new NextResponse(new Uint8Array(buf), {
     headers: {
       "Content-Type": "application/pdf",

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { pctDelta, previousRange, rangeToDates } from "./date-range";
+import { pctDelta, rangeToDates } from "./date-range";
 import type { ReportRange } from "./types";
 import {
   addToBucket,
@@ -10,6 +10,7 @@ import {
   parseOrderItems,
 } from "./helpers";
 import { buildInsights } from "./insights";
+import { countSlaCompliance } from "@/lib/sla";
 import type {
   KpiCard,
   KpiKey,
@@ -98,7 +99,7 @@ async function fetchPeriodMetrics(from: Date, to: Date) {
         status: { in: ["RESOLVED", "CLOSED"] },
         resolvedAt: { not: null },
       },
-      select: { createdAt: true, resolvedAt: true, slaBreached: true },
+      select: { createdAt: true, resolvedAt: true, slaDeadline: true, status: true },
     }),
     db.auditLog.groupBy({
       by: ["action"],
@@ -191,8 +192,7 @@ async function fetchPeriodMetrics(from: Date, to: Date) {
       ) / respondedQuotes.length;
   }
 
-  const slaBreached = ticketsForSla.filter((t) => t.slaBreached).length;
-  const slaCompliant = ticketsForSla.length - slaBreached;
+  const { breached: slaBreached, compliant: slaCompliant } = countSlaCompliance(ticketsForSla);
   const avgResolutionMs =
     ticketsForSla.length > 0
       ? ticketsForSla.reduce(
@@ -273,8 +273,6 @@ function buildKpis(
   previous: Awaited<ReturnType<typeof fetchPeriodMetrics>> | null
 ): KpiCard[] {
   const aov = current.orderCount > 0 ? current.revenue / current.orderCount : 0;
-  const prevRevenue = previous?.revenue ?? 0;
-  const growth = pctDelta(current.revenue, prevRevenue);
 
   const defs: {
     key: KpiKey;
@@ -288,7 +286,7 @@ function buildKpis(
       value: current.revenue,
       formatted: formatAllStatic(current.revenue),
       sparkline: current.revenueSparkline,
-      prev: prevRevenue,
+      prev: previous?.revenue,
     },
     {
       key: "orders",
@@ -303,12 +301,6 @@ function buildKpis(
       formatted: formatAllStatic(aov),
       sparkline: current.revenueSparkline,
       prev: previous && previous.orderCount > 0 ? previous.revenue / previous.orderCount : 0,
-    },
-    {
-      key: "revenueGrowth",
-      value: growth ?? 0,
-      formatted: growth != null ? `${growth > 0 ? "+" : ""}${growth}%` : "—",
-      sparkline: current.revenueSparkline,
     },
     {
       key: "newCustomers",
@@ -358,7 +350,7 @@ function buildKpis(
     key: d.key,
     value: d.value,
     formatted: d.formatted,
-    deltaPct: d.key === "revenueGrowth" ? growth : d.prev !== undefined ? pctDelta(d.value, d.prev) : null,
+    deltaPct: d.prev !== undefined ? pctDelta(d.value, d.prev) : null,
     sparkline: d.sparkline,
   }));
 }
@@ -371,27 +363,15 @@ function formatAllStatic(amount: number): string {
   }).format(amount);
 }
 
-export async function fetchReportsOverview(
-  range: ReportRange,
-  compare: boolean
-): Promise<ReportsOverviewPayload> {
+export async function fetchReportsOverview(range: ReportRange): Promise<ReportsOverviewPayload> {
   const { from, to } = rangeToDates(range);
   const current = await fetchPeriodMetrics(from, to);
 
-  let previous: Awaited<ReturnType<typeof fetchPeriodMetrics>> | null = null;
-  let prevRange: ReportRange | null = null;
-
-  if (compare) {
-    prevRange = previousRange(range);
-    const prevDates = rangeToDates(prevRange);
-    previous = await fetchPeriodMetrics(prevDates.from, prevDates.to);
-  }
-
-  const kpis = buildKpis(current, previous);
+  const kpis = buildKpis(current, null);
 
   const payload: ReportsOverviewPayload = {
     range,
-    previousRange: prevRange,
+    previousRange: null,
     kpis,
     insights: [],
     sections: {
@@ -440,6 +420,6 @@ export async function fetchReportsOverview(
     generatedAt: new Date().toISOString(),
   };
 
-  payload.insights = buildInsights(payload, compare && previous != null);
+  payload.insights = buildInsights(payload);
   return payload;
 }

@@ -3,21 +3,37 @@ import { useTranslations, useLocale } from "next-intl";
 import { Phone, Mail, MapPin, Clock, Shield, Award, ArrowUpRight } from "lucide-react";
 import { ItArenaLogo } from "@/components/brand/logo";
 import { shopUrl } from "@/lib/shop-url";
+import type { MarketingServiceRecord, SiteSettingsBundle } from "@/lib/site-content/types";
+import { pickLocale, serviceName } from "@/lib/site-content/locale";
 
-export function Footer() {
+export function Footer({
+  siteSettings,
+  services: cmsServices,
+}: {
+  siteSettings?: SiteSettingsBundle;
+  services?: MarketingServiceRecord[];
+}) {
   const t = useTranslations();
   const locale = useLocale();
   const localePath = locale === "sq" ? "" : `/${locale}`;
 
   const navLink = (href: string) => `${localePath}${href}`;
 
-  const serviceLinks = [
-    { key: "it_support", href: "/sherbime/it-support" },
-    { key: "cloud", href: "/sherbime/cloud" },
-    { key: "telecom", href: "/sherbime/telekomunikacion" },
-    { key: "network", href: "/sherbime/rrjet" },
-    { key: "web", href: "/sherbime/web-marketing" },
-  ];
+  const contact = siteSettings?.contact;
+  const footer = siteSettings?.footer;
+  const serviceLinks = cmsServices?.length
+    ? cmsServices.filter((s) => s.enabled).slice(0, 5).map((s) => ({
+        key: s.slug,
+        href: `/sherbime/${s.slug}`,
+        label: serviceName(s, locale),
+      }))
+    : [
+        { key: "it_support", href: "/sherbime/it-support", label: t("services.it_support.name") },
+        { key: "cloud", href: "/sherbime/cloud", label: t("services.cloud.name") },
+        { key: "telecom", href: "/sherbime/telekomunikacion", label: t("services.telecom.name") },
+        { key: "network", href: "/sherbime/rrjet", label: t("services.network.name") },
+        { key: "web", href: "/sherbime/web-marketing", label: t("services.web.name") },
+      ];
 
   return (
     <footer className="bg-[hsl(222,47%,9%)] text-slate-300">
@@ -30,7 +46,7 @@ export function Footer() {
               <ItArenaLogo variant="dark" size="lg" showTagline />
             </div>
             <p className="text-sm text-slate-400 leading-relaxed mb-6">
-              {locale === "sq"
+              {footer ? pickLocale(footer.description, locale) : locale === "sq"
                 ? "Partneri juaj strategjik teknologjik në Shqipëri. Nga 2012, duke fuqizuar mbi 500 biznese me zgjidhje IT të personalizuara."
                 : "Your strategic technology partner in Albania. Since 2012, empowering 500+ businesses with tailored IT solutions."}
             </p>
@@ -60,7 +76,7 @@ export function Footer() {
                     className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors group"
                   >
                     <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
-                    {t(`services.${s.key}.name`)}
+                    {s.label}
                   </Link>
                 </li>
               ))}
@@ -120,8 +136,8 @@ export function Footer() {
                   <Phone className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div className="space-y-1">
-                  <a href="tel:+355696314319" className="hover:text-white transition-colors block font-medium">
-                    +355 69 63 14 319
+                  <a href={`tel:${(contact?.phone ?? "+355696314319").replace(/\s/g, "")}`} className="hover:text-white transition-colors block font-medium">
+                    {contact?.phone ?? "+355 69 63 14 319"}
                   </a>
                 </div>
               </li>
@@ -129,27 +145,24 @@ export function Footer() {
                 <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-500/20">
                   <Mail className="h-3.5 w-3.5 text-amber-400" />
                 </div>
-                <a href="mailto:info@itarena.al" className="hover:text-white transition-colors">
-                  info@itarena.al
+                <a href={`mailto:${contact?.email ?? "info@itarena.al"}`} className="hover:text-white transition-colors">
+                  {contact?.email ?? "info@itarena.al"}
                 </a>
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-400">
                 <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-500/20">
                   <MapPin className="h-3.5 w-3.5 text-emerald-400" />
                 </div>
-                <span>Rr. Loni Ligori, Astir<br />Tiranë, Shqipëri</span>
+                <span className="whitespace-pre-line">{contact ? pickLocale(contact.address, locale) : "Rr. Loni Ligori, Astir\nTiranë, Shqipëri"}</span>
               </li>
               <li className="flex items-start gap-3 text-sm text-slate-400">
                 <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-violet-500/20">
                   <Clock className="h-3.5 w-3.5 text-violet-400" />
                 </div>
-                <div>
-                  <div>E Hënë–E Premte: 08:00–17:30</div>
-                  <div>E Shtunë: 08:00–13:00</div>
-                  <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-emerald-400 font-semibold text-xs">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    24/7 Emergjencë
-                  </div>
+                <div className="whitespace-pre-line">
+                  {contact
+                    ? pickLocale(contact.businessHours, locale)
+                    : "E Hënë–E Premte: 08:00–17:30\nE Shtunë: 08:00–13:00\n24/7 Emergjencë"}
                 </div>
               </li>
             </ul>

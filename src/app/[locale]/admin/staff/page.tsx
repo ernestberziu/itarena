@@ -10,7 +10,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AdminStatCard, UserAvatar, UserStatusBadges, AdminStaffRowActions } from "@/components/admin/users";
 
-const STAFF_ROLES = ["ADMIN", "ENGINEER", "SALES", "OPS"] as const;
+import { STAFF_ROLES } from "@/types/domain";
 
 const ROLE_LABELS: Record<string, { sq: string; en: string; color: string }> = {
   ADMIN: {
@@ -32,6 +32,11 @@ const ROLE_LABELS: Record<string, { sq: string; en: string; color: string }> = {
     sq: "Operacione",
     en: "Operations",
     color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400",
+  },
+  PARTNER: {
+    sq: "Partner",
+    en: "Partner",
+    color: "text-violet-600 bg-violet-50 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400",
   },
 };
 
