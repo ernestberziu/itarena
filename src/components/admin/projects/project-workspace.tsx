@@ -14,8 +14,10 @@ import {
   type ProjectFormPayload,
 } from "@/components/admin/projects/project-form";
 import { ProjectChannelPanel } from "@/components/admin/messages/project-channel-panel";
+import { ProjectStepsSection } from "@/components/admin/projects/project-steps-section";
+import type { ProjectStepRow } from "@/lib/projects/step-types";
 
-type Section = "overview" | "clients" | "tickets" | "messages" | "team";
+type Section = "overview" | "clients" | "tickets" | "messages" | "team" | "steps";
 
 type TicketRow = {
   id: string;
@@ -26,11 +28,12 @@ type TicketRow = {
   updatedAt: string;
 };
 
-const SECTIONS: Section[] = ["overview", "clients", "tickets", "messages", "team"];
+const SECTIONS: Section[] = ["overview", "clients", "tickets", "messages", "team", "steps"];
 
 export function ProjectWorkspace({
   project: initial,
   tickets: initialTickets,
+  steps: initialSteps,
   locale,
   listPrefix,
   canWrite,
@@ -40,6 +43,7 @@ export function ProjectWorkspace({
 }: {
   project: ProjectFormPayload;
   tickets: TicketRow[];
+  steps: ProjectStepRow[];
   locale: string;
   listPrefix: string;
   canWrite: boolean;
@@ -58,6 +62,7 @@ export function ProjectWorkspace({
     tickets: initialTickets.length,
     messages: messageCount,
     team: project.members.length,
+    steps: initialSteps.length,
   };
 
   return (
@@ -169,6 +174,15 @@ export function ProjectWorkspace({
                 canWrite={canMessageWrite}
               />
             </ProjectFormCard>
+          )}
+
+          {section === "steps" && (
+            <ProjectStepsSection
+              projectId={project.id}
+              locale={locale}
+              initialSteps={initialSteps}
+              canWrite={canWrite}
+            />
           )}
         </div>
       </div>

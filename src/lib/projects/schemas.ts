@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PROJECT_ACCESS_LEVELS, PROJECT_STATUSES } from "./types";
+import { PROJECT_STEP_STATUSES } from "./step-types";
 
 export const projectMemberSchema = z.object({
   userId: z.string().min(1),
@@ -68,6 +69,24 @@ export const updateProjectMemberSchema = z.object({
 export const projectMessageSchema = z.object({
   body: z.string().min(1).max(50000),
   isInternal: z.boolean().optional().default(false),
+});
+
+export const createProjectStepSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().max(10000).optional().nullable(),
+  status: z.enum(PROJECT_STEP_STATUSES).optional(),
+  clientVisible: z.boolean().optional(),
+});
+
+export const updateProjectStepSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(10000).optional().nullable(),
+  status: z.enum(PROJECT_STEP_STATUSES).optional(),
+  clientVisible: z.boolean().optional(),
+});
+
+export const reorderProjectStepsSchema = z.object({
+  orderedIds: z.array(z.string().min(1)).min(1),
 });
 
 export function slugifyTitle(title: string): string {

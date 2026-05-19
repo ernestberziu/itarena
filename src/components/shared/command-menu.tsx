@@ -23,6 +23,7 @@ import {
   UserCog,
   BarChart3,
   Settings,
+  Calendar,
   Plus,
   Search,
 } from "lucide-react";
@@ -43,6 +44,7 @@ const adminNav = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Njoftimet", href: "/admin/notifications", icon: Bell },
   { label: "Biletat", href: "/admin/tickets", icon: Ticket },
+  { label: "Kalendari", href: "/admin/calendar", icon: Calendar },
   { label: "Klientët", href: "/admin/clients", icon: Users },
   { label: "Ofertat", href: "/admin/quotes", icon: FileText },
   { label: "Porositë", href: "/admin/orders", icon: ShoppingBag },

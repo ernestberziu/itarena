@@ -33,7 +33,7 @@ export default async function AdminProjectDetailPage({
 
   const conv = await ensureProjectConversation(id, session.user.id);
 
-  const [messageCount, tickets] = await Promise.all([
+  const [messageCount, tickets, steps] = await Promise.all([
     conv
       ? db.conversationMessage.count({ where: { conversationId: conv.id } })
       : Promise.resolve(0),
@@ -46,6 +46,19 @@ export default async function AdminProjectDetailPage({
         title: true,
         status: true,
         priority: true,
+        updatedAt: true,
+      },
+    }),
+    db.projectStep.findMany({
+      where: { projectId: id },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        sortOrder: true,
+        title: true,
+        description: true,
+        status: true,
+        clientVisible: true,
         updatedAt: true,
       },
     }),
@@ -87,6 +100,11 @@ export default async function AdminProjectDetailPage({
       tickets={tickets.map((t) => ({
         ...t,
         updatedAt: t.updatedAt.toISOString(),
+      }))}
+      steps={steps.map((s) => ({
+        ...s,
+        status: s.status as "OPEN" | "IN_PROGRESS" | "ON_HOLD" | "CLOSED",
+        updatedAt: s.updatedAt.toISOString(),
       }))}
     />
   );

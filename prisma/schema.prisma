@@ -46,9 +46,12 @@ model User {
   projectMembers  ProjectMember[]
   projectMessages ProjectMessage[]
   projectClients  ProjectClient[]
+  projectStepsCreated ProjectStep[] @relation("ProjectStepCreator")
   conversationsCreated Conversation[]        @relation("ConversationCreator")
   conversationParticipants ConversationParticipant[]
   conversationMessages ConversationMessage[] @relation("ConversationMessageAuthor")
+  staffDailyReports StaffDailyReport[]
+  staffDailyReportReplies StaffDailyReportReply[] @relation("StaffDailyReportReplyAuthor")
 
   @@map("users")
 }
@@ -176,6 +179,7 @@ model Project {
   clients   ProjectClient[]
   tickets        Ticket[]
   messages       ProjectMessage[]
+  steps          ProjectStep[]
   conversation   Conversation?
 
   @@index([status])
@@ -228,6 +232,25 @@ model ProjectMessage {
 
   @@index([projectId, createdAt])
   @@map("project_messages")
+}
+
+model ProjectStep {
+  id            String   @id @default(cuid())
+  projectId     String
+  sortOrder     Int      @default(0)
+  title         String
+  description   String?  @db.Text
+  status        String   @default("OPEN")
+  clientVisible Boolean  @default(false)
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("ProjectStepCreator", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([projectId, sortOrder])
+  @@map("project_steps")
 }
 
 // ─── Conversations (admin messaging) ─────────────────────────────────────────
@@ -643,4 +666,36 @@ model Testimonial {
 
   @@index([enabled, sortOrder])
   @@map("testimonials")
+}
+
+// ─── Staff daily reports (admin calendar) ────────────────────────────────────
+
+model StaffDailyReport {
+  id         String   @id @default(cuid())
+  userId     String
+  reportDate DateTime @db.Date
+  body       String   @db.Text
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies StaffDailyReportReply[]
+
+  @@unique([userId, reportDate])
+  @@index([reportDate])
+  @@map("staff_daily_reports")
+}
+
+model StaffDailyReportReply {
+  id        String   @id @default(cuid())
+  reportId  String
+  authorId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  report StaffDailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  author User             @relation("StaffDailyReportReplyAuthor", fields: [authorId], references: [id], onDelete: NoAction)
+
+  @@index([reportId, createdAt])
+  @@map("staff_daily_report_replies")
 }
