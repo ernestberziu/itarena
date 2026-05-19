@@ -41,7 +41,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     ctaSecondaryText: { sq: "Vizito Dyqanin", en: "Visit Shop" },
     ctaSecondaryLink: DEFAULT_SHOP_PATH,
     ctaTertiaryText: { sq: "Shiko Shërbimet", en: "View Services" },
-    ctaTertiaryLink: "/sherbime",
+    ctaTertiaryLink: "#services",
     backgroundImageUrl: "",
     overlayOpacity: 0,
     gradientClass: "mesh-gradient",

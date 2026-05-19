@@ -71,7 +71,7 @@ export function HomePageClient({ content }: { content: PublishedSiteContent }) {
       </section>
 
       {/* ── Services ──────────────────────────────────────── */}
-      <section className="py-20 md:py-28">
+      <section id="home-services" className="scroll-mt-20 py-20 md:py-28">
         <div className="container mx-auto px-4">
           <div className="mx-auto mb-16 max-w-4xl text-center">
             <span className="mb-5 inline-block rounded-full border-2 border-primary/20 bg-primary/10 px-5 py-2 text-xs font-extrabold uppercase tracking-[0.2em] text-primary md:text-sm">
