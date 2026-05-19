@@ -156,7 +156,7 @@ export function CalendarPrintDialog({
                   <Label>{t("printSelectStaff")}</Label>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="link"
                     size="sm"
                     className="h-7 text-xs"
                     onClick={() => toggleAll(!allSelected)}

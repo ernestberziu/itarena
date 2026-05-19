@@ -337,5 +337,3 @@ export async function getCalendarPrintData(
     })),
   };
 }
-
-export { isTodayCalendarDate, isFutureCalendarDate };
