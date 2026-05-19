@@ -60,6 +60,18 @@ export function sectionToRows(
         ],
         rows: data.sections.support.auditByAction.map((a) => ({ ...a })),
       };
+    case "projects":
+      return {
+        columns: [
+          { key: "title", header: "Project" },
+          { key: "status", header: "Status" },
+          { key: "tickets", header: "Tickets" },
+          { key: "messages", header: "Messages" },
+          { key: "stepsClosed", header: "Steps closed" },
+          { key: "stepsTotal", header: "Steps total" },
+        ],
+        rows: data.sections.projects.topProjects.map((p) => ({ ...p })),
+      };
     case "overview":
     default:
       return {

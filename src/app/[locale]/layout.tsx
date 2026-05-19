@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { SetHtmlLang } from "@/components/public/set-html-lang";
 
 export const metadata: Metadata = {
   title: {
@@ -45,6 +46,7 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
+      <SetHtmlLang />
       <TooltipProvider>
         {children}
         <Toaster position="top-right" richColors />

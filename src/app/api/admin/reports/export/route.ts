@@ -13,7 +13,7 @@ import type { ReportSectionId } from "@/lib/reports/types";
 import { format } from "date-fns";
 
 const bodySchema = z.object({
-  section: z.enum(["revenue", "users", "quotes", "products", "funnel", "support", "overview"]),
+  section: z.enum(["revenue", "users", "quotes", "products", "funnel", "support", "projects", "overview"]),
   format: z.enum(["csv", "xlsx", "pdf"]),
   preset: z.string().optional(),
   from: z.string().optional(),

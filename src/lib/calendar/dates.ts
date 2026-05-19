@@ -39,6 +39,10 @@ export function getTodayInTz(tz = CALENDAR_TZ): Date {
   return parseCalendarDate(getTodayCalendarDate(tz));
 }
 
+export function getYesterdayCalendarDate(tz = CALENDAR_TZ): string {
+  return formatCalendarDate(subDays(parseCalendarDate(getTodayCalendarDate(tz)), 1));
+}
+
 export function isFutureCalendarDate(dateStr: string, tz = CALENDAR_TZ): boolean {
   return dateStr > getTodayCalendarDate(tz);
 }

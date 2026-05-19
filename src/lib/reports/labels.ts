@@ -23,6 +23,7 @@ export const SECTION_TITLES: Record<ReportSectionId, { sq: string; en: string }>
   products: { sq: "Produkte", en: "Products" },
   funnel: { sq: "Funnel komercial", en: "Commercial funnel" },
   support: { sq: "Mbështetje", en: "Support" },
+  projects: { sq: "Projektet", en: "Projects" },
 };
 
 const FUNNEL_STAGE_LABELS: Record<string, { sq: string; en: string }> = {
@@ -39,6 +40,19 @@ const FUNNEL_STAGE_LABELS: Record<string, { sq: string; en: string }> = {
 const TIER_LABELS: Record<string, { sq: string; en: string }> = {
   RETAIL: { sq: "Pakicë", en: "Retail" },
   B2B: { sq: "B2B", en: "B2B" },
+};
+
+const PROJECT_STATUS_LABELS: Record<string, { sq: string; en: string }> = {
+  ACTIVE: { sq: "Aktiv", en: "Active" },
+  COMPLETED: { sq: "Përfunduar", en: "Completed" },
+  ARCHIVED: { sq: "Arkivuar", en: "Archived" },
+};
+
+const STEP_STATUS_LABELS: Record<string, { sq: string; en: string }> = {
+  OPEN: { sq: "Hapur", en: "Open" },
+  IN_PROGRESS: { sq: "Në progres", en: "In progress" },
+  ON_HOLD: { sq: "Në pritje", en: "On hold" },
+  CLOSED: { sq: "Mbyllur", en: "Closed" },
 };
 
 const AUDIT_ACTION_LABELS: Record<string, { sq: string; en: string }> = {
@@ -90,6 +104,16 @@ export function labelAuditAction(action: string, locale: ReportLocale): string {
   return entry ? pick(locale, entry) : humanizeId(action, locale);
 }
 
+export function labelProjectStatus(status: string, locale: ReportLocale): string {
+  const entry = PROJECT_STATUS_LABELS[status];
+  return entry ? pick(locale, entry) : humanizeId(status, locale);
+}
+
+export function labelStepStatus(status: string, locale: ReportLocale): string {
+  const entry = STEP_STATUS_LABELS[status];
+  return entry ? pick(locale, entry) : humanizeId(status, locale);
+}
+
 function humanizeId(id: string, locale: ReportLocale): string {
   const spaced = id.replace(/_/g, " ").toLowerCase();
   if (locale === "sq") return spaced;
@@ -121,7 +145,11 @@ export function formatExportCell(
     return getKpiLabel(str, locale);
   }
   if (columnKey === "status") {
+    if (section === "projects") return labelProjectStatus(str, locale);
     return section === "quotes" ? labelQuoteStatus(str, locale) : labelOrderStatus(str, locale);
+  }
+  if (columnKey === "stepStatus") {
+    return labelStepStatus(str, locale);
   }
   if (columnKey === "stage") {
     return labelFunnelStage(str, locale);

@@ -26,6 +26,14 @@ import { subDays, format, startOfDay } from "date-fns";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { hasAclLevel } from "@/lib/admin-acl/features";
+import { isCalendarAdmin } from "@/lib/calendar/access";
+import {
+  getCalendarDay,
+  getTodayCalendarDate,
+  getYesterdayCalendarDate,
+} from "@/lib/calendar";
+import { DashboardStaffReportsSection } from "@/components/admin/dashboard-staff-reports-section";
 import { countMissedSlaTickets, countSlaCompliance, isSlaBreached } from "@/lib/sla";
 
 async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
@@ -129,6 +137,27 @@ export default async function AdminDashboardPage({
   const now = new Date();
   const thirtyDaysAgo = subDays(now, 30);
   const todayStart = startOfDay(now);
+  const canViewCalendar = hasAclLevel(acl, "calendar", "read");
+  const isAdmin = session.user.role === "ADMIN";
+
+  let staffReports: {
+    today: Awaited<ReturnType<typeof getCalendarDay>>;
+    yesterday: Awaited<ReturnType<typeof getCalendarDay>>;
+  } | null = null;
+
+  if (canViewCalendar) {
+    try {
+      const todayStr = getTodayCalendarDate();
+      const yesterdayStr = getYesterdayCalendarDate();
+      const [today, yesterday] = await Promise.all([
+        getCalendarDay(todayStr, session.user.id, isCalendarAdmin(session.user.role)),
+        getCalendarDay(yesterdayStr, session.user.id, isCalendarAdmin(session.user.role)),
+      ]);
+      staffReports = { today, yesterday };
+    } catch {
+      staffReports = null;
+    }
+  }
 
   let data: Awaited<ReturnType<typeof fetchAdminDashboardData>>;
   try {
@@ -300,6 +329,16 @@ export default async function AdminDashboardPage({
           <StatCard key={kpi.title} {...kpi} />
         ))}
       </div>
+
+      {staffReports && (
+        <DashboardStaffReportsSection
+          locale={locale}
+          lp={lp}
+          isAdmin={isAdmin}
+          today={staffReports.today}
+          yesterday={staffReports.yesterday}
+        />
+      )}
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

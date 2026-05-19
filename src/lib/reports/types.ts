@@ -51,6 +51,7 @@ export type ReportsOverviewPayload = {
     products: ProductsSection;
     funnel: FunnelSection;
     support: SupportSection;
+    projects: ProjectsSection;
   };
   generatedAt: string;
 };
@@ -96,6 +97,30 @@ export type SupportSection = {
   auditByAction: { action: string; count: number }[];
 };
 
+export type ProjectsSection = {
+  byStatus: { status: string; count: number }[];
+  createdDaily: DailyPoint[];
+  stepByStatus: { status: string; count: number }[];
+  messagesDaily: DailyPoint[];
+  topProjects: {
+    id: string;
+    title: string;
+    status: string;
+    tickets: number;
+    messages: number;
+    stepsClosed: number;
+    stepsTotal: number;
+  }[];
+  totals: {
+    active: number;
+    completed: number;
+    archived: number;
+    createdInRange: number;
+    messagesInRange: number;
+    ticketsInRange: number;
+  };
+};
+
 export type ReportSectionId =
   | "revenue"
   | "users"
@@ -103,4 +128,5 @@ export type ReportSectionId =
   | "products"
   | "funnel"
   | "support"
+  | "projects"
   | "overview";

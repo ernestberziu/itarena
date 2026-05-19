@@ -7,7 +7,9 @@ import {
   labelAuditAction,
   labelFunnelStage,
   labelOrderStatus,
+  labelProjectStatus,
   labelQuoteStatus,
+  labelStepStatus,
   labelTier,
   type ReportLocale,
 } from "@/lib/reports/labels";
@@ -188,6 +190,92 @@ export function ReportsSections({
                 value: a.count,
               }))}
             />
+          </div>
+        ) : null}
+      </ReportsSection>
+
+      <ReportsSection
+        id="projects"
+        title={t("Projektet", "Projects")}
+        description={t(
+          "Aktiviteti i projekteve, hapat dhe mesazhet në periudhën e zgjedhur",
+          "Project activity, steps, and messages in the selected period"
+        )}
+        locale={locale}
+        rangeParams={rangeParams}
+      >
+        <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3 lg:grid-cols-6">
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{t("Aktive", "Active")}</p>
+            <p className="font-semibold tabular-nums">{sections.projects.totals.active}</p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{t("Të reja", "Created")}</p>
+            <p className="font-semibold tabular-nums">{sections.projects.totals.createdInRange}</p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{t("Mesazhe", "Messages")}</p>
+            <p className="font-semibold tabular-nums">{sections.projects.totals.messagesInRange}</p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{t("Bileta", "Tickets")}</p>
+            <p className="font-semibold tabular-nums">{sections.projects.totals.ticketsInRange}</p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{t("Përfunduar", "Completed")}</p>
+            <p className="font-semibold tabular-nums">{sections.projects.totals.completed}</p>
+          </div>
+          <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
+            <p className="text-xs text-muted-foreground">{t("Arkivuar", "Archived")}</p>
+            <p className="font-semibold tabular-nums">{sections.projects.totals.archived}</p>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <ReportLineChart data={sections.projects.createdDaily} />
+          <ReportLineChart data={sections.projects.messagesDaily} />
+        </div>
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <ReportDonutChart
+            data={sections.projects.byStatus.map((s) => ({
+              name: labelProjectStatus(s.status, loc),
+              value: s.count,
+            }))}
+          />
+          {sections.projects.stepByStatus.length > 0 ? (
+            <ReportBarChart
+              data={sections.projects.stepByStatus.map((s) => ({
+                label: labelStepStatus(s.status, loc),
+                value: s.count,
+              }))}
+            />
+          ) : null}
+        </div>
+        {sections.projects.topProjects.length > 0 ? (
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="pb-2">{t("Projekti", "Project")}</th>
+                  <th className="pb-2">{t("Statusi", "Status")}</th>
+                  <th className="pb-2">{t("Bileta", "Tickets")}</th>
+                  <th className="pb-2">{t("Mesazhe", "Messages")}</th>
+                  <th className="pb-2">{t("Hapa", "Steps")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sections.projects.topProjects.map((p) => (
+                  <tr key={p.id} className="border-b border-border/40">
+                    <td className="py-2 font-medium">{p.title}</td>
+                    <td className="py-2">{labelProjectStatus(p.status, loc)}</td>
+                    <td className="py-2 tabular-nums">{p.tickets}</td>
+                    <td className="py-2 tabular-nums">{p.messages}</td>
+                    <td className="py-2 tabular-nums">
+                      {p.stepsClosed}/{p.stepsTotal}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : null}
       </ReportsSection>

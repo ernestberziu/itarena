@@ -39,5 +39,5 @@ export const DEFAULT_PRESET_CONFIG: ReportPresetConfig = {
   dimensions: ["day"],
   chartType: "line",
   defaultRange: "last30",
-  sections: ["revenue", "users", "quotes", "support"],
+  sections: ["revenue", "users", "quotes", "support", "projects"],
 };

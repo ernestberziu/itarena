@@ -1,110 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations, useLocale } from "next-intl";
+import { useLocale } from "next-intl";
 import type { PublishedSiteContent } from "@/lib/site-content/types";
 import { getLucideIcon } from "@/lib/site-content/icons";
-import { pickLocale, serviceName, serviceShortDesc } from "@/lib/site-content/locale";
+import { pickLocale } from "@/lib/site-content/locale";
 import {
-  Monitor, Cloud, Globe, Camera, Wifi, Code2,
-  Network, Printer, ArrowRight, CheckCircle2,
-  Phone, Zap, Users, Trophy, Clock, Star, ShoppingBag,
-  TrendingUp, Lock, HeadphonesIcon,
+  ArrowRight,
+  Phone,
+  Zap,
+  Star,
+  ShoppingBag,
+  TrendingUp,
+  Lock,
+  HeadphonesIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { resolveMarketingHref, shopUrl } from "@/lib/shop-url";
-
-const serviceIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  it_support: Monitor,
-  cloud: Cloud,
-  web: Globe,
-  cctv: Camera,
-  telecom: Wifi,
-  software: Code2,
-  network: Network,
-  printers: Printer,
-};
-
-const serviceColors: Record<string, { bg: string; text: string; border: string }> = {
-  it_support:    { bg: "bg-blue-50",    text: "text-blue-600",    border: "border-blue-100" },
-  cloud:         { bg: "bg-sky-50",     text: "text-sky-600",     border: "border-sky-100" },
-  telecom:       { bg: "bg-violet-50",  text: "text-violet-600",  border: "border-violet-100" },
-  web:           { bg: "bg-emerald-50", text: "text-emerald-600", border: "border-emerald-100" },
-  cctv:          { bg: "bg-rose-50",    text: "text-rose-600",    border: "border-rose-100" },
-  network:       { bg: "bg-orange-50",  text: "text-orange-600",  border: "border-orange-100" },
-  software:      { bg: "bg-indigo-50",  text: "text-indigo-600",  border: "border-indigo-100" },
-  printers:      { bg: "bg-teal-50",    text: "text-teal-600",    border: "border-teal-100" },
-};
-
-const serviceAccent: Record<string, string> = {
-  it_support:    "bg-blue-500",
-  cloud:         "bg-sky-500",
-  telecom:       "bg-violet-500",
-  web:           "bg-emerald-500",
-  cctv:          "bg-rose-500",
-  network:       "bg-orange-500",
-  software:      "bg-indigo-500",
-  printers:      "bg-teal-500",
-};
-
-const serviceKeys = [
-  "it_support", "cloud", "telecom", "web", "cctv",
-  "network", "software", "printers",
-];
-
-const serviceHrefs: Record<string, string> = {
-  it_support: "/sherbime/it-support",
-  cloud: "/sherbime/cloud",
-  telecom: "/sherbime/telekomunikacion",
-  web: "/sherbime/web-marketing",
-  cctv: "/sherbime/cctv-siguri",
-  network: "/sherbime/rrjet",
-  software: "/sherbime/software",
-  printers: "/sherbime/printere",
-};
-
-const industries = [
-  { name: "Kontabilitet", icon: "💼" },
-  { name: "Ndërtim", icon: "🏗️" },
-  { name: "Arsim", icon: "🎓" },
-  { name: "Inxhinieri", icon: "⚙️" },
-  { name: "Imobiliare", icon: "🏠" },
-  { name: "Prodhim", icon: "🏭" },
-  { name: "Shëndetësi", icon: "🏥" },
-  { name: "Hotele", icon: "🏨" },
-  { name: "Zyra", icon: "🏢" },
-  { name: "Restorante", icon: "🍽️" },
-  { name: "Juridik", icon: "⚖️" },
-  { name: "Shitje me Pakicë", icon: "🛍️" },
-];
-
-const testimonials = [
-  {
-    initials: "AH",
-    role: "CEO",
-    text: "IT Arena transformoi infrastrukturën tonë IT brenda 30 ditëve. Downtime zero, produktivitet i lartë. Rekomandoj me besim.",
-    rating: 5,
-    color: "bg-blue-500",
-  },
-  {
-    initials: "EK",
-    role: "CFO",
-    text: "Zgjidhja cloud dhe Microsoft 365 e implementuar nga IT Arena ul kostot tona operacionale me 40%. Ekip profesional dhe i dedikuar.",
-    rating: 5,
-    color: "bg-emerald-500",
-  },
-  {
-    initials: "BR",
-    role: "IT Manager",
-    text: "Kamera CCTV dhe sistemi i kontrollit të hyrjes punon pa defekt 24/7. Mbështetja e tyre është me të vërtetë 24 orë.",
-    rating: 5,
-    color: "bg-violet-500",
-  },
-];
+import { shopUrl } from "@/lib/shop-url";
+import { HomeHeroSection } from "@/components/public/home-hero-section";
+import { HomeServiceCard } from "@/components/public/home-service-card";
 
 export function HomePageClient({ content }: { content: PublishedSiteContent }) {
-  const t = useTranslations();
   const locale = useLocale();
   const lp = locale === "sq" ? "" : `/${locale}`;
   const hero = content.settings.hero;
@@ -113,68 +30,7 @@ export function HomePageClient({ content }: { content: PublishedSiteContent }) {
   return (
     <div className="flex flex-col">
 
-      {/* ── Hero ─────────────────────────────────────────── */}
-      <section className={cn("relative overflow-hidden py-24 md:py-36", hero.gradientClass || "mesh-gradient")}>
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-amber-400/8 blur-3xl" />
-        </div>
-
-        <div className="container relative mx-auto px-4 text-center">
-          {/* Trust badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-5 py-2 text-sm font-medium text-primary mb-8 shadow-sm">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span>{pl(hero.badge)}</span>
-          </div>
-
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-7 max-w-5xl mx-auto leading-[1.08]">
-            {pl(hero.titleLine1)}{" "}
-            <span className="bg-gradient-to-r from-primary via-blue-500 to-violet-600 bg-clip-text text-transparent">
-              {pl(hero.titleHighlight)}
-            </span>{" "}
-            {pl(hero.titleLine2)}
-          </h1>
-
-          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
-            {pl(hero.subtitle)}
-          </p>
-
-          <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center mb-12">
-            <Button asChild>
-              <Link href={`${lp}${hero.ctaPrimaryLink}`}>
-                {pl(hero.ctaPrimaryText)}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button variant="accent" asChild>
-              <Link href={resolveMarketingHref(hero.ctaSecondaryLink, lp)}>
-                <ShoppingBag className="h-5 w-5" />
-                {pl(hero.ctaSecondaryText)}
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={`${lp}${hero.ctaTertiaryLink}`}>
-                {pl(hero.ctaTertiaryText)}
-              </Link>
-            </Button>
-          </div>
-
-          {/* Quick stats row */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-            {hero.quickStats.map((s) => {
-              const Icon = getLucideIcon(s.iconKey);
-              return (
-                <div key={s.value} className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-primary" />
-                  <strong className="text-foreground font-bold">{s.value}</strong>
-                  <span>{pl(s.label)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <HomeHeroSection hero={hero} locale={locale} lp={lp} />
 
       {/* ── Stats Banner ──────────────────────────────────── */}
       <section className="border-y border-border/50 bg-gradient-to-b from-slate-50/90 to-white">
@@ -215,57 +71,47 @@ export function HomePageClient({ content }: { content: PublishedSiteContent }) {
       </section>
 
       {/* ── Services ──────────────────────────────────────── */}
-      <section className="py-24">
+      <section className="py-20 md:py-28">
         <div className="container mx-auto px-4">
-          <div className="mx-auto mb-14 max-w-3xl text-center">
-            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary mb-4">
+          <div className="mx-auto mb-16 max-w-4xl text-center">
+            <span className="mb-5 inline-block rounded-full border-2 border-primary/20 bg-primary/10 px-5 py-2 text-xs font-extrabold uppercase tracking-[0.2em] text-primary md:text-sm">
               {locale === "sq" ? "Çfarë Ofrojmë" : "What We Offer"}
             </span>
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-5 tracking-tight">
+            <h2 className="mb-6 text-4xl font-black tracking-tight md:text-5xl lg:text-6xl">
               {locale === "sq" ? "8 Divizione Shërbimi" : "8 Service Divisions"}
             </h2>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-lg font-medium text-muted-foreground md:text-xl">
               {locale === "sq"
-                ? "Nga mbështetja ditore deri te projektet e mëdha, kemi gjithçka që biznesi juaj ka nevojë."
-                : "From daily support to large-scale projects, we have everything your business needs."}
+                ? "Nga mbështetja ditore deri te projektet e mëdha — zgjidhni fushën tuaj dhe hyni direkt."
+                : "From daily support to large-scale projects — pick your area and dive in."}
             </p>
           </div>
 
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4 lg:gap-5">
-            {content.services.filter((s) => s.showOnHomepage).map((svc) => {
-              const Icon = getLucideIcon(svc.iconKey);
-              const col = { bg: svc.colorClass?.split(" ")[0] ?? "bg-muted", border: svc.colorClass?.split(" ")[2] ?? "border-border", text: svc.colorClass?.split(" ")[1] ?? "text-foreground" };
-              const accent = svc.accentClass ? `bg-gradient-to-r ${svc.accentClass}` : "bg-primary";
-              return (
-                <Link key={svc.id} href={`${lp}/sherbime/${svc.slug}`} className="group flex h-full min-h-0">
-                  <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl border bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-slate-200/60">
-                    {/* Color accent top bar */}
-                    <div className={`h-1 w-full shrink-0 ${accent}`} />
-                    <div className="flex flex-1 flex-col p-5">
-                      <div className={`mb-4 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${col.bg} ${col.border}`}>
-                        <Icon className={`h-5 w-5 ${col.text}`} />
-                      </div>
-                      <h3 className="mb-1.5 line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug">
-                        {serviceName(svc, locale)}
-                      </h3>
-                      <p className="flex-1 text-xs leading-relaxed text-muted-foreground line-clamp-3">
-                        {serviceShortDesc(svc, locale)}
-                      </p>
-                      <div className="mt-4 flex shrink-0 items-center gap-1 text-xs font-semibold text-primary opacity-70 transition-opacity group-hover:opacity-100">
-                        {locale === "sq" ? "Mëso më shumë" : "Learn more"} <ArrowRight className="h-3 w-3" />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="mx-auto grid max-w-6xl grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+            {content.services
+              .filter((s) => s.showOnHomepage)
+              .map((svc, index, arr) => (
+                <HomeServiceCard
+                  key={svc.id}
+                  svc={svc}
+                  locale={locale}
+                  lp={lp}
+                  index={index}
+                  total={arr.length}
+                />
+              ))}
           </div>
 
-          <div className="text-center mt-10">
-            <Button variant="outline" size="lg" asChild>
+          <div className="mt-14 text-center">
+            <Button
+              variant="outline"
+              size="lg"
+              asChild
+              className="min-h-14 rounded-2xl border-[3px] px-10 text-base font-bold md:min-h-16 md:px-14 md:text-lg"
+            >
               <Link href={`${lp}/sherbime`}>
                 {locale === "sq" ? "Shiko Të Gjitha Shërbimet" : "View All Services"}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
           </div>

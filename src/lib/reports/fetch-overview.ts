@@ -10,6 +10,7 @@ import {
   parseOrderItems,
 } from "./helpers";
 import { buildInsights } from "./insights";
+import { fetchProjectMetrics } from "./fetch-project-metrics";
 import { countSlaCompliance } from "@/lib/sla";
 import type {
   KpiCard,
@@ -365,7 +366,10 @@ function formatAllStatic(amount: number): string {
 
 export async function fetchReportsOverview(range: ReportRange): Promise<ReportsOverviewPayload> {
   const { from, to } = rangeToDates(range);
-  const current = await fetchPeriodMetrics(from, to);
+  const [current, projects] = await Promise.all([
+    fetchPeriodMetrics(from, to),
+    fetchProjectMetrics(from, to),
+  ]);
 
   const kpis = buildKpis(current, null);
 
@@ -416,6 +420,7 @@ export async function fetchReportsOverview(range: ReportRange): Promise<ReportsO
         avgResolutionHours: current.avgResolutionHours,
         auditByAction: current.auditByAction,
       },
+      projects,
     },
     generatedAt: new Date().toISOString(),
   };

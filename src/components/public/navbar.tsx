@@ -43,6 +43,7 @@ export function Navbar({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { data: session, status } = useSession();
@@ -55,6 +56,18 @@ export function Navbar({
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) {
+      setMobileServicesOpen(false);
+      document.body.style.overflow = "";
+      return;
+    }
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   function switchLanguage() {
     router.replace(pathname, { locale: otherLocale });
@@ -141,10 +154,11 @@ export function Navbar({
       </div>
 
       {/* Main nav */}
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        {/* Logo */}
-        <Link href={localePath || "/"} className="flex items-center group">
-          <ItArenaLogo variant="light" size="md" showTagline />
+      <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4">
+        {/* Logo — compact on mobile */}
+        <Link href={localePath || "/"} className="flex min-w-0 shrink items-center">
+          <ItArenaLogo variant="light" size="sm" showTagline={false} className="md:hidden" />
+          <ItArenaLogo variant="light" size="md" showTagline className="hidden md:flex" />
         </Link>
 
         {/* Desktop nav */}
@@ -245,20 +259,18 @@ export function Navbar({
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={switchLanguage}
-            className="flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-semibold text-muted-foreground cursor-pointer select-none transition-[background-color,color,border-color,transform] duration-200 ease-out hover:border-border/50 hover:bg-muted/60 hover:text-foreground active:bg-muted motion-safe:active:scale-[0.97]"
+            className="flex h-9 min-w-9 items-center justify-center gap-1 rounded-lg border border-transparent px-2 text-xs font-semibold text-muted-foreground cursor-pointer select-none transition-[background-color,color,border-color,transform] duration-200 ease-out hover:border-border/50 hover:bg-muted/60 hover:text-foreground active:bg-muted motion-safe:active:scale-[0.97] sm:min-w-0 sm:px-2.5 sm:py-1.5"
             title={otherLocale === "en" ? "Switch to English" : "Kalo në Shqip"}
           >
-            <Globe className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline uppercase tracking-wide">
-              {otherLocale === "en" ? "EN" : "SQ"}
-            </span>
+            <Globe className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+            <span className="uppercase tracking-wide">{otherLocale === "en" ? "EN" : "SQ"}</span>
           </button>
 
-          <Button asChild>
+          <Button asChild className="hidden md:inline-flex">
             <Link href={navLink("/kerko-oferte")}>{t("nav.quoteRequest")}</Link>
           </Button>
 
@@ -310,9 +322,10 @@ export function Navbar({
 
           <button
             type="button"
-            className="cursor-pointer select-none rounded-lg p-2 text-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted active:bg-muted/80 motion-safe:active:scale-[0.95] md:hidden"
+            className="flex h-10 w-10 cursor-pointer select-none items-center justify-center rounded-xl border border-border/60 bg-muted/30 text-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted active:bg-muted/80 motion-safe:active:scale-[0.95] md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -321,79 +334,162 @@ export function Navbar({
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t bg-white shadow-xl">
-          <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
-            <Link
-              href={navLink("/sherbime")}
-              className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              {t("nav.services")}
-            </Link>
-            {[
-              { href: "/industrite", label: t("nav.industries") },
-              { href: "/rreth-nesh", label: t("nav.about") },
-              { href: "/kontakt", label: t("nav.contact") },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={navLink(item.href)}
-                className="px-3 py-2.5 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Link
-              href={shopUrl()}
-              className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors text-primary"
-              onClick={() => setMobileOpen(false)}
-            >
-              <ShoppingBag className="h-4 w-4" />
-              IT Shop
-            </Link>
-            <div className="pt-3 border-t mt-2 flex flex-col gap-2">
-              <Button asChild>
-                <Link href={navLink("/kerko-oferte")} onClick={() => setMobileOpen(false)}>
-                  {t("nav.quoteRequest")}
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 top-14 z-40 bg-slate-900/40 backdrop-blur-[2px] md:hidden sm:top-16"
+            aria-label="Close menu"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="relative z-50 md:hidden">
+            <nav className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t bg-white shadow-xl sm:max-h-[calc(100dvh-4rem)]">
+              <div className="container mx-auto space-y-1 px-3 py-4 sm:px-4">
+                {/* Quick contact strip */}
+                <div className="mb-3 space-y-2 rounded-xl border border-border/60 bg-slate-50/90 p-3">
+                  <a
+                    href="tel:+355696314319"
+                    className="flex items-center gap-2.5 text-sm font-semibold text-foreground"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Phone className="h-4 w-4" />
+                    </span>
+                    +355 69 63 14 319
+                  </a>
+                  <p className="pl-[2.875rem] text-xs text-muted-foreground">
+                    {locale === "sq" ? "E Hënë–E Premte · 08:00–17:30" : "Mon–Fri · 08:00–17:30"}
+                  </p>
+                  <span className="ml-[2.875rem] inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    24/7 {locale === "sq" ? "Emergjencë" : "Emergency"}
+                  </span>
+                </div>
+
+                {/* Services accordion */}
+                <div className="overflow-hidden rounded-xl border border-border/60">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between px-4 py-3.5 text-left text-sm font-semibold text-foreground"
+                    onClick={() => setMobileServicesOpen((open) => !open)}
+                    aria-expanded={mobileServicesOpen}
+                  >
+                    {t("nav.services")}
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-muted-foreground transition-transform",
+                        mobileServicesOpen && "rotate-180"
+                      )}
+                    />
+                  </button>
+                  {mobileServicesOpen && (
+                    <div className="border-t border-border/60 bg-slate-50/50 px-2 py-2">
+                      <Link
+                        href={navLink("/sherbime")}
+                        className="mb-1 block rounded-lg px-3 py-2.5 text-sm font-medium text-primary"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {locale === "sq" ? "Të gjitha shërbimet" : "All services"}
+                      </Link>
+                      {menuServices.map((s) => {
+                        const Icon = s.icon;
+                        return (
+                          <Link
+                            key={s.key}
+                            href={navLink(s.href)}
+                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white"
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
+                              <Icon className={cn("h-4 w-4", s.color)} />
+                            </span>
+                            <span className="min-w-0 font-medium leading-snug">{s.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {[
+                  { href: "/industrite", label: t("nav.industries") },
+                  { href: "/rreth-nesh", label: t("nav.about") },
+                  { href: "/kontakt", label: t("nav.contact") },
+                  { href: "/mbeshtetje-remote", label: locale === "sq" ? "Mbështetje Remote" : "Remote Support" },
+                ].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={navLink(item.href)}
+                    className="block rounded-xl px-4 py-3.5 text-sm font-medium transition-colors hover:bg-slate-50"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+
+                <Link
+                  href={shopUrl()}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                    <ShoppingBag className="h-4 w-4" />
+                  </span>
+                  IT Shop
                 </Link>
-              </Button>
-              {status === "loading" ? (
-                <Button variant="outline" disabled className="justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </Button>
-              ) : session ? (
-                <>
-                  <Button variant="outline" asChild>
-                    <Link
-                      href={dashboardHref}
-                      onClick={() => setMobileOpen(false)}
-                      className="gap-2"
-                    >
-                      <LayoutDashboard className="h-4 w-4" />
-                      {dashboardLabel}
+
+                <button
+                  type="button"
+                  onClick={switchLanguage}
+                  className="flex w-full items-center gap-3 rounded-xl border border-dashed border-border px-4 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-slate-50 hover:text-foreground"
+                >
+                  <Globe className="h-4 w-4" />
+                  {locale === "sq" ? "Switch to English" : "Kalo në Shqip"}
+                </button>
+
+                <div className="space-y-2 border-t border-border/60 pt-4">
+                  <Button asChild className="w-full min-h-11">
+                    <Link href={navLink("/kerko-oferte")} onClick={() => setMobileOpen(false)}>
+                      {t("nav.quoteRequest")}
                     </Link>
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="justify-start border-transparent bg-transparent text-muted-foreground shadow-none hover:bg-muted/60 hover:text-foreground"
-                    onClick={() => void handleSignOut()}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    {t("nav.logout")}
-                  </Button>
-                </>
-              ) : (
-                <Button variant="outline" asChild>
-                  <Link href={navLink("/hyr")} onClick={() => setMobileOpen(false)}>
-                    {t("nav.login")}
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </nav>
-        </div>
+                  {status === "loading" ? (
+                    <Button variant="outline" disabled className="w-full min-h-11 justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </Button>
+                  ) : session ? (
+                    <>
+                      <Button variant="outline" asChild className="w-full min-h-11">
+                        <Link
+                          href={dashboardHref}
+                          onClick={() => setMobileOpen(false)}
+                          className="gap-2"
+                        >
+                          <LayoutDashboard className="h-4 w-4" />
+                          {dashboardLabel}
+                        </Link>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full min-h-11 justify-center"
+                        onClick={() => void handleSignOut()}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        {t("nav.logout")}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="outline" asChild className="w-full min-h-11">
+                      <Link href={navLink("/hyr")} onClick={() => setMobileOpen(false)}>
+                        {t("nav.login")}
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </nav>
+          </div>
+        </>
       )}
     </header>
   );
