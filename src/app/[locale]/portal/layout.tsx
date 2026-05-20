@@ -1,7 +1,9 @@
-import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { PortalSidebar } from "@/components/portal/sidebar";
 import { db } from "@/lib/db";
+import { PortalAppShell } from "@/components/portal/portal-app-shell";
+import { requirePortalUser, portalUser } from "@/lib/portal/access";
+import { portalNotificationWhere } from "@/lib/portal/scope";
+import { userHasProjectLinks } from "@/lib/portal/project-access";
 
 export default async function PortalLayout({
   children,
@@ -11,14 +13,13 @@ export default async function PortalLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const session = await auth();
+  const session = requirePortalUser(await auth(), locale);
 
-  if (!session) {
-    redirect(locale === "en" ? "/en/hyr" : "/hyr");
-  }
+  const user = portalUser(session);
+  const hasProjectLinks = await userHasProjectLinks(user);
 
   const unread = await db.notification.count({
-    where: { userId: session.user.id, readAt: null },
+    where: { ...portalNotificationWhere(session.user.id), readAt: null },
   });
 
   const nameParts = session.user.name?.split(" ") ?? ["U"];
@@ -28,19 +29,23 @@ export default async function PortalLayout({
     .join("")
     .toUpperCase();
 
+  const portalLocale = locale === "en" ? "en" : "sq";
+
   return (
-    <div className="flex h-screen overflow-hidden">
-      <PortalSidebar
-        userRole={session.user.role}
-        userInitials={initials}
-        userName={session.user.name ?? session.user.email ?? "User"}
-        unreadNotifications={unread}
-      />
-      <main className="flex-1 overflow-y-auto bg-muted/20 md:pt-0 pt-14">
-        <div className="container mx-auto px-4 py-6 max-w-6xl md:px-6">
-          {children}
-        </div>
-      </main>
-    </div>
+    <PortalAppShell
+      userRole={user.role}
+      userInitials={initials}
+      userName={session.user.name ?? session.user.email ?? "User"}
+      userEmail={session.user.email ?? undefined}
+      locale={portalLocale}
+      notificationCount={unread}
+      navContext={{
+        role: user.role,
+        hasProjectLinks,
+        hasCompanyId: Boolean(user.companyId),
+      }}
+    >
+      {children}
+    </PortalAppShell>
   );
 }

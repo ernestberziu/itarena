@@ -5,15 +5,23 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Plus, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/shared/page-header";
-import { EmptyState } from "@/components/shared/empty-state";
-import { TicketStatusBadge } from "@/components/portal/ticket-status-badge";
-import { PriorityBadge } from "@/components/portal/priority-badge";
-import { SlaIndicator } from "@/components/portal/sla-indicator";
-import type { TicketStatus, Priority } from "@/types/domain";
-import { timeAgo } from "@/lib/utils";
-import { DIVISION_LABELS } from "@/lib/sla";
 import { Badge } from "@/components/ui/badge";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import {
+  AdminListToolbar,
+  AdminListToolbarSearch,
+} from "@/components/admin/admin-list-toolbar";
+import {
+  SegmentedFilterLink,
+  SegmentedFilterTrack,
+} from "@/components/admin/admin-filter-segments";
+import { EmptyState } from "@/components/shared/empty-state";
+import { PortalTicketsTable, type PortalTicketRow } from "@/components/portal/tables/portal-tickets-table";
+import { portalTicketWhere, portalUsesCompanyScope } from "@/lib/portal/scope";
+import { portalUser } from "@/lib/portal/access";
+import { adminListShellClassName } from "@/lib/admin-list-ui";
+import { resolveClientFacingTicketStatus } from "@/lib/ticket-activity";
+import type { TicketStatus } from "@/types/domain";
 
 const STATUS_TABS = ["ALL", "OPEN", "ASSIGNED", "IN_PROGRESS", "PAUSED", "PENDING_CLIENT", "RESOLVED", "CLOSED"] as const;
 const PRIORITY_OPTIONS = ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
@@ -31,39 +39,45 @@ export default async function TicketsPage({
   const { locale } = await params;
   const sp = await searchParams;
   const t = await getTranslations({ locale, namespace: "tickets" });
+  const tPortal = await getTranslations({ locale, namespace: "portal" });
   const lp = locale === "sq" ? "" : `/${locale}`;
+
+  const user = portalUser(session);
+  const companyScope = portalUsesCompanyScope(user);
 
   const statusFilter = sp.status && STATUS_TABS.includes(sp.status as typeof STATUS_TABS[number]) ? sp.status : "ALL";
   const priorityFilter = sp.priority && PRIORITY_OPTIONS.includes(sp.priority as typeof PRIORITY_OPTIONS[number]) ? sp.priority : "ALL";
   const q = sp.q?.trim();
 
-  const isStaff = ["ADMIN", "ENGINEER", "SALES", "OPS"].includes(session.user.role);
-
-  const where: Record<string, unknown> = isStaff ? {} : { createdById: session.user.id };
+  const baseWhere = portalTicketWhere(user);
+  const where: Record<string, unknown> = { ...baseWhere };
   if (statusFilter !== "ALL") where.status = statusFilter;
   if (priorityFilter !== "ALL") where.priority = priorityFilter;
   if (q) {
-    where.OR = [
-      { title: { contains: q } },
-      { number: { contains: q } },
-    ];
+    where.OR = [{ title: { contains: q } }, { number: { contains: q } }];
   }
 
-  // Get counts per status for badges
+  const countWhere = portalTicketWhere(user);
+
   const [tickets, counts] = await Promise.all([
     db.ticket.findMany({
       where,
       orderBy: [{ updatedAt: "desc" }],
       include: {
-        createdBy: { select: { firstName: true, lastName: true, email: true } },
+        createdBy: { select: { firstName: true, lastName: true, email: true, role: true } },
         assignedTo: { select: { firstName: true, lastName: true } },
         company: { select: { name: true } },
+        history: {
+          where: { field: "status" },
+          orderBy: { createdAt: "asc" },
+          select: { field: true, newValue: true, createdAt: true },
+        },
       },
     }),
     db.ticket.groupBy({
       by: ["status"],
       _count: true,
-      where: isStaff ? {} : { createdById: session.user.id },
+      where: countWhere,
     }),
   ]);
 
@@ -87,88 +101,101 @@ export default async function TicketsPage({
     return `${lp}/portal/tickets${qs ? `?${qs}` : ""}`;
   }
 
+  const rows: PortalTicketRow[] = tickets.map((ticket) => ({
+    id: ticket.id,
+    number: ticket.number,
+    title: ticket.title,
+    status: resolveClientFacingTicketStatus(
+      ticket.status as TicketStatus,
+      ticket.history
+    ),
+    priority: ticket.priority,
+    division: ticket.division,
+    createdAt: ticket.createdAt.toISOString(),
+    updatedAt: ticket.updatedAt.toISOString(),
+    createdBy: ticket.createdBy,
+    assignedTo: ticket.assignedTo,
+  }));
+
+  const pLabel: Record<string, string> =
+    locale === "sq"
+      ? { ALL: "Të gjitha", CRITICAL: "Kritike", HIGH: "E lartë", MEDIUM: "Mesatare", LOW: "E ulët" }
+      : { ALL: "All", CRITICAL: "Critical", HIGH: "High", MEDIUM: "Medium", LOW: "Low" };
+
   return (
     <div className="space-y-5">
-      <PageHeader
+      <AdminPageHeader
         title={t("title")}
-        description={`${tickets.length} ${locale === "sq" ? "bileta" : "tickets"}`}
+        description={
+          companyScope
+            ? `${tickets.length} ${locale === "sq" ? "bileta" : "tickets"} · ${tPortal("company_scope_hint")}`
+            : `${tickets.length} ${locale === "sq" ? "bileta" : "tickets"}`
+        }
         actions={
           <Button asChild size="sm">
             <Link href={`${lp}/portal/tickets/new`}>
-              <Plus className="h-4 w-4 mr-1.5" strokeWidth={2} />
+              <Plus className="mr-1.5 h-4 w-4" strokeWidth={2} />
               {t("new")}
             </Link>
           </Button>
         }
       />
 
-      {/* Status tabs */}
-      <div className="flex flex-wrap gap-1.5 items-center">
-        {STATUS_TABS.map((status) => {
-          const isActive = statusFilter === status;
-          const count = status === "ALL" ? totalCount : countByStatus[status] ?? 0;
-          return (
-            <Link key={status} href={tabHref(status)}>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border ${
-                  isActive
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
-              >
-                {statusLabels[status]}
-                {count > 0 && (
-                  <span
-                    className={`inline-flex h-4 min-w-4 items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-                      isActive ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {count}
-                  </span>
-                )}
+      <AdminListToolbar>
+        <div className="space-y-3">
+          <SegmentedFilterTrack>
+            {STATUS_TABS.map((status) => {
+              const count = status === "ALL" ? totalCount : countByStatus[status] ?? 0;
+              const label = count > 0 ? `${statusLabels[status]} (${count})` : statusLabels[status];
+              return (
+                <SegmentedFilterLink
+                  key={status}
+                  href={tabHref(status)}
+                  label={label}
+                  selected={statusFilter === status}
+                />
+              );
+            })}
+          </SegmentedFilterTrack>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <AdminListToolbarSearch
+              action={`${lp}/portal/tickets`}
+              placeholder={locale === "sq" ? "Kërko biletë…" : "Search tickets…"}
+              defaultQuery={q}
+              locale={locale}
+              submitLabelSq="Kërko"
+              submitLabelEn="Search"
+              hiddenFields={{
+                ...(statusFilter !== "ALL" ? { status: statusFilter } : {}),
+                ...(priorityFilter !== "ALL" ? { priority: priorityFilter } : {}),
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">
+                {locale === "sq" ? "Prioriteti:" : "Priority:"}
               </span>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Search + Priority filter */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <form method="GET" action={`${lp}/portal/tickets`}>
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder={locale === "sq" ? "Kërko biletë..." : "Search tickets..."}
-            className="h-8 rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-52"
-          />
-          {statusFilter !== "ALL" && <input type="hidden" name="status" value={statusFilter} />}
-          {priorityFilter !== "ALL" && <input type="hidden" name="priority" value={priorityFilter} />}
-        </form>
-
-        <div className="flex gap-1 items-center">
-          <span className="text-xs text-muted-foreground">Prioriteti:</span>
-          {PRIORITY_OPTIONS.map((p) => {
-            const pLabel: Record<string, string> = locale === "sq"
-              ? { ALL: "Të gjitha", CRITICAL: "Kritike", HIGH: "E lartë", MEDIUM: "Mesatare", LOW: "E ulët" }
-              : { ALL: "All", CRITICAL: "Critical", HIGH: "High", MEDIUM: "Medium", LOW: "Low" };
-            const href = (() => {
-              const params = new URLSearchParams();
-              if (q) params.set("q", q);
-              if (statusFilter !== "ALL") params.set("status", statusFilter);
-              if (p !== "ALL") params.set("priority", p);
-              const qs = params.toString();
-              return `${lp}/portal/tickets${qs ? `?${qs}` : ""}`;
-            })();
-            return (
-              <Link key={p} href={href}>
-                <Badge variant={priorityFilter === p ? "default" : "outline"} className="cursor-pointer text-xs">
-                  {pLabel[p]}
-                </Badge>
-              </Link>
-            );
-          })}
+              {PRIORITY_OPTIONS.map((p) => {
+                const href = (() => {
+                  const params = new URLSearchParams();
+                  if (q) params.set("q", q);
+                  if (statusFilter !== "ALL") params.set("status", statusFilter);
+                  if (p !== "ALL") params.set("priority", p);
+                  const qs = params.toString();
+                  return `${lp}/portal/tickets${qs ? `?${qs}` : ""}`;
+                })();
+                return (
+                  <Link key={p} href={href}>
+                    <Badge variant={priorityFilter === p ? "default" : "outline"} className="cursor-pointer text-xs">
+                      {pLabel[p]}
+                    </Badge>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
+      </AdminListToolbar>
 
       {tickets.length === 0 ? (
         <EmptyState
@@ -178,48 +205,8 @@ export default async function TicketsPage({
           action={{ label: t("new"), href: `${lp}/portal/tickets/new` }}
         />
       ) : (
-        <div className="rounded-xl border bg-card overflow-hidden">
-          <div className="divide-y">
-            {tickets.map((ticket) => {
-              const divLabel = DIVISION_LABELS[ticket.division]?.[locale as "sq" | "en"] ?? ticket.division;
-              return (
-                <Link
-                  key={ticket.id}
-                  href={`${lp}/portal/tickets/${ticket.id}`}
-                  className="group flex items-center gap-4 px-4 py-4 hover:bg-muted/40 transition-colors"
-                >
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground">
-                        {ticket.number}
-                      </span>
-                      <TicketStatusBadge status={ticket.status as TicketStatus} locale={locale} />
-                      <PriorityBadge priority={ticket.priority as Priority} locale={locale} />
-                    </div>
-                    <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
-                      {ticket.title}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span>{divLabel}</span>
-                      {ticket.assignedTo && (
-                        <span>→ {ticket.assignedTo.firstName} {ticket.assignedTo.lastName}</span>
-                      )}
-                      <span>{timeAgo(ticket.updatedAt)}</span>
-                    </div>
-                  </div>
-                  {ticket.slaDeadline && (
-                    <SlaIndicator
-                      createdAt={ticket.createdAt}
-                      deadline={new Date(ticket.slaDeadline)}
-                      status={ticket.status as TicketStatus}
-                      resolvedAt={ticket.resolvedAt}
-                      locale={locale}
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+        <div className={adminListShellClassName}>
+          <PortalTicketsTable rows={rows} locale={locale} lp={lp} companyScope={companyScope} />
         </div>
       )}
     </div>

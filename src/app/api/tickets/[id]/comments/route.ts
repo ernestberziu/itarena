@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
+import { canCommentOnPortalTicket, portalUser } from "@/lib/portal/access";
 
 const schema = z.object({
   body: z.string().min(1),
@@ -26,9 +27,9 @@ export async function POST(
   if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const isStaff = ["ADMIN", "ENGINEER", "SALES", "OPS"].includes(session.user.role);
-  const isOwner = ticket.createdById === session.user.id;
+  const clientUser = portalUser(session);
 
-  if (!isStaff && !isOwner) {
+  if (!isStaff && !canCommentOnPortalTicket(clientUser, ticket)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

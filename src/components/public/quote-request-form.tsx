@@ -29,14 +29,39 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-export function QuoteRequestForm({ locale }: { locale: string }) {
+export type QuoteRequestPrefill = {
+  companyName: string;
+  vatNumber?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+};
+
+export function QuoteRequestForm({
+  locale,
+  prefilled,
+  locked = false,
+}: {
+  locale: string;
+  prefilled?: QuoteRequestPrefill | null;
+  locked?: boolean;
+}) {
   const [submitted, setSubmitted] = useState(false);
   const divisions = Object.entries(DIVISION_LABELS);
   const lang: "sq" | "en" = locale === "en" ? "en" : "sq";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { services: [] },
+    defaultValues: prefilled
+      ? {
+          companyName: prefilled.companyName,
+          vatNumber: prefilled.vatNumber ?? "",
+          contactName: prefilled.contactName,
+          contactEmail: prefilled.contactEmail,
+          contactPhone: prefilled.contactPhone ?? "",
+          services: [],
+        }
+      : { services: [] },
   });
 
   const { isSubmitting, errors } = form.formState;
@@ -93,13 +118,22 @@ export function QuoteRequestForm({ locale }: { locale: string }) {
                 <Label>{locale === "sq" ? "Emri i Kompanisë" : "Company Name"} *</Label>
                 <Input
                   placeholder={locale === "sq" ? "P.sh. TechBuild SH.A." : "E.g. TechBuild LLC"}
+                  readOnly={locked}
+                  disabled={locked}
+                  className={locked ? "bg-muted/50" : undefined}
                   {...form.register("companyName")}
                 />
                 {errors.companyName && <p className="text-xs text-destructive">{locale === "sq" ? "E detyrueshme" : "Required"}</p>}
               </div>
               <div className="space-y-2">
-                <Label>{locale === "sq" ? "Numri NIPT" : "VAT Number"}</Label>
-                <Input placeholder="NIPTXXXXXXXX" {...form.register("vatNumber")} />
+                <Label>{locale === "sq" ? "Numri NIPT" : "NIPT Number"}</Label>
+                <Input
+                  placeholder="NIPTXXXXXXXX"
+                  readOnly={locked}
+                  disabled={locked}
+                  className={locked ? "bg-muted/50" : undefined}
+                  {...form.register("vatNumber")}
+                />
               </div>
             </div>
           </div>
@@ -114,6 +148,9 @@ export function QuoteRequestForm({ locale }: { locale: string }) {
                 <Label>{locale === "sq" ? "Emri e Mbiemri" : "Full Name"} *</Label>
                 <Input
                   placeholder={locale === "sq" ? "Emri i plotë i personit të kontaktit" : "Contact person full name"}
+                  readOnly={locked}
+                  disabled={locked}
+                  className={locked ? "bg-muted/50" : undefined}
                   {...form.register("contactName")}
                 />
                 {errors.contactName && <p className="text-xs text-destructive">{locale === "sq" ? "E detyrueshme" : "Required"}</p>}
@@ -123,13 +160,23 @@ export function QuoteRequestForm({ locale }: { locale: string }) {
                 <Input
                   type="email"
                   placeholder={locale === "sq" ? "emri@kompania.al" : "name@company.com"}
+                  readOnly={locked}
+                  disabled={locked}
+                  className={locked ? "bg-muted/50" : undefined}
                   {...form.register("contactEmail")}
                 />
                 {errors.contactEmail && <p className="text-xs text-destructive">{locale === "sq" ? "Email i pavlefshëm" : "Invalid email"}</p>}
               </div>
               <div className="space-y-2">
                 <Label>{locale === "sq" ? "Telefoni" : "Phone"}</Label>
-                <Input type="tel" placeholder="+355..." {...form.register("contactPhone")} />
+                <Input
+                  type="tel"
+                  placeholder="+355..."
+                  readOnly={locked}
+                  disabled={locked}
+                  className={locked ? "bg-muted/50" : undefined}
+                  {...form.register("contactPhone")}
+                />
               </div>
             </div>
           </div>

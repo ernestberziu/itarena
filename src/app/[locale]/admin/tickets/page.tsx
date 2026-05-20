@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
+import { adminListShellClassName } from "@/lib/admin-list-ui";
 
 export default async function AdminTicketsPage({
   params,
@@ -515,7 +516,7 @@ export default async function AdminTicketsPage({
           action={{ label: locale === "sq" ? "Hiq filtrat" : "Clear filters", href: `${lp}/admin/tickets` }}
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+        <div className={adminListShellClassName}>
           <AdminTicketsTable
             initialTickets={rows}
             totalCount={totalCount}

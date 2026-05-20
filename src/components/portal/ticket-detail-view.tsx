@@ -8,7 +8,6 @@ import { formatDateTime, timeAgo, cn } from "@/lib/utils";
 import { DIVISION_LABELS } from "@/lib/sla";
 import { TicketStatusBadge } from "./ticket-status-badge";
 import { PriorityBadge } from "./priority-badge";
-import { SlaIndicator } from "./sla-indicator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +17,9 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ArrowLeft,
+  ChevronRight,
+  GitBranch,
+  History,
   MessageSquare,
   Lock,
   User,
@@ -30,7 +32,19 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { STAFF_ROLES, type Role, type TicketStatus } from "@/types/domain";
-import { formatHistoryActivity, type TicketHistoryRow } from "@/lib/ticket-activity";
+import {
+  formatHistoryActivity,
+  formatClientStatusHistory,
+  mergeTicketActivity,
+  type TicketHistoryRow,
+} from "@/lib/ticket-activity";
+import {
+  PORTAL_BRAND_NAME,
+  portalAuthorDisplayName,
+  portalAuthorInitials,
+  portalTicketOpenedByLabel,
+  isPortalStaffRole,
+} from "@/lib/portal/client-branding";
 
 export type PortalTicketEngineerOption = {
   id: string;
@@ -72,10 +86,9 @@ interface TicketDetailViewProps {
   currentUserId: string;
   currentUserRole: Role;
   locale: string;
-  /** Staff portal: used to resolve assignee IDs in history lines. */
   engineers?: PortalTicketEngineerOption[];
-  /** Override back link target (e.g. admin ticket list). */
   ticketsListHref?: string;
+  readOnlyForViewer?: boolean;
 }
 
 export function TicketDetailView({
@@ -85,11 +98,17 @@ export function TicketDetailView({
   locale,
   engineers,
   ticketsListHref,
+  readOnlyForViewer = false,
 }: TicketDetailViewProps) {
   const router = useRouter();
   const lp = locale === "sq" ? "" : `/${locale}`;
   const backHref = ticketsListHref ?? `${lp}/portal/tickets`;
   const isStaff = STAFF_ROLES.includes(currentUserRole);
+  const isOwner = ticket.createdBy.id === currentUserId;
+  const canOwnerActions = isOwner && !readOnlyForViewer;
+  const canComment = isStaff || ticket.status !== "CLOSED";
+
+  const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
 
   const engineerById = useMemo(() => {
     const m = new Map<string, string>();
@@ -113,23 +132,20 @@ export function TicketDetailView({
   const divLabel =
     DIVISION_LABELS[ticket.division]?.[locale as "sq" | "en"] ?? ticket.division;
 
-  const estimateLabel = (() => {
-    const d = ticket.estimatedDays ?? 0;
-    const h = ticket.estimatedHours ?? 0;
-    if (d <= 0 && h <= 0) return null;
-    const parts: string[] = [];
-    if (d > 0) parts.push(locale === "sq" ? `${d} ditë` : `${d} d`);
-    if (h > 0) parts.push(`${h} h`);
-    return parts.join(" · ");
-  })();
-
   const creatorIsClientFacing =
     ticket.createdBy.role === "CLIENT" || ticket.createdBy.role === "COMPANY_ADMIN";
 
   const reporterMeta = (() => {
+    const lang = locale === "en" ? "en" : "sq";
     if (creatorIsClientFacing) {
       return {
-        primary: `${ticket.createdBy.firstName} ${ticket.createdBy.lastName}`,
+        primary: portalTicketOpenedByLabel(ticket.createdBy, lang),
+        secondary: null as string | null,
+      };
+    }
+    if (!isStaff && isPortalStaffRole(ticket.createdBy.role)) {
+      return {
+        primary: PORTAL_BRAND_NAME,
         secondary: null as string | null,
       };
     }
@@ -139,22 +155,27 @@ export function TicketDetailView({
           locale === "sq"
             ? `Kërkues (jo-portal): ${ticket.externalRequesterName}`
             : `Requester (external): ${ticket.externalRequesterName}`,
-        secondary: `${ticket.createdBy.firstName} ${ticket.createdBy.lastName}`,
+        secondary: isStaff
+          ? `${ticket.createdBy.firstName} ${ticket.createdBy.lastName}`
+          : null,
       };
     }
     return {
-      primary: `${ticket.createdBy.firstName} ${ticket.createdBy.lastName}`,
-      secondary:
-        locale === "sq"
-          ? "Hapur nga stafi"
-          : "Opened by staff",
+      primary: isStaff
+        ? `${ticket.createdBy.firstName} ${ticket.createdBy.lastName}`
+        : PORTAL_BRAND_NAME,
+      secondary: isStaff ? (locale === "sq" ? "Hapur nga stafi" : "Opened by staff") : null,
     };
   })();
 
-  // Filter comments: clients don't see internal notes
   const visibleComments = isStaff
     ? ticket.comments
     : ticket.comments.filter((c) => !c.isInternal);
+
+  const activity = useMemo(
+    () => mergeTicketActivity(visibleComments, ticket.history),
+    [visibleComments, ticket.history]
+  );
 
   async function submitComment() {
     if (!comment.trim()) return;
@@ -162,16 +183,16 @@ export function TicketDetailView({
     const res = await fetch(`/api/tickets/${ticket.id}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: comment, isInternal }),
+      body: JSON.stringify({ body: comment, isInternal: isStaff ? isInternal : false }),
     });
     setSubmitting(false);
     if (!res.ok) {
-      toast.error(locale === "sq" ? "Gabim gjatë dërgimit" : "Error submitting comment");
+      toast.error(t("Gabim gjatë dërgimit", "Error submitting comment"));
       return;
     }
     setComment("");
     if (isStaff) setIsInternal(false);
-    toast.success(locale === "sq" ? "Komenti u shtua" : "Comment added");
+    toast.success(t("Komenti u shtua", "Comment added"));
     router.refresh();
   }
 
@@ -182,10 +203,10 @@ export function TicketDetailView({
       body: JSON.stringify({ status }),
     });
     if (!res.ok) {
-      toast.error(locale === "sq" ? "Gabim" : "Error");
+      toast.error(t("Gabim", "Error"));
       return;
     }
-    toast.success(locale === "sq" ? "Statusi u ndryshua" : "Status updated");
+    toast.success(t("Statusi u ndryshua", "Status updated"));
     router.refresh();
   }
 
@@ -196,445 +217,294 @@ export function TicketDetailView({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rating: stars }),
     });
-    toast.success(locale === "sq" ? "Faleminderit për vlerësimin!" : "Thank you for your rating!");
+    toast.success(t("Faleminderit për vlerësimin!", "Thank you for your rating!"));
     router.refresh();
   }
 
+  const showStaffActions = isStaff;
+
   return (
-    <div className="space-y-6 max-w-4xl">
-      {/* Back */}
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
+    <div className="mx-auto w-full max-w-6xl space-y-6 pb-10">
+      <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+        <Link href={backHref} className="transition-colors hover:text-foreground">
+          {t("Biletat", "Tickets")}
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+        <span className="font-mono text-foreground/80">{ticket.number}</span>
+      </nav>
+
+      <div className="flex flex-col gap-4 border-b border-border/60 pb-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-muted/80 px-2 py-0.5 font-mono text-xs text-muted-foreground ring-1 ring-border/60">
+              {ticket.number}
+            </span>
+            <TicketStatusBadge status={ticket.status} locale={locale} />
+            <PriorityBadge priority={ticket.priority} locale={locale} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{ticket.title}</h1>
+          <div className="flex flex-col gap-0 divide-y divide-border/60 text-sm text-muted-foreground sm:flex-row sm:flex-nowrap sm:items-stretch sm:divide-x sm:divide-y-0 sm:overflow-x-auto">
+            <div className="flex min-w-0 items-start gap-2 py-2 first:pt-0 sm:shrink-0 sm:py-0 sm:pr-4">
+              <User className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+              <div className="min-w-0 leading-snug">
+                <span className="block text-foreground/90">{reporterMeta.primary}</span>
+                {reporterMeta.secondary ? (
+                  <span className="mt-0.5 block text-xs">({reporterMeta.secondary})</span>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-center py-2 sm:px-4 sm:py-0">
+              <span>{divLabel}</span>
+            </div>
+            {isStaff && ticket.assignedTo ? (
+              <div className="flex items-center py-2 sm:px-4 sm:py-0">
+                <span>
+                  {t("Inxhinieri", "Engineer")}: {ticket.assignedTo.firstName} {ticket.assignedTo.lastName}
+                </span>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-x-1.5 py-2 last:pb-0 sm:px-4 sm:py-0">
+              <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="tabular-nums text-foreground/90">{formatDateTime(ticket.createdAt)}</span>
+              <span className="text-xs">({timeAgo(ticket.createdAt)})</span>
+            </div>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" asChild className="shrink-0 border-border/60 shadow-sm">
           <Link href={backHref}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {locale === "sq" ? "Kthehu" : "Back"}
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("Kthehu", "Back")}
           </Link>
         </Button>
       </div>
 
-      {/* Header */}
-      <div>
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          <span className="text-sm font-mono text-muted-foreground">{ticket.number}</span>
-          <TicketStatusBadge status={ticket.status} locale={locale} />
-          <PriorityBadge priority={ticket.priority} locale={locale} />
-          {ticket.slaDeadline && (
-            <SlaIndicator
-              createdAt={new Date(ticket.createdAt)}
-              deadline={new Date(ticket.slaDeadline)}
-              status={ticket.status}
-              resolvedAt={ticket.resolvedAt ? new Date(ticket.resolvedAt) : null}
-              locale={locale}
-            />
-          )}
-        </div>
-        <h1 className="text-2xl font-bold">{ticket.title}</h1>
-        <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-          <span className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
-            <span className="flex items-center gap-1">
-              <User className="h-3.5 w-3.5 shrink-0" />
-              <span>{reporterMeta.primary}</span>
-            </span>
-            {reporterMeta.secondary && (
-              <span className="text-xs sm:text-sm sm:opacity-90">({reporterMeta.secondary})</span>
-            )}
-          </span>
-          <span>{divLabel}</span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {formatDateTime(ticket.createdAt)}
-          </span>
-          {ticket.assignedTo && (
-            <span>
-              {locale === "sq" ? "Inxhinier" : "Engineer"}:{" "}
-              {ticket.assignedTo.firstName} {ticket.assignedTo.lastName}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground mb-3">
-                {locale === "sq" ? "Përshkrimi" : "Description"}
-              </p>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {ticket.description}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <div className="space-y-4">
-            <h2 className="text-base font-semibold">
-              {locale === "sq" ? "Kronologjia" : "Timeline"}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <section className="admin-card-elevated rounded-2xl border p-6 shadow-sm border-[var(--admin-card-border)]">
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("Përshkrimi", "Description")}
             </h2>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/95">{ticket.description}</p>
+          </section>
 
-            {visibleComments.map((c) => {
-              const isOwn = c.author.id === currentUserId;
-              const isStaffComment = STAFF_ROLES.includes(c.author.role);
+          <section className="space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-base font-semibold">
+                <History className="h-4 w-4 text-muted-foreground" />
+                {t("Aktiviteti", "Activity")}
+              </h2>
+              <span className="text-xs text-muted-foreground">
+                {activity.length} {t("ngjarje", "events")}
+              </span>
+            </div>
 
-              return (
-                <div
-                  key={c.id}
-                  className={`rounded-lg border p-4 ${
-                    c.isInternal
-                      ? "border-amber-200 bg-amber-50"
-                      : isStaffComment
-                      ? "border-primary/20 bg-primary/5"
-                      : "bg-card"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                        {c.author.firstName[0]}
-                        {c.author.lastName[0]}
-                      </div>
-                      <span className="text-sm font-medium">
-                        {c.author.firstName} {c.author.lastName}
-                      </span>
-                      {c.isInternal ? (
-                        <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">
-                          <Lock className="h-3 w-3" />
-                          {locale === "sq" ? "Internal" : "Internal"}
-                        </span>
-                      ) : isStaff && isStaffComment ? (
-                        <span className="flex items-center gap-1 text-xs text-sky-800 bg-sky-100 rounded px-1.5 py-0.5 dark:bg-sky-950/40 dark:text-sky-100">
-                          <Users className="h-3 w-3" />
-                          {locale === "sq" ? "External" : "External"}
-                        </span>
-                      ) : null}
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {timeAgo(c.createdAt)}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{c.body}</p>
-                </div>
-              );
-            })}
-
-            {/* History events (server already filters rows for non-staff) */}
-            {ticket.history.map((h) => (
-              <div
-                key={h.id}
-                className="flex items-start gap-2 pl-2 text-xs text-muted-foreground"
-              >
-                <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <p className="text-sm leading-snug text-foreground/90">
-                    {formatHistoryActivity(h, locale, engineerById)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">{timeAgo(h.createdAt)}</p>
-                </div>
+            {activity.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-6 py-12 text-center text-sm text-muted-foreground">
+                {t("Nuk ka aktivitet ende.", "No activity yet.")}
               </div>
-            ))}
-          </div>
-
-          {/* Comment form */}
-          {ticket.status !== "CLOSED" && (
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex flex-col gap-3">
-                  <p className="text-sm font-medium">
-                    <MessageSquare className="h-4 w-4 inline mr-2" />
-                    {locale === "sq" ? "Shto Koment" : "Add Comment"}
-                  </p>
-                  {isStaff && (
-                    <div
-                      role="group"
-                      aria-label={
-                        locale === "sq" ? "Dukshmëria e komentit" : "Comment visibility"
-                      }
-                      className="flex min-w-0 w-full max-w-full flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border/60 bg-muted px-3 py-2 sm:gap-x-5 sm:py-2"
-                    >
-                      <div className="flex shrink-0 items-center gap-1">
-                        <span className="text-[11px] font-medium tracking-tight text-muted-foreground">
-                          {locale === "sq" ? "Dukshmëria e komentit" : "Comment visibility"}
+            ) : (
+              <ul className="relative space-y-2 before:absolute before:bottom-2 before:left-[13px] before:top-2 before:w-px before:bg-border/80">
+                {activity.map((item) => {
+                  if (item.kind === "comment") {
+                    const c = item.comment;
+                    const isStaffComment = STAFF_ROLES.includes(c.author.role);
+                    const authorLabel = isStaff
+                      ? `${c.author.firstName} ${c.author.lastName}`
+                      : portalAuthorDisplayName(c.author, currentUserId, locale === "en" ? "en" : "sq");
+                    const authorInitials = isStaff
+                      ? `${c.author.firstName[0]}${c.author.lastName[0]}`
+                      : portalAuthorInitials(c.author, currentUserId);
+                    return (
+                      <li key={item.id} className="relative flex gap-2.5 pl-1">
+                        <span className="relative z-[1] mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-[10px] font-semibold text-muted-foreground shadow-sm">
+                          {authorInitials}
                         </span>
-                        <Tooltip>
-                          <TooltipTrigger
-                            render={
-                              <button
-                                type="button"
-                                className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-                                aria-label={
-                                  locale === "sq"
-                                    ? "Ndihmë: dukshmëria e komentit"
-                                    : "Help: comment visibility"
-                                }
-                              >
-                                <CircleHelp className="size-3.5" strokeWidth={2} />
-                              </button>
-                            }
-                          />
-                          <TooltipContent
-                            side="bottom"
-                            align="start"
-                            sideOffset={8}
-                            showArrow={false}
-                            className={cn(
-                              "ticket-comment-visibility-tooltip !block !w-max max-w-[min(22rem,calc(100vw-1.5rem))] rounded-xl border border-border bg-card px-3.5 py-3 text-left text-[13px] leading-snug text-card-foreground shadow-lg ring-1 ring-border"
-                            )}
-                          >
-                            <p className="mb-2.5 border-b border-border/60 pb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                              {locale === "sq" ? "Dukshmëria e komentit" : "Comment visibility"}
-                            </p>
-                            <ul className="space-y-2.5">
-                              <li className="flex gap-2.5">
-                                <span className="mt-0.5 shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                        <div
+                          className={cn(
+                            "min-w-0 flex-1 rounded-lg border px-3 py-2 shadow-sm",
+                            c.isInternal
+                              ? "border-amber-500/35 bg-amber-500/10"
+                              : isStaffComment
+                                ? "border-primary/25 bg-primary/5"
+                                : "border-border/60 bg-card"
+                          )}
+                        >
+                          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-xs font-medium">
+                                {authorLabel}
+                              </span>
+                              {c.isInternal ? (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase">
+                                  <Lock className="h-3 w-3" />
                                   Internal
                                 </span>
-                                <span className="text-muted-foreground">
-                                  {locale === "sq"
-                                    ? "Vetëm për stafin; klienti nuk e sheh në portal."
-                                    : "Staff only; the customer does not see it in the portal."}
-                                </span>
-                              </li>
-                              <li className="flex gap-2.5">
-                                <span className="mt-0.5 shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                              ) : isStaff && isStaffComment ? (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-sky-600/25 bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase">
+                                  <Users className="h-3 w-3" />
                                   External
                                 </span>
-                                <span className="text-muted-foreground">
-                                  {locale === "sq"
-                                    ? "Klienti e sheh në portal si përgjigje publike."
-                                    : "The customer sees it in the portal as a public reply."}
-                                </span>
-                              </li>
-                            </ul>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-1 sm:flex-none sm:justify-end">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="comment-vis-internal-portal"
-                            checked={isInternal}
-                            onCheckedChange={(v) => setIsInternal(v === true)}
-                          />
-                          <Label
-                            htmlFor="comment-vis-internal-portal"
-                            className="cursor-pointer text-xs font-medium text-foreground"
-                          >
-                            Internal
-                          </Label>
+                              ) : null}
+                            </div>
+                            <time className="text-xs text-muted-foreground">{timeAgo(c.createdAt)}</time>
+                          </div>
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">{c.body}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="comment-vis-external-portal"
-                            checked={!isInternal}
-                            onCheckedChange={(v) => setIsInternal(v !== true)}
-                          />
-                          <Label
-                            htmlFor="comment-vis-external-portal"
-                            className="cursor-pointer text-xs font-medium text-foreground"
-                          >
-                            External
-                          </Label>
+                      </li>
+                    );
+                  }
+
+                  const h = item.history;
+                  return (
+                    <li key={item.id} className="relative flex gap-2.5 pl-1">
+                      <span className="relative z-[1] mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted/50 shadow-sm">
+                        <GitBranch className="h-3 w-3 text-muted-foreground" />
+                      </span>
+                      <div className="min-w-0 flex-1 rounded-lg border border-border/50 bg-muted/15 px-3 py-2">
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <span className="rounded bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
+                            {t("Status", "Status")}
+                          </span>
+                          <time className="text-xs text-muted-foreground">{timeAgo(h.createdAt)}</time>
                         </div>
+                        <p className="text-sm leading-snug text-foreground/90">
+                          {isStaff
+                            ? formatHistoryActivity(h, locale, engineerById)
+                            : formatClientStatusHistory(h, locale)}
+                        </p>
                       </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {canComment ? (
+            <Card className="admin-card-elevated">
+              <CardHeader className="border-b pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <MessageSquare className="h-4 w-4" />
+                  {t("Shto Koment", "Add Comment")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-4">
+                {isStaff ? (
+                  <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("Dukshmëria", "Visibility")}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="comment-internal"
+                        checked={isInternal}
+                        onCheckedChange={(v) => setIsInternal(v === true)}
+                      />
+                      <Label htmlFor="comment-internal" className="cursor-pointer text-xs">
+                        Internal
+                      </Label>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : null}
                 <Textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={4}
-                  placeholder={
-                    locale === "sq"
-                      ? "Shkruani komentit tuaj..."
-                      : "Write your comment..."
-                  }
-                  className={cn(
-                    isInternal
-                      ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950"
-                      : "",
-                    !isInternal && isStaff
-                      ? "border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-950"
-                      : ""
-                  )}
+                  placeholder={t("Shkruani komentin tuaj...", "Write your comment...")}
                 />
-                <Button onClick={submitComment} disabled={submitting || !comment.trim()}>
-                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {locale === "sq" ? "Dërgo" : "Submit"}
+                <Button onClick={() => void submitComment()} disabled={submitting || !comment.trim()}>
+                  {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {t("Dërgo", "Submit")}
                 </Button>
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
-          {/* Rating (after resolved) */}
-          {ticket.status === "RESOLVED" && ticket.createdBy.id === currentUserId && (
-            <Card>
+          {ticket.status === "RESOLVED" && canOwnerActions ? (
+            <Card className="admin-card-elevated">
               <CardContent className="p-4">
-                <p className="text-sm font-medium mb-3">
-                  {locale === "sq" ? "Vlerëso Shërbimin" : "Rate the Service"}
-                </p>
+                <p className="mb-3 text-sm font-medium">{t("Vlerëso Shërbimin", "Rate the Service")}</p>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => submitRating(star)}
-                      className="text-2xl transition-transform hover:scale-110"
-                    >
+                    <button key={star} type="button" onClick={() => void submitRating(star)} className="transition-transform hover:scale-110">
                       <Star
-                        className={`h-7 w-7 ${
-                          star <= rating
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-muted-foreground"
-                        }`}
+                        className={cn(
+                          "h-7 w-7",
+                          star <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground"
+                        )}
                       />
                     </button>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
         </div>
 
-        {/* Sidebar actions */}
         <div className="space-y-4">
-          {/* Status actions */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">{locale === "sq" ? "Veprime" : "Actions"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {isStaff && ticket.status === "OPEN" && (
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => updateStatus("IN_PROGRESS")}
-                >
-                  {locale === "sq" ? "Fillo Punën" : "Start Working"}
-                </Button>
-              )}
-              {isStaff && ticket.status === "IN_PROGRESS" && (
-                <>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={() => updateStatus("RESOLVED")}
-                  >
-                    {locale === "sq" ? "Shëno si Zgjidhur" : "Mark Resolved"}
+          {showStaffActions ? (
+            <Card className="admin-card-elevated">
+              <CardHeader className="border-b pb-3">
+                <CardTitle className="text-sm">{t("Veprime", "Actions")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 pt-4">
+                {ticket.status === "OPEN" ? (
+                  <Button size="sm" className="w-full" onClick={() => void updateStatus("IN_PROGRESS")}>
+                    {t("Fillo Punën", "Start Working")}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => updateStatus("PENDING_CLIENT")}
-                  >
-                    {locale === "sq" ? "Prit Klientin" : "Pending Client"}
+                ) : null}
+                {ticket.status === "IN_PROGRESS" ? (
+                  <>
+                    <Button size="sm" className="w-full" onClick={() => void updateStatus("RESOLVED")}>
+                      {t("Shëno si Zgjidhur", "Mark Resolved")}
+                    </Button>
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => void updateStatus("PENDING_CLIENT")}>
+                      {t("Pret Klientin", "Pending Client")}
+                    </Button>
+                    <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => void updateStatus("PAUSED")}>
+                      <Pause className="h-4 w-4" />
+                      {t("Pezullo", "Pause")}
+                    </Button>
+                  </>
+                ) : null}
+                {ticket.status === "PAUSED" ? (
+                  <Button size="sm" className="w-full gap-2" onClick={() => void updateStatus("IN_PROGRESS")}>
+                    <Play className="h-4 w-4" />
+                    {t("Vazhdo punën", "Resume work")}
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full gap-2"
-                    onClick={() => updateStatus("PAUSED")}
-                  >
-                    <Pause className="h-4 w-4 shrink-0" />
-                    {locale === "sq" ? "Pezullo" : "Pause"}
-                  </Button>
-                </>
-              )}
-              {isStaff && ticket.status === "PAUSED" && (
-                <Button
-                  size="sm"
-                  className="w-full gap-2"
-                  onClick={() => updateStatus("IN_PROGRESS")}
-                >
-                  <Play className="h-4 w-4 shrink-0" />
-                  {locale === "sq" ? "Vazhdo punën" : "Resume work"}
-                </Button>
-              )}
-              {!isStaff && ticket.status === "PENDING_CLIENT" && (
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => updateStatus("IN_PROGRESS")}
-                >
-                  {locale === "sq" ? "U Përgjigja" : "I Responded"}
-                </Button>
-              )}
-              {ticket.status === "RESOLVED" && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => updateStatus("CLOSED")}
-                  >
-                    {locale === "sq" ? "Mbyll Biletën" : "Close Ticket"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() => updateStatus("IN_PROGRESS")}
-                  >
-                    {locale === "sq" ? "Rihap" : "Reopen"}
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
 
-          {/* Details */}
-          <Card>
-            <CardContent className="p-4 space-y-3">
+          <Card className="admin-card-elevated">
+            <CardHeader className="border-b pb-3">
+              <CardTitle className="text-sm font-semibold">{t("Detajet", "Details")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-4">
               <div>
-                <p className="text-xs text-muted-foreground mb-1">{locale === "sq" ? "Statusi" : "Status"}</p>
+                <p className="mb-1 text-xs text-muted-foreground">{t("Statusi", "Status")}</p>
                 <TicketStatusBadge status={ticket.status} locale={locale} />
               </div>
               <Separator />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">{locale === "sq" ? "Prioriteti" : "Priority"}</p>
+                <p className="mb-1 text-xs text-muted-foreground">{t("Prioriteti", "Priority")}</p>
                 <PriorityBadge priority={ticket.priority} locale={locale} />
               </div>
               <Separator />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">{locale === "sq" ? "Divisioni" : "Division"}</p>
+                <p className="mb-1 text-xs text-muted-foreground">{t("Divisioni", "Division")}</p>
                 <p className="text-sm">{divLabel}</p>
               </div>
-              {ticket.slaDeadline && (
+              {ticket.company ? (
                 <>
                   <Separator />
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">SLA</p>
-                    <SlaIndicator
-                      createdAt={new Date(ticket.createdAt)}
-                      deadline={new Date(ticket.slaDeadline)}
-                      status={ticket.status}
-                      resolvedAt={ticket.resolvedAt ? new Date(ticket.resolvedAt) : null}
-                      locale={locale}
-                    />
-                  </div>
-                </>
-              )}
-              {ticket.company && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">{locale === "sq" ? "Kompania" : "Company"}</p>
+                    <p className="mb-1 text-xs text-muted-foreground">{t("Kompania", "Company")}</p>
                     <p className="text-sm">{ticket.company.name}</p>
                   </div>
                 </>
-              )}
-              {estimateLabel && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">
-                      {locale === "sq" ? "Vlerësimi" : "Estimate"}
-                    </p>
-                    <p className="text-sm font-medium tabular-nums">{estimateLabel}</p>
-                  </div>
-                </>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         </div>

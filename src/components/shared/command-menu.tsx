@@ -30,6 +30,11 @@ import {
 import { cn } from "@/lib/utils";
 import { Bell } from "lucide-react";
 import { crossAppAdminHref } from "@/components/admin/admin-href";
+import {
+  PORTAL_MAIN_NAV,
+  filterPortalNav,
+  type PortalNavContext,
+} from "@/components/portal/portal-nav-config";
 
 interface CommandMenuProps {
   open: boolean;
@@ -38,6 +43,8 @@ interface CommandMenuProps {
   /** When admin panel runs on shop host, resolve main-app links absolutely */
   adminContext?: "locale" | "shop";
   adminLocale?: "sq" | "en";
+  portalNavContext?: PortalNavContext;
+  portalLocale?: "sq" | "en";
 }
 
 const adminNav = [
@@ -55,14 +62,32 @@ const adminNav = [
   { label: "Cilësimet", href: "/admin/settings", icon: Settings },
 ];
 
-const portalNav = [
-  { label: "Dashboard", href: "/portal/dashboard", icon: LayoutDashboard },
-  { label: "Biletat e Mia", href: "/portal/tickets", icon: Ticket },
-  { label: "Porositë", href: "/portal/orders", icon: ShoppingBag },
-  { label: "Ofertat", href: "/portal/quotes", icon: FileText },
-  { label: "Njoftimet", href: "/portal/notifications", icon: Search },
-  { label: "Cilësimet", href: "/portal/settings", icon: Settings },
-];
+const portalNavLabels: Record<string, { sq: string; en: string }> = {
+  dashboard: { sq: "Paneli", en: "Dashboard" },
+  my_tickets: { sq: "Biletat e mia", en: "My tickets" },
+  orders: { sq: "Porositë", en: "Orders" },
+  quotes: { sq: "Ofertat", en: "Quotes" },
+  company: { sq: "Kompania", en: "Company" },
+  projects: { sq: "Projektet", en: "Projects" },
+  notifications: { sq: "Njoftimet", en: "Notifications" },
+  settings: { sq: "Cilësimet", en: "Settings" },
+};
+
+function buildPortalNav(ctx?: PortalNavContext, locale: "sq" | "en" = "sq") {
+  if (!ctx) {
+    return [
+      { label: portalNavLabels.dashboard[locale], href: "/portal/dashboard", icon: LayoutDashboard },
+      { label: portalNavLabels.my_tickets[locale], href: "/portal/tickets", icon: Ticket },
+      { label: portalNavLabels.orders[locale], href: "/portal/orders", icon: ShoppingBag },
+      { label: portalNavLabels.settings[locale], href: "/portal/settings", icon: Settings },
+    ];
+  }
+  return filterPortalNav(PORTAL_MAIN_NAV, ctx).map((item) => ({
+    label: portalNavLabels[item.transKey]?.[locale] ?? item.transKey,
+    href: item.href,
+    icon: item.icon,
+  }));
+}
 
 const groupHeadingClass =
   "px-1 [&_.cmdk-group-heading]:px-2 [&_.cmdk-group-heading]:pb-0.5 [&_.cmdk-group-heading]:pt-2";
@@ -82,14 +107,21 @@ export function CommandMenu({
   mode = "admin",
   adminContext = "locale",
   adminLocale = "sq",
+  portalNavContext,
+  portalLocale = "sq",
 }: CommandMenuProps) {
   const router = useRouter();
   const locale = useLocale();
   const lp = locale === "sq" ? "" : `/${locale}`;
   const effectiveAdminLocale =
     adminLocale === "en" ? "en" : locale === "en" ? "en" : "sq";
+  const effectivePortalLocale =
+    portalLocale === "en" ? "en" : locale === "en" ? "en" : "sq";
 
-  const nav = mode === "admin" ? adminNav : portalNav;
+  const nav =
+    mode === "admin"
+      ? adminNav
+      : buildPortalNav(portalNavContext, effectivePortalLocale);
 
   function go(href: string) {
     if (mode === "admin") {

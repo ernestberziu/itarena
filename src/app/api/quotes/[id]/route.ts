@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { QUOTE_MONEY_MAX, isQuoteMoneyInRange } from "@/lib/quote-money";
+import { canAccessPortalQuote, portalUser } from "@/lib/portal/access";
 
 const patchSchema = z.object({
   status: z.enum(["PENDING", "REVIEWING", "SENT", "ACCEPTED", "REJECTED", "REVISION_REQUESTED"]).optional(),
@@ -43,10 +44,10 @@ export async function PATCH(
   if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const isStaff = ["ADMIN", "SALES"].includes(session.user.role);
-  const isOwner = quote.requestedById === session.user.id;
+  const clientUser = portalUser(session);
+  const canAccess = isStaff || canAccessPortalQuote(clientUser, quote);
 
-  // Clients can only ACCEPT or REJECT
-  if (!isStaff && !isOwner) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!isStaff && parsed.data.status && !["ACCEPTED", "REJECTED"].includes(parsed.data.status)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -91,7 +92,8 @@ export async function GET(
   if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const isStaff = ["ADMIN", "SALES"].includes(session.user.role);
-  if (!isStaff && quote.requestedById !== session.user.id) {
+  const clientUser = portalUser(session);
+  if (!isStaff && !canAccessPortalQuote(clientUser, quote)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

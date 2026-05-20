@@ -29,6 +29,51 @@ export function filterTicketHistoryForClient<
   return history.filter(isClientVisibleTicketHistoryRow);
 }
 
+type StatusHistoryRow = {
+  field: string;
+  newValue: string | null;
+  createdAt: Date | string;
+};
+
+/** Latest client-visible status from full ticket history (ignores internal PAUSED/ASSIGNED rows). */
+export function getLatestClientVisibleStatus(
+  history: StatusHistoryRow[]
+): TicketStatus | null {
+  let latest: { status: TicketStatus; at: number } | null = null;
+  for (const row of history) {
+    if (!isClientVisibleTicketHistoryRow(row) || !row.newValue) continue;
+    const at = new Date(row.createdAt).getTime();
+    if (!latest || at >= latest.at) {
+      latest = { status: row.newValue as TicketStatus, at };
+    }
+  }
+  return latest?.status ?? null;
+}
+
+/** Status badge value for portal clients — never surfaces internal PAUSED when a public IN_PROGRESS exists. */
+export function resolveClientFacingTicketStatus(
+  currentStatus: TicketStatus,
+  fullHistory: StatusHistoryRow[]
+): TicketStatus {
+  const latestPublic = getLatestClientVisibleStatus(fullHistory);
+  if (latestPublic) return latestPublic;
+  if (currentStatus === "ASSIGNED" || currentStatus === "PAUSED") return "IN_PROGRESS";
+  if (clientVisibleStatusSet.has(currentStatus)) return currentStatus;
+  return "OPEN";
+}
+
+/** Keep only the most recent client-visible status row for portal activity timelines. */
+export function latestClientStatusHistory<
+  T extends StatusHistoryRow,
+>(history: T[]): T[] {
+  const visible = filterTicketHistoryForClient(history);
+  if (visible.length === 0) return [];
+  const latest = visible.reduce((a, b) =>
+    new Date(a.createdAt).getTime() >= new Date(b.createdAt).getTime() ? a : b
+  );
+  return [latest];
+}
+
 const STATUS_LABELS: Record<TicketStatus, { sq: string; en: string }> = {
   OPEN: { sq: "Hapur", en: "Open" },
   ASSIGNED: { sq: "Caktuar", en: "Assigned" },
@@ -156,4 +201,15 @@ export function formatHistoryActivity(
         ? `${who}: ${h.field} ${h.oldValue ?? "—"} → ${h.newValue ?? "—"}`
         : `${who}: ${h.field} ${h.oldValue ?? "—"} → ${h.newValue ?? "—"}`;
   }
+}
+
+/** Client-facing one-line status change (no staff names). */
+export function formatClientStatusHistory(h: TicketHistoryRow, locale: string): string {
+  const lang = locale === "en" ? "en" : "sq";
+  if (h.field === "status") {
+    return lang === "sq"
+      ? `Statusi u përditësua në ${statusLabel(h.newValue, lang)}`
+      : `Status updated to ${statusLabel(h.newValue, lang)}`;
+  }
+  return formatHistoryActivity(h, locale, new Map());
 }

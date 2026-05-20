@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { Settings } from "lucide-react";
-import { PageHeader } from "@/components/shared/page-header";
+import { getTranslations } from "next-intl/server";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { PortalSettingsForm } from "@/components/portal/settings-form";
 
 export default async function PortalSettingsPage({
@@ -14,6 +14,7 @@ export default async function PortalSettingsPage({
   if (!session) redirect("/hyr");
 
   const { locale } = await params;
+  const t = await getTranslations("portal");
 
   const user = await db.user.findUnique({
     where: { id: session.user.id },
@@ -31,9 +32,11 @@ export default async function PortalSettingsPage({
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title={locale === "sq" ? "Cilësimet e Llogarisë" : "Account Settings"}
-        description={locale === "sq" ? "Menaxhoni informacionin tuaj personal" : "Manage your personal information"}
+      <AdminPageHeader
+        title={t("settings")}
+        description={
+          locale === "sq" ? "Menaxhoni informacionin tuaj personal" : "Manage your personal information"
+        }
       />
       <PortalSettingsForm user={user} locale={locale} />
     </div>

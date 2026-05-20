@@ -2,8 +2,13 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import { TicketDetailView } from "@/components/portal/ticket-detail-view";
-import { filterTicketHistoryForClient } from "@/lib/ticket-activity";
+import {
+  filterTicketHistoryForClient,
+  latestClientStatusHistory,
+  resolveClientFacingTicketStatus,
+} from "@/lib/ticket-activity";
 import { STAFF_ROLES, type TicketStatus, type Priority, type Role } from "@/types/domain";
+import { canViewPortalTicket, isPortalTicketOwner, portalUser } from "@/lib/portal/access";
 
 export default async function TicketDetailPage({
   params,
@@ -49,25 +54,30 @@ export default async function TicketDetailPage({
 
   if (!ticket) notFound();
 
-  // Access control — clients can only see their own tickets
-  if (!isStaff && ticket.createdById !== session.user.id) notFound();
+  const clientUser = portalUser(session);
+  if (!isStaff && !canViewPortalTicket(clientUser, ticket)) notFound();
+
+  const isOwner = isPortalTicketOwner(clientUser, ticket);
 
   const mappedHistory = ticket.history.map((h) => ({
     ...h,
     changedBy: { ...h.changedBy, role: h.changedBy.role as Role },
   }));
 
+  const dbStatus = ticket.status as TicketStatus;
+  const clientHistory = latestClientStatusHistory(filterTicketHistoryForClient(mappedHistory));
+
   // Cast DB string values to domain types
   const typedTicket = {
     ...ticket,
-    status: ticket.status as TicketStatus,
+    status: isStaff ? dbStatus : resolveClientFacingTicketStatus(dbStatus, mappedHistory),
     priority: ticket.priority as Priority,
     createdBy: { ...ticket.createdBy, role: ticket.createdBy.role as Role },
     comments: ticket.comments.map((c) => ({
       ...c,
       author: { ...c.author, role: c.author.role as Role },
     })),
-    history: isStaff ? mappedHistory : filterTicketHistoryForClient(mappedHistory),
+    history: isStaff ? mappedHistory : clientHistory,
   };
 
   return (
@@ -77,6 +87,7 @@ export default async function TicketDetailPage({
       currentUserRole={session.user.role as Role}
       locale={locale}
       engineers={isStaff ? engineers : undefined}
+      readOnlyForViewer={!isStaff && !isOwner}
     />
   );
 }

@@ -13,6 +13,7 @@ import {
 } from "@/lib/ticket-estimate";
 import { filterTicketHistoryForClient } from "@/lib/ticket-activity";
 import { computeSlaBreachedFlag } from "@/lib/sla";
+import { canViewPortalTicket, portalUser } from "@/lib/portal/access";
 import { canAccessProject } from "@/lib/projects";
 import { STAFF_ROLES } from "@/types/domain";
 import { TICKET_PROJECT_STAFF_CONFLICT, ticketStaffAssigneeBlocked } from "@/lib/ticket-project";
@@ -45,7 +46,13 @@ export async function PATCH(
   if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
+  const clientUser = portalUser(session);
   const isOwner = ticket.createdById === session.user.id;
+  const canView = isStaff || canViewPortalTicket(clientUser, ticket);
+
+  if (!canView) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   if (!isStaff && !isOwner) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -309,7 +316,8 @@ export async function GET(
   if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
-  if (!isStaff && ticket.createdById !== session.user.id) {
+  const clientUser = portalUser(session);
+  if (!isStaff && !canViewPortalTicket(clientUser, ticket)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

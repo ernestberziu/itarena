@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { CheckCircle2, Clock, Shield, Zap, Building2, ArrowRight } from "lucide-react";
-import { QuoteRequestForm } from "@/components/public/quote-request-form";
+import { QuoteRequestForm, type QuoteRequestPrefill } from "@/components/public/quote-request-form";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { PORTAL_ROLES } from "@/lib/portal/access";
 
 export async function generateMetadata({
   params,
@@ -19,6 +22,30 @@ export default async function QuoteRequestPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const session = await auth();
+
+  let prefilled: QuoteRequestPrefill | null = null;
+  if (session?.user?.id && PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number])) {
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        company: { select: { name: true, vatNumber: true } },
+      },
+    });
+    if (user) {
+      prefilled = {
+        companyName: user.company?.name ?? `${user.firstName} ${user.lastName}`.trim(),
+        vatNumber: user.company?.vatNumber ?? undefined,
+        contactName: `${user.firstName} ${user.lastName}`.trim(),
+        contactEmail: user.email,
+        contactPhone: user.phone ?? undefined,
+      };
+    }
+  }
 
   const benefits = [
     {
@@ -63,21 +90,20 @@ export default async function QuoteRequestPage({
 
   return (
     <div className="flex flex-col">
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-primary via-blue-700 to-violet-700 text-white py-20 relative overflow-hidden">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-blue-700 to-violet-700 py-20 text-white">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-20 -right-20 h-[400px] w-[400px] rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute -right-20 -top-20 h-[400px] w-[400px] rounded-full bg-white/5 blur-3xl" />
           <div className="absolute bottom-0 left-1/4 h-[200px] w-[200px] rounded-full bg-amber-400/10 blur-3xl" />
         </div>
         <div className="container relative mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/20 px-5 py-2 text-sm text-white/80 mb-6">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-5 py-2 text-sm text-white/80">
             <Building2 className="h-4 w-4" />
             {locale === "sq" ? "Shërbim B2B" : "B2B Service"}
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-5">
+          <h1 className="mb-5 text-4xl font-extrabold md:text-5xl">
             {locale === "sq" ? "Kërkoni Ofertën Tuaj Falas" : "Request Your Free Quote"}
           </h1>
-          <p className="text-white/70 text-lg max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-lg text-white/70">
             {locale === "sq"
               ? "Tregoni çfarë keni nevojë dhe ekipi ynë do t'ju dërgojë një ofertë të personalizuar brenda 24 orëve."
               : "Tell us what you need and our team will send you a personalized quote within 24 hours."}
@@ -85,33 +111,31 @@ export default async function QuoteRequestPage({
         </div>
       </section>
 
-      <section className="py-16 bg-slate-50">
+      <section className="bg-slate-50 py-16">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-
-            {/* Left: benefits + services */}
-            <div className="lg:col-span-2 space-y-6">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-5">
+            <div className="space-y-6 lg:col-span-2">
               <div>
-                <h2 className="font-extrabold text-xl mb-5">
+                <h2 className="mb-5 text-xl font-extrabold">
                   {locale === "sq" ? "Pse Të Zgjidhni IT Arena?" : "Why Choose IT Arena?"}
                 </h2>
                 <div className="space-y-4">
                   {benefits.map((b) => (
-                    <div key={b.title} className="flex gap-4 items-start">
+                    <div key={b.title} className="flex items-start gap-4">
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${b.color}`}>
                         <b.icon className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-sm">{b.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{b.desc}</p>
+                        <p className="text-sm font-bold">{b.title}</p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{b.desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-white border border-border/60 p-5 shadow-sm">
-                <p className="font-bold text-sm mb-4">
+              <div className="rounded-2xl border border-border/60 bg-white p-5 shadow-sm">
+                <p className="mb-4 text-sm font-bold">
                   {locale === "sq" ? "Shërbimet Tona" : "Our Services"}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -126,8 +150,8 @@ export default async function QuoteRequestPage({
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60 p-5">
-                <p className="font-bold text-sm text-amber-900 mb-2 flex items-center gap-2">
+              <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 p-5">
+                <p className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-900">
                   <ArrowRight className="h-4 w-4 text-amber-600" />
                   {locale === "sq" ? "Procesi Ynë" : "Our Process"}
                 </p>
@@ -137,25 +161,28 @@ export default async function QuoteRequestPage({
                   locale === "sq" ? "3. Dërgojmë ofertën detale" : "3. We send detailed quote",
                   locale === "sq" ? "4. Fillojmë projektin" : "4. We start the project",
                 ].map((step) => (
-                  <p key={step} className="text-xs text-amber-800 py-1 border-b border-amber-100 last:border-0">
+                  <p key={step} className="border-b border-amber-100 py-1 text-xs text-amber-800 last:border-0">
                     {step}
                   </p>
                 ))}
               </div>
             </div>
 
-            {/* Right: form */}
             <div className="lg:col-span-3">
-              <div className="rounded-3xl bg-white border border-border/60 shadow-xl shadow-slate-200/50 p-8 md:p-10">
-                <h2 className="text-2xl font-extrabold mb-2">
+              <div className="rounded-3xl border border-border/60 bg-white p-8 shadow-xl shadow-slate-200/50 md:p-10">
+                <h2 className="mb-2 text-2xl font-extrabold">
                   {locale === "sq" ? "Detajet e Kërkesës" : "Request Details"}
                 </h2>
-                <p className="text-sm text-muted-foreground mb-8">
-                  {locale === "sq"
-                    ? "Sa më shumë detaje të jepni, aq më e saktë do të jetë oferta jonë."
-                    : "The more details you provide, the more accurate our quote will be."}
+                <p className="mb-8 text-sm text-muted-foreground">
+                  {prefilled
+                    ? locale === "sq"
+                      ? "Të dhënat tuaja janë plotësuar nga llogaria. Plotësoni detajet e projektit."
+                      : "Your details are filled from your account. Complete the project details."
+                    : locale === "sq"
+                      ? "Sa më shumë detaje të jepni, aq më e saktë do të jetë oferta jonë."
+                      : "The more details you provide, the more accurate our quote will be."}
                 </p>
-                <QuoteRequestForm locale={locale} />
+                <QuoteRequestForm locale={locale} prefilled={prefilled} locked={Boolean(prefilled)} />
               </div>
             </div>
           </div>

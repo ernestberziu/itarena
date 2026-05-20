@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -12,23 +12,49 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "./cart-context";
 import { formatPrice } from "@/lib/utils";
 import { shopUrl } from "@/lib/shop-url";
+import { cn } from "@/lib/utils";
+
+export type ShopCheckoutPrefill = {
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+};
 
 interface CartViewProps {
   isB2b: boolean;
   isLoggedIn: boolean;
+  checkoutPrefill?: ShopCheckoutPrefill | null;
+  fieldsLocked?: boolean;
 }
 
-export function CartView({ isB2b }: CartViewProps) {
+export function CartView({
+  isB2b,
+  checkoutPrefill,
+  fieldsLocked = false,
+}: CartViewProps) {
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart();
   const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    city: "",
+    name: checkoutPrefill?.name ?? "",
+    phone: checkoutPrefill?.phone ?? "",
+    address: checkoutPrefill?.address ?? "",
+    city: checkoutPrefill?.city ?? "",
     notes: "",
   });
   const [placing, setPlacing] = useState(false);
   const [step, setStep] = useState<"cart" | "checkout">("cart");
+
+  useEffect(() => {
+    if (checkoutPrefill) {
+      setForm((f) => ({
+        ...f,
+        name: checkoutPrefill.name,
+        phone: checkoutPrefill.phone,
+        address: checkoutPrefill.address,
+        city: checkoutPrefill.city,
+      }));
+    }
+  }, [checkoutPrefill]);
 
   const total = totalPrice(isB2b);
 
@@ -204,6 +230,11 @@ export function CartView({ isB2b }: CartViewProps) {
             ) : (
               <form onSubmit={placeOrder} className="rounded-3xl bg-white border border-border/60 shadow-sm p-7 space-y-5">
                 <h2 className="font-extrabold text-lg mb-2">Detajet e Dorëzimit</h2>
+                {fieldsLocked ? (
+                  <p className="text-sm text-muted-foreground -mt-1 mb-2">
+                    Të dhënat tuaja janë plotësuar nga llogaria dhe nuk mund të ndryshohen.
+                  </p>
+                ) : null}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1 sm:col-span-2">
@@ -213,10 +244,15 @@ export function CartView({ isB2b }: CartViewProps) {
                     </label>
                     <input
                       required
+                      readOnly={fieldsLocked}
+                      disabled={fieldsLocked}
                       value={form.name}
                       onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                       placeholder="Emri i plotë"
-                      className="w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className={cn(
+                        "w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
+                        fieldsLocked && "bg-muted/50 cursor-not-allowed"
+                      )}
                     />
                   </div>
                   <div className="space-y-1">
@@ -227,10 +263,15 @@ export function CartView({ isB2b }: CartViewProps) {
                     <input
                       required
                       type="tel"
+                      readOnly={fieldsLocked}
+                      disabled={fieldsLocked}
                       value={form.phone}
                       onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                       placeholder="+355 6X XXX XXXX"
-                      className="w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className={cn(
+                        "w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
+                        fieldsLocked && "bg-muted/50 cursor-not-allowed"
+                      )}
                     />
                   </div>
                   <div className="space-y-1">
@@ -240,10 +281,15 @@ export function CartView({ isB2b }: CartViewProps) {
                     </label>
                     <input
                       required
+                      readOnly={fieldsLocked}
+                      disabled={fieldsLocked}
                       value={form.city}
                       onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
                       placeholder="p.sh. Tiranë"
-                      className="w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className={cn(
+                        "w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
+                        fieldsLocked && "bg-muted/50 cursor-not-allowed"
+                      )}
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-2">
@@ -252,10 +298,15 @@ export function CartView({ isB2b }: CartViewProps) {
                     </label>
                     <input
                       required
+                      readOnly={fieldsLocked}
+                      disabled={fieldsLocked}
                       value={form.address}
                       onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
                       placeholder="Rruga, numri, pallati..."
-                      className="w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className={cn(
+                        "w-full rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
+                        fieldsLocked && "bg-muted/50 cursor-not-allowed"
+                      )}
                     />
                   </div>
                   <div className="space-y-1 sm:col-span-2">

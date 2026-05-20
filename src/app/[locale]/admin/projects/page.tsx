@@ -20,6 +20,7 @@ import { hasAclLevel } from "@/lib/admin-acl/features";
 import { projectsListWhere, projectListInclude } from "@/lib/projects";
 import { PROJECT_STATUSES, type ProjectListRow } from "@/lib/projects/types";
 import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
+import { adminListShellClassName } from "@/lib/admin-list-ui";
 import { cn } from "@/lib/utils";
 
 export default async function AdminProjectsPage({
@@ -275,7 +276,7 @@ export default async function AdminProjectsPage({
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+        <div className={adminListShellClassName}>
           <ProjectsTable
             initialRows={initialRows}
             totalCount={totalCount}

@@ -151,9 +151,10 @@ export async function listUserConversations(
         ...conversationInclude,
         messages: {
           orderBy: { createdAt: "desc" },
-          take: 1,
+          take: 20,
+          where: { isInternal: false },
           include: {
-            author: { select: { firstName: true, lastName: true } },
+            author: { select: { firstName: true, lastName: true, role: true } },
           },
         },
       },

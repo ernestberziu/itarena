@@ -65,10 +65,12 @@ export function NewTicketForm({
   variant = "portal",
   projects = [],
   initialProjectId = null,
+  hideHeader = false,
 }: {
   variant?: "portal" | "admin";
   projects?: ProjectOption[];
   initialProjectId?: string | null;
+  hideHeader?: boolean;
 }) {
   const t = useTranslations("tickets");
   const locale = useLocale();
@@ -877,18 +879,20 @@ export function NewTicketForm({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href={ticketsListHref}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {locale === "sq" ? "Kthehu" : "Back"}
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-bold">{t("new")}</h1>
-      </div>
+      {!hideHeader ? (
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={ticketsListHref}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              {locale === "sq" ? "Kthehu" : "Back"}
+            </Link>
+          </Button>
+          <h1 className="text-2xl font-bold">{t("new")}</h1>
+        </div>
+      ) : null}
 
-      <Card>
-        <CardHeader>
+      <Card className="admin-card-elevated">
+        <CardHeader className="border-b pb-3">
           <CardTitle className="text-base">
             {locale === "sq" ? "Detajet e Biletës" : "Ticket Details"}
           </CardTitle>

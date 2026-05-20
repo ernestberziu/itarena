@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { toast } from "sonner";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface User {
@@ -26,16 +28,23 @@ export function PortalSettingsForm({
   user: User;
   locale: string;
 }) {
+  const en = locale === "en";
+  const t = (sq: string, e: string) => (en ? e : sq);
+
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
   const [phone, setPhone] = useState(user.phone ?? "");
   const [language, setLanguage] = useState(user.language);
-  const [loading, setLoading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    setLoadingProfile(true);
     try {
       const res = await fetch("/api/portal/settings", {
         method: "PATCH",
@@ -43,47 +52,85 @@ export function PortalSettingsForm({
         body: JSON.stringify({ firstName, lastName, phone, language }),
       });
       if (!res.ok) throw new Error();
-      toast.success(locale === "sq" ? "Cilësimet u ruajtën!" : "Settings saved!");
+      toast.success(t("Cilësimet u ruajtën!", "Settings saved!"));
       router.refresh();
     } catch {
-      toast.error(locale === "sq" ? "Gabim gjatë ruajtjes" : "Failed to save settings");
+      toast.error(t("Gabim gjatë ruajtjes", "Failed to save settings"));
     } finally {
-      setLoading(false);
+      setLoadingProfile(false);
     }
   }
 
+  async function savePassword() {
+    if (newPassword.trim().length < 8) {
+      toast.error(t("Fjalëkalimi duhet të jetë të paktën 8 karaktere", "Password must be at least 8 characters"));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
+      return;
+    }
+
+    setLoadingPassword(true);
+    try {
+      const res = await fetch("/api/portal/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword: newPassword.trim(),
+          confirmPassword: confirmPassword.trim(),
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string; passwordChanged?: boolean };
+      if (!res.ok) {
+        throw new Error(
+          json.error === "Current password is incorrect"
+            ? t("Fjalëkalimi aktual është i gabuar", "Current password is incorrect")
+            : json.error ?? "Error"
+        );
+      }
+      toast.success(t("Fjalëkalimi u ndryshua. Hyni përsëri.", "Password updated. Please sign in again."));
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      if (json.passwordChanged) {
+        await signOut({ callbackUrl: en ? "/en/hyr" : "/hyr" });
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+    } finally {
+      setLoadingPassword(false);
+    }
+  }
+
+  const passwordReady =
+    currentPassword.length > 0 &&
+    newPassword.trim().length >= 8 &&
+    confirmPassword.trim().length >= 8;
+
   return (
     <div className="max-w-xl space-y-4">
-      <Card>
-        <CardHeader className="pb-4 border-b">
+      <Card className="admin-card-elevated">
+        <CardHeader className="border-b pb-3">
           <CardTitle className="text-sm font-semibold">
-            {locale === "sq" ? "Informacioni Personal" : "Personal Information"}
+            {t("Informacioni Personal", "Personal Information")}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={saveProfile} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="firstName" className="text-xs font-medium text-muted-foreground">
-                  {locale === "sq" ? "Emri" : "First Name"}
+                  {t("Emri", "First Name")}
                 </Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                />
+                <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="lastName" className="text-xs font-medium text-muted-foreground">
-                  {locale === "sq" ? "Mbiemri" : "Last Name"}
+                  {t("Mbiemri", "Last Name")}
                 </Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                />
+                <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
               </div>
             </div>
 
@@ -91,33 +138,22 @@ export function PortalSettingsForm({
               <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">
                 Email
               </Label>
-              <Input
-                id="email"
-                value={user.email}
-                disabled
-                className="bg-muted/40"
-              />
+              <Input id="email" value={user.email} disabled className="bg-muted/40" />
               <p className="text-xs text-muted-foreground">
-                {locale === "sq" ? "Emaili nuk mund të ndryshohet." : "Email cannot be changed."}
+                {t("Emaili nuk mund të ndryshohet.", "Email cannot be changed.")}
               </p>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground">
-                {locale === "sq" ? "Telefon" : "Phone"}
+                {t("Telefon", "Phone")}
               </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+355..."
-              />
+              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+355..." />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">
-                {locale === "sq" ? "Gjuha e Preferuar" : "Preferred Language"}
+                {t("Gjuha e Preferuar", "Preferred Language")}
               </Label>
               <Select value={language} onValueChange={(v) => v && setLanguage(v)}>
                 <SelectTrigger>
@@ -132,15 +168,78 @@ export function PortalSettingsForm({
               </Select>
             </div>
 
-            <Button type="submit" size="sm" className="gap-2" disabled={loading}>
-              {loading ? (
+            <Button type="submit" size="sm" className="gap-2" disabled={loadingProfile}>
+              {loadingProfile ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
                 <Save className="h-3.5 w-3.5" strokeWidth={2} />
               )}
-              {locale === "sq" ? "Ruaj Ndryshimet" : "Save Changes"}
+              {t("Ruaj Ndryshimet", "Save Changes")}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="admin-card-elevated">
+        <CardHeader className="border-b pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <KeyRound className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+            {t("Fjalëkalimi", "Password")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-4">
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "Vendosni fjalëkalimin aktual dhe një të ri.",
+              "Enter your current password and a new one."
+            )}
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="current-password">{t("Fjalëkalimi aktual", "Current password")}</Label>
+            <Input
+              id="current-password"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">{t("Fjalëkalim i ri", "New password")}</Label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">{t("Konfirmo", "Confirm")}</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="gap-2"
+            disabled={loadingPassword || !passwordReady}
+            onClick={() => void savePassword()}
+          >
+            {loadingPassword ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <KeyRound className="h-3.5 w-3.5" strokeWidth={2} />
+            )}
+            {t("Ruaj fjalëkalimin", "Save password")}
+          </Button>
         </CardContent>
       </Card>
     </div>

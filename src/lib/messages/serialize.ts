@@ -84,7 +84,7 @@ export function toConversationListRow(
       body: string;
       isInternal: boolean;
       createdAt: Date;
-      author: { firstName: string; lastName: string };
+      author: { firstName: string; lastName: string; role?: string };
     }>;
   },
   currentUserId: string,

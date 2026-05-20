@@ -25,6 +25,7 @@ import { formatPrice } from "@/lib/utils";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
+import { adminListShellClassName } from "@/lib/admin-list-ui";
 import { adminQuotesListWhere, mapQuoteToAdminRow } from "@/lib/admin-quotes-list-dto";
 
 export default async function AdminQuotesPage({
@@ -233,7 +234,7 @@ export default async function AdminQuotesPage({
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">
+        <div className={adminListShellClassName}>
           <AdminQuotesTable
             initialQuotes={initialQuotes}
             totalCount={filteredTotal}

@@ -2,14 +2,15 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
-import { ShoppingBag, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/shared/page-header";
+import { ShoppingBag } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { PortalOrderAccordion } from "@/components/portal/order-accordion";
+import { PortalOrdersTable } from "@/components/portal/tables/portal-orders-table";
+import type { PortalOrderRow } from "@/components/portal/tables/portal-order-detail-panel";
 import { parseFulfillmentItems } from "@/lib/order-fulfillment";
-import { formatDate, formatPrice } from "@/lib/utils";
+import { portalOrderWhere, portalUsesCompanyScope } from "@/lib/portal/scope";
+import { portalUser } from "@/lib/portal/access";
+import { adminListShellClassName } from "@/lib/admin-list-ui";
 
 export default async function OrdersPage({
   params,
@@ -21,25 +22,42 @@ export default async function OrdersPage({
 
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "orders" });
-  const lp = locale === "sq" ? "" : `/${locale}`;
+  const tPortal = await getTranslations({ locale, namespace: "portal" });
+
+  const user = portalUser(session);
+  const companyScope = portalUsesCompanyScope(user);
 
   const orders = await db.order.findMany({
-    where: { userId: session.user.id },
+    where: portalOrderWhere(user),
     orderBy: { createdAt: "desc" },
+    include: { user: { select: { firstName: true, lastName: true } } },
   });
 
-  const ordersWithItems = orders.map((order) => ({
-    ...order,
+  const rows: PortalOrderRow[] = orders.map((order) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
     total: Number(order.total),
     subtotal: Number(order.subtotal),
-    parsedItems: parseFulfillmentItems(order.items as string),
+    items: parseFulfillmentItems(order.items as string),
+    deliveryAddress: order.deliveryAddress,
+    deliveryCity: order.deliveryCity,
+    createdAt: order.createdAt.toISOString(),
+    confirmedAt: order.confirmedAt?.toISOString() ?? null,
+    dispatchedAt: order.dispatchedAt?.toISOString() ?? null,
+    deliveredAt: order.deliveredAt?.toISOString() ?? null,
+    user: order.user,
   }));
 
   return (
     <div className="space-y-5">
-      <PageHeader
+      <AdminPageHeader
         title={t("title")}
-        description={`${orders.length} ${locale === "sq" ? "porosi" : "orders"}`}
+        description={
+          companyScope
+            ? `${orders.length} ${locale === "sq" ? "porosi" : "orders"} · ${tPortal("company_scope_hint")}`
+            : `${orders.length} ${locale === "sq" ? "porosi" : "orders"}`
+        }
       />
 
       {orders.length === 0 ? (
@@ -47,38 +65,16 @@ export default async function OrdersPage({
           icon={ShoppingBag}
           title={t("empty")}
           description={t("empty_desc")}
-          action={{ label: locale === "sq" ? "Shko te Tregu" : "Go to Marketplace", href: `${lp}/tregu` }}
+          action={{ label: locale === "sq" ? "Shko te Tregu" : "Go to Shop", href: "/shop" }}
         />
       ) : (
-        <div className="space-y-3">
-          {ordersWithItems.map((order) => (
-            <PortalOrderAccordion
-              key={order.id}
-              order={{
-                id: order.id,
-                orderNumber: order.orderNumber,
-                status: order.status,
-                total: order.total,
-                subtotal: order.subtotal,
-                items: order.parsedItems,
-                deliveryAddress: order.deliveryAddress,
-                deliveryCity: order.deliveryCity,
-                createdAt: order.createdAt,
-                confirmedAt: order.confirmedAt,
-                dispatchedAt: order.dispatchedAt,
-                deliveredAt: order.deliveredAt,
-              }}
-              locale={locale}
-              t={{
-                cod_notice: t("cod_notice"),
-                status_placed: t("status_placed"),
-                status_confirmed: t("status_confirmed"),
-                status_dispatched: t("status_dispatched"),
-                status_delivered: t("status_delivered"),
-                status_cancelled: t("status_cancelled"),
-              }}
-            />
-          ))}
+        <div className={adminListShellClassName}>
+          <PortalOrdersTable
+            rows={rows}
+            locale={locale}
+            companyScope={companyScope}
+            codNotice={t("cod_notice")}
+          />
         </div>
       )}
     </div>

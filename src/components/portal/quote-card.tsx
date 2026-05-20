@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatPrice } from "@/lib/utils";
 
@@ -35,9 +35,10 @@ interface QuoteCardProps {
     notes: string | null;
     validUntil: Date | null;
     createdAt: Date;
+    pdfUrl?: string | null;
   };
   locale: string;
-  t: { accept: string; reject: string; valid_until: string };
+  t: { accept: string; reject: string; valid_until: string; download_pdf?: string };
 }
 
 export function PortalQuoteCard({ quote, locale, t }: QuoteCardProps) {
@@ -102,38 +103,47 @@ export function PortalQuoteCard({ quote, locale, t }: QuoteCardProps) {
           )}
         </div>
 
-        {/* Actions — only when SENT */}
-        {status === "SENT" && (
-          <div className="flex flex-col gap-2">
-            <Button
-              size="sm"
-              className="text-xs gap-1.5"
-              disabled={loading !== null}
-              onClick={() => action("ACCEPTED")}
-            >
-              {loading === "accept" ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
-              )}
-              {t.accept}
+        <div className="flex flex-col gap-2">
+          {quote.pdfUrl ? (
+            <Button size="sm" variant="outline" className="text-xs gap-1.5" asChild>
+              <a href={quote.pdfUrl} target="_blank" rel="noopener noreferrer">
+                <Download className="h-3.5 w-3.5" strokeWidth={2} />
+                {t.download_pdf ?? (locale === "sq" ? "Shkarko PDF" : "Download PDF")}
+              </a>
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs gap-1.5"
-              disabled={loading !== null}
-              onClick={() => action("REJECTED")}
-            >
-              {loading === "reject" ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <XCircle className="h-3.5 w-3.5" strokeWidth={2} />
-              )}
-              {t.reject}
-            </Button>
-          </div>
-        )}
+          ) : null}
+          {status === "SENT" ? (
+            <>
+              <Button
+                size="sm"
+                className="text-xs gap-1.5"
+                disabled={loading !== null}
+                onClick={() => action("ACCEPTED")}
+              >
+                {loading === "accept" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
+                )}
+                {t.accept}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs gap-1.5"
+                disabled={loading !== null}
+                onClick={() => action("REJECTED")}
+              >
+                {loading === "reject" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <XCircle className="h-3.5 w-3.5" strokeWidth={2} />
+                )}
+                {t.reject}
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
     </div>
   );
