@@ -42,3 +42,9 @@ export const STATUS_LABELS: Record<
       "text-red-600 bg-red-50 border-red-200 dark:bg-red-950/30 dark:text-red-400",
   },
 };
+
+export function orderStatusLabel(status: string, locale: string): string {
+  const sl = STATUS_LABELS[status];
+  if (!sl) return status;
+  return locale === "en" ? sl.en : sl.sq;
+}

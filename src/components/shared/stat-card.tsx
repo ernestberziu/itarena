@@ -42,7 +42,7 @@ function StatCardInner({
         </div>
       </div>
       <div>
-        <p className="text-2xl font-bold tabular-nums text-foreground">
+        <p className="admin-stat-value text-lg font-bold tabular-nums leading-snug text-foreground">
           {value}
         </p>
         {delta && (

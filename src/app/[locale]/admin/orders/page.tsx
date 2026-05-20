@@ -229,6 +229,7 @@ export default async function AdminOrdersPage({
             totalCount={filteredTotal}
             pageSize={ADMIN_LIST_PAGE_SIZE}
             locale={locale}
+            lp={lp}
             filterQuery={filterQuery}
           />
         </div>

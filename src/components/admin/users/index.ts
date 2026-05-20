@@ -1,6 +1,6 @@
 export { UserAvatar } from "./user-avatar";
 export { UserStatusBadges, deriveUserStatusLabels, type UserStatusBadgeInput } from "./user-status-badges";
-export { AdminStatCard } from "./admin-stat-card";
+export { AdminStatCard, adminStatValueClassName } from "./admin-stat-card";
 export { ConfirmDangerDialog } from "./confirm-danger-dialog";
 export { AdminClientRowActions, type AdminClientActionRow } from "./admin-client-row-actions";
 export { AdminUsersToolbar } from "./admin-users-toolbar";

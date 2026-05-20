@@ -63,7 +63,7 @@ export function ReportsKpiCard({ kpi, locale }: { kpi: KpiCard; locale: string }
           </span>
         ) : null}
       </div>
-      <p className="mt-2 text-2xl font-bold tabular-nums tracking-tight">{display}</p>
+      <p className="admin-stat-value mt-2 text-lg font-bold tabular-nums leading-snug tracking-tight">{display}</p>
       <div className="mt-3 h-10 opacity-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={kpi.sparkline}>

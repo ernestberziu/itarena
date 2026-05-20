@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { seedSiteContent } from "./seed-site-content";
 import { seedProjects } from "./seed-projects";
+import { seedDemoOrder } from "./seed-demo-order";
 
 const prisma = new PrismaClient();
 
@@ -106,6 +107,7 @@ async function main() {
 
   await seedSiteContent(prisma);
   await seedProjects(prisma);
+  await seedDemoOrder(prisma);
 
   console.log("\n🎉 Seeding complete!");
   console.log("\nLogin credentials:");

@@ -107,7 +107,7 @@ export function AdminQuotesTable({
         enableSorting: true,
         sortingFn: "alphanumeric",
         cell: ({ row }) => {
-          const summary = summarizeServicesJson(row.original.services);
+          const summary = summarizeServicesJson(row.original.services, locale as "sq" | "en");
           return (
             <div className="max-w-[min(100vw,20rem)] lg:max-w-xs">
               <p className="truncate font-medium">{row.original.title}</p>
@@ -194,12 +194,6 @@ export function AdminQuotesTable({
           ) : (
             <span className="text-muted-foreground">—</span>
           ),
-      },
-      {
-        id: "assigned",
-        header: th("Stafi", "Staff"),
-        enableSorting: false,
-        cell: () => <span className="text-xs text-muted-foreground">—</span>,
       },
       {
         id: "actions",

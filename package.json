@@ -9,6 +9,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:seed-demo-order": "tsx scripts/seed-demo-order.ts",
     "db:wait": "node scripts/wait-for-databases.mjs",
     "dev": "node scripts/dev.mjs",
     "dev:with-mock": "node scripts/dev-with-mock.mjs",

@@ -1,6 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/** Shared typography for KPI / stat values across admin dashboards. */
+export const adminStatValueClassName =
+  "admin-stat-value text-lg font-semibold tabular-nums tracking-tight leading-snug text-foreground";
+
 export function AdminStatCard({
   label,
   value,
@@ -25,9 +29,7 @@ export function AdminStatCard({
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-            {value}
-          </p>
+          <p className={adminStatValueClassName}>{value}</p>
         </div>
         {Icon ? (
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted/80 text-muted-foreground shadow-inner">

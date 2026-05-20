@@ -50,7 +50,7 @@ export function ProjectStepsSummary({
             {t("stepsProgress", { closed, total })}
           </p>
         </div>
-        <p className="text-2xl font-bold tabular-nums text-foreground">{pct}%</p>
+        <p className="admin-stat-value text-lg font-bold tabular-nums leading-snug text-foreground">{pct}%</p>
       </div>
 
       <div

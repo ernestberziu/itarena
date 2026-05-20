@@ -174,13 +174,13 @@ export function AdminClientPreviewSheet({
                       label={t("Biletat", "Tickets")}
                       value={user._count.tickets}
                       icon={Ticket}
-                      className="p-3.5 [&_p.text-2xl]:text-xl"
+                      className="p-3.5 [&_.admin-stat-value]:text-base"
                     />
                     <AdminStatCard
                       label={t("Porositë", "Orders")}
                       value={user._count.orders}
                       icon={ShoppingBag}
-                      className="p-3.5 [&_p.text-2xl]:text-xl"
+                      className="p-3.5 [&_.admin-stat-value]:text-base"
                     />
                   </div>
                 </section>

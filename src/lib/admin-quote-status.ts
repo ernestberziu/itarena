@@ -49,3 +49,9 @@ export const STATUS_LABELS: Record<
       "text-purple-600 bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400",
   },
 };
+
+export function quoteStatusLabel(status: string, locale: string): string {
+  const sl = STATUS_LABELS[status];
+  if (!sl) return status;
+  return locale === "en" ? sl.en : sl.sq;
+}

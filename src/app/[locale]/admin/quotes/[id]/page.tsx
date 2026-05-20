@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Mail, FileText } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -73,15 +73,29 @@ export default async function AdminQuoteDetailPage({
           { label: en ? "Quotes" : "Ofertat", href: `${lp}/admin/quotes` },
           { label: quote.quoteNumber },
         ]}
-        title={quote.title}
-        description={`${quote.quoteNumber} · ${quote.contactName}`}
+        title={quote.quoteNumber}
+        description={quote.contactEmail}
         actions={
-          <Link
-            href={`${lp}/admin/quotes`}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            {en ? "← Back to quotes" : "← Kthehu te ofertat"}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={`mailto:${quote.contactEmail}`}
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border/60 bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50"
+            >
+              <Mail className="h-4 w-4" strokeWidth={2} aria-hidden />
+              {en ? "Email client" : "Email klientit"}
+            </a>
+            {quote.pdfUrl ? (
+              <a
+                href={quote.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-border/60 bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50"
+              >
+                <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+                {en ? "Open PDF" : "Hap PDF"}
+              </a>
+            ) : null}
+          </div>
         }
       />
       <AdminQuoteDetailView quote={model} locale={locale} lp={lp} />

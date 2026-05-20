@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PortalOrderAccordion } from "@/components/portal/order-accordion";
-import { parseJsonArray } from "@/lib/json";
+import { parseFulfillmentItems } from "@/lib/order-fulfillment";
 import { formatDate, formatPrice } from "@/lib/utils";
 
 export default async function OrdersPage({
@@ -32,9 +32,7 @@ export default async function OrdersPage({
     ...order,
     total: Number(order.total),
     subtotal: Number(order.subtotal),
-    parsedItems: parseJsonArray<{ name: string; nameEn?: string; quantity: number; price: number; sku?: string }>(
-      order.items as string
-    ),
+    parsedItems: parseFulfillmentItems(order.items as string),
   }));
 
   return (

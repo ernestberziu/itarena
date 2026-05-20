@@ -4,16 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const STATUSES = ["PLACED", "CONFIRMED", "DISPATCHED", "DELIVERED", "CANCELLED"] as const;
-
-const LABELS: Record<string, { sq: string; en: string }> = {
-  PLACED: { sq: "Vendosur", en: "Placed" },
-  CONFIRMED: { sq: "Konfirmuar", en: "Confirmed" },
-  DISPATCHED: { sq: "Dërguar", en: "Dispatched" },
-  DELIVERED: { sq: "Dorëzuar", en: "Delivered" },
-  CANCELLED: { sq: "Anuluar", en: "Cancelled" },
-};
+import { ORDER_STATUSES, orderStatusLabel } from "@/lib/admin-order-status";
 
 interface Props {
   orderId: string;
@@ -49,14 +40,12 @@ export function AdminOrderStatusUpdater({ orderId, currentStatus, locale }: Prop
   return (
     <Select value={status} onValueChange={handleChange} disabled={loading}>
       <SelectTrigger className="h-7 text-xs w-36 border-dashed">
-        <SelectValue>
-          {LABELS[status]?.[locale as "sq" | "en"] ?? status}
-        </SelectValue>
+        <SelectValue>{orderStatusLabel(status, locale)}</SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {STATUSES.map((s) => (
+        {ORDER_STATUSES.map((s) => (
           <SelectItem key={s} value={s} className="text-xs">
-            {LABELS[s]?.[locale as "sq" | "en"] ?? s}
+            {orderStatusLabel(s, locale)}
           </SelectItem>
         ))}
       </SelectContent>

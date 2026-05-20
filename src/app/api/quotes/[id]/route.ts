@@ -3,10 +3,16 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
+import { QUOTE_MONEY_MAX, isQuoteMoneyInRange } from "@/lib/quote-money";
 
 const patchSchema = z.object({
   status: z.enum(["PENDING", "REVIEWING", "SENT", "ACCEPTED", "REJECTED", "REVISION_REQUESTED"]).optional(),
-  total: z.number().positive().optional(),
+  total: z
+    .number()
+    .positive()
+    .max(QUOTE_MONEY_MAX)
+    .refine(isQuoteMoneyInRange, { message: "Total exceeds allowed range" })
+    .optional(),
   notes: z.string().optional(),
   validUntil: z.string().optional(),
   pdfUrl: z.string().url().optional(),
@@ -22,7 +28,16 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
   const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid" }, { status: 400 });
+  if (!parsed.success) {
+    const totalIssue = parsed.error.issues.find((issue) => issue.path[0] === "total");
+    if (totalIssue) {
+      return NextResponse.json(
+        { error: "Total exceeds the maximum allowed amount (99,999,999.99)." },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: "Invalid" }, { status: 400 });
+  }
 
   const quote = await db.quote.findUnique({ where: { id } });
   if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -43,7 +58,9 @@ export async function PATCH(
 
   const updateData: Record<string, unknown> = {};
   if (parsed.data.status) updateData.status = parsed.data.status;
-  if (parsed.data.total !== undefined && isStaff) updateData.total = parsed.data.total;
+  if (parsed.data.total !== undefined && isStaff) {
+    updateData.total = Math.round(parsed.data.total * 100) / 100;
+  }
   if (parsed.data.notes !== undefined && isStaff) updateData.internalNote = parsed.data.notes;
   if (parsed.data.validUntil && isStaff) updateData.validUntil = new Date(parsed.data.validUntil);
   if (parsed.data.pdfUrl && isStaff) updateData.pdfUrl = parsed.data.pdfUrl;

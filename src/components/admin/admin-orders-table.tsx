@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   getCoreRowModel,
   getSortedRowModel,
@@ -9,9 +11,9 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { AdminInfiniteTable } from "@/components/admin/admin-infinite-table";
-import { AdminOrderStatusUpdater } from "@/components/admin/order-status-updater";
+import { AdminOrderRowActions } from "@/components/admin/admin-order-row-actions";
+import { OrderStatusBadge } from "@/components/admin/order-status-badge";
 import { formatDate, formatPrice } from "@/lib/utils";
-import { STATUS_LABELS } from "@/lib/admin-order-status";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 
 export { ORDER_STATUSES, STATUS_LABELS } from "@/lib/admin-order-status";
@@ -41,14 +43,17 @@ export function AdminOrdersTable({
   totalCount,
   pageSize,
   locale,
+  lp,
   filterQuery,
 }: {
   initialOrders: AdminOrderListRow[];
   totalCount: number;
   pageSize: number;
   locale: string;
+  lp: string;
   filterQuery: string;
 }) {
+  const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount } =
@@ -69,9 +74,18 @@ export function AdminOrdersTable({
         accessorKey: "orderNumber",
         header: th("Nr. Porosisë", "Order #"),
         enableSorting: true,
-        cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.orderNumber}</span>
-        ),
+        cell: ({ row }) => {
+          const href = `${lp}/admin/orders/${row.original.id}`;
+          return (
+            <Link
+              href={href}
+              className="font-mono text-xs font-medium text-primary hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {row.original.orderNumber}
+            </Link>
+          );
+        },
       },
       {
         id: "customer",
@@ -115,16 +129,9 @@ export function AdminOrdersTable({
         accessorKey: "status",
         header: th("Statusi", "Status"),
         enableSorting: true,
-        cell: ({ row }) => {
-          const sl = STATUS_LABELS[row.original.status];
-          return sl ? (
-            <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${sl.color}`}
-            >
-              {sl[locale as "sq" | "en"]}
-            </span>
-          ) : null;
-        },
+        cell: ({ row }) => (
+          <OrderStatusBadge status={row.original.status} locale={locale} />
+        ),
       },
       {
         accessorKey: "createdAt",
@@ -141,17 +148,16 @@ export function AdminOrdersTable({
         header: "",
         enableSorting: false,
         cell: ({ row }) => (
-          <div onClick={(e) => e.stopPropagation()}>
-            <AdminOrderStatusUpdater
-              orderId={row.original.id}
-              currentStatus={row.original.status}
-              locale={locale}
-            />
-          </div>
+          <AdminOrderRowActions
+            orderId={row.original.id}
+            detailHref={`${lp}/admin/orders/${row.original.id}`}
+            currentStatus={row.original.status}
+            locale={locale}
+          />
         ),
       },
     ];
-  }, [locale]);
+  }, [locale, lp]);
 
   const table = useReactTable({
     data: rows,
@@ -179,6 +185,8 @@ export function AdminOrdersTable({
       error={error}
       scrollRef={scrollRef}
       sentinelRef={sentinelRef}
+      onRowClick={(row) => router.push(`${lp}/admin/orders/${row.id}`)}
+      getRowId={(r) => r.id}
       minTableWidth="920px"
     />
   );

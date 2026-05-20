@@ -1,11 +1,24 @@
 /** Display helpers for quote JSON fields — safe parse, no throws to UI. */
 
-export function summarizeServicesJson(servicesJson: string, maxLen = 72): string {
+import { divisionLabel } from "@/lib/division-labels";
+
+export function quoteServiceLabel(serviceId: string, locale: "sq" | "en"): string {
+  return divisionLabel(serviceId, locale);
+}
+
+export function summarizeServicesJson(
+  servicesJson: string,
+  locale: "sq" | "en" = "sq",
+  maxLen = 72
+): string {
   if (!servicesJson || servicesJson === "[]") return "";
   try {
     const parsed = JSON.parse(servicesJson) as unknown;
     if (!Array.isArray(parsed)) return "";
-    const parts = parsed.filter((x): x is string => typeof x === "string").slice(0, 4);
+    const parts = parsed
+      .filter((x): x is string => typeof x === "string")
+      .slice(0, 4)
+      .map((id) => divisionLabel(id, locale));
     const s = parts.join(" · ");
     if (s.length <= maxLen) return s;
     return `${s.slice(0, maxLen - 1)}…`;

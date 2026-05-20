@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { ChevronDown, MapPin, Package, Clock, CheckCircle2, Truck } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatDate, formatPrice } from "@/lib/utils";
+import { cn, formatDate, formatPrice } from "@/lib/utils";
+import {
+  getFulfilledQty,
+  getLineFulfillmentState,
+  lineFulfillmentTotal,
+  orderFulfillmentSummary,
+  type OrderLineItem,
+} from "@/lib/order-fulfillment";
 
 const STATUS_STYLES: Record<string, string> = {
   PLACED: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400",
@@ -13,13 +19,7 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: "text-red-600 bg-red-50 border-red-200 dark:bg-red-950/30 dark:text-red-400",
 };
 
-interface OrderItem {
-  name: string;
-  nameEn?: string;
-  quantity: number;
-  price: number;
-  sku?: string;
-}
+interface OrderItem extends OrderLineItem {}
 
 interface OrderAccordionProps {
   order: {
@@ -46,6 +46,9 @@ export function PortalOrderAccordion({ order, locale, t }: OrderAccordionProps) 
   const statusStyle = STATUS_STYLES[order.status] ?? "";
   const statusLabel =
     t[`status_${order.status.toLowerCase()}`] ?? order.status;
+
+  const fulfillment = orderFulfillmentSummary(order.items);
+  const showFulfillment = fulfillment.hasShortfall;
 
   const timeline = [
     { label: locale === "sq" ? "Vendosur" : "Placed", date: order.createdAt, icon: Package },
@@ -92,6 +95,13 @@ export function PortalOrderAccordion({ order, locale, t }: OrderAccordionProps) 
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               {locale === "sq" ? "Artikujt" : "Items"}
             </p>
+            {showFulfillment ? (
+              <p className="mb-2 text-xs text-amber-800 dark:text-amber-200">
+                {locale === "sq"
+                  ? "Sasia e konfirmuar nga stafi mund të ndryshojë nga porosia fillestare."
+                  : "Confirmed quantities may differ from your original order."}
+              </p>
+            ) : null}
             <div className="rounded-lg border bg-card overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -100,8 +110,19 @@ export function PortalOrderAccordion({ order, locale, t }: OrderAccordionProps) 
                       {locale === "sq" ? "Produkti" : "Product"}
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
-                      {locale === "sq" ? "Sasi" : "Qty"}
+                      {showFulfillment
+                        ? locale === "sq"
+                          ? "Kërkuar"
+                          : "Requested"
+                        : locale === "sq"
+                          ? "Sasi"
+                          : "Qty"}
                     </th>
+                    {showFulfillment ? (
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
+                        {locale === "sq" ? "Konfirmuar" : "Confirmed"}
+                      </th>
+                    ) : null}
                     <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">
                       {locale === "sq" ? "Çmimi" : "Price"}
                     </th>
@@ -111,26 +132,63 @@ export function PortalOrderAccordion({ order, locale, t }: OrderAccordionProps) 
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.map((item, i) => (
-                    <tr key={i} className="border-b last:border-0">
-                      <td className="px-3 py-2.5">
-                        <p className="font-medium">{locale === "en" && item.nameEn ? item.nameEn : item.name}</p>
-                        {item.sku && <p className="text-xs text-muted-foreground font-mono">{item.sku}</p>}
-                      </td>
-                      <td className="px-3 py-2.5 text-center tabular-nums">{item.quantity}</td>
-                      <td className="px-3 py-2.5 text-right tabular-nums">{formatPrice(item.price)}</td>
-                      <td className="px-3 py-2.5 text-right font-medium tabular-nums">
-                        {formatPrice(item.price * item.quantity)}
-                      </td>
-                    </tr>
-                  ))}
+                  {order.items.map((item, i) => {
+                    const fulfilled = getFulfilledQty(item);
+                    const lineState = getLineFulfillmentState(item);
+                    return (
+                      <tr
+                        key={i}
+                        className={cn(
+                          "border-b last:border-0",
+                          lineState === "unavailable" && "bg-red-50/40 dark:bg-red-950/20",
+                          lineState === "partial" && "bg-amber-50/30 dark:bg-amber-950/15"
+                        )}
+                      >
+                        <td className="px-3 py-2.5">
+                          <p className="font-medium">{locale === "en" && item.nameEn ? item.nameEn : item.name}</p>
+                          {item.sku && <p className="text-xs text-muted-foreground font-mono">{item.sku}</p>}
+                          {lineState === "unavailable" ? (
+                            <p className="text-xs text-red-600 dark:text-red-400">
+                              {locale === "sq" ? "Nuk disponohet" : "Not available"}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2.5 text-center tabular-nums">{item.quantity}</td>
+                        {showFulfillment ? (
+                          <td className="px-3 py-2.5 text-center tabular-nums font-medium">{fulfilled}</td>
+                        ) : null}
+                        <td className="px-3 py-2.5 text-right tabular-nums">{formatPrice(item.price)}</td>
+                        <td className="px-3 py-2.5 text-right font-medium tabular-nums">
+                          {formatPrice(showFulfillment ? lineFulfillmentTotal(item) : item.price * item.quantity)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 <tfoot>
+                  {showFulfillment ? (
+                    <tr className="border-t bg-muted/10">
+                      <td colSpan={showFulfillment ? 4 : 3} className="px-3 py-2 text-right text-xs text-muted-foreground">
+                        {locale === "sq" ? "Totali i porositur" : "Ordered total"}
+                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                        {formatPrice(fulfillment.orderedTotal)}
+                      </td>
+                    </tr>
+                  ) : null}
                   <tr className="border-t bg-muted/20">
-                    <td colSpan={3} className="px-3 py-2 text-right text-sm font-semibold">
-                      {locale === "sq" ? "Total" : "Total"}
+                    <td colSpan={showFulfillment ? 4 : 3} className="px-3 py-2 text-right text-sm font-semibold">
+                      {showFulfillment
+                        ? locale === "sq"
+                          ? "Totali i konfirmuar"
+                          : "Confirmed total"
+                        : locale === "sq"
+                          ? "Total"
+                          : "Total"}
                     </td>
-                    <td className="px-3 py-2 text-right font-bold tabular-nums">{formatPrice(order.total)}</td>
+                    <td className="px-3 py-2 text-right font-bold tabular-nums">
+                      {formatPrice(showFulfillment ? fulfillment.fulfilledTotal : order.total)}
+                    </td>
                   </tr>
                 </tfoot>
               </table>
