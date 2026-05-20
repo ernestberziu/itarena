@@ -177,8 +177,8 @@ type PdfDocProps = {
   party: ContractParty;
   settings: TemplateSettingsConfig;
   language: TemplateLanguage;
-  variant: "service" | "employment";
-  employeeName?: string;
+  variant: "service" | "employment" | "partner";
+  counterpartyName?: string;
 };
 
 function ContractPdfDocument({
@@ -187,15 +187,19 @@ function ContractPdfDocument({
   settings,
   language,
   variant,
-  employeeName,
+  counterpartyName,
 }: PdfDocProps) {
   const en = language === "en";
   const leftLabel =
     variant === "employment"
       ? en ? "Employee" : "Punonjësi"
-      : en ? "Client" : "Klienti";
+      : variant === "partner"
+        ? en ? "Partner" : "Partneri"
+        : en ? "Client" : "Klienti";
   const leftName =
-    variant === "employment" ? employeeName ?? party.fullName : party.fullName;
+    variant === "employment" || variant === "partner"
+      ? counterpartyName ?? party.fullName
+      : party.fullName;
 
   return (
     <Document>

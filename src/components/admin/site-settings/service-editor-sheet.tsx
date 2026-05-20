@@ -3,13 +3,10 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, ListChecks, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -18,8 +15,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IconPicker } from "./shared/icon-picker";
+import { BilingualInput } from "./shared/bilingual-input";
+import { adminWhiteDialogClassName, adminWhiteInputClassName } from "@/components/admin/admin-white-dialog";
 import { getLucideIcon } from "@/lib/site-content/icons";
 import { cn } from "@/lib/utils";
 import type { MarketingServiceRecord, ServiceFeature } from "@/lib/site-content/types";
@@ -86,6 +84,34 @@ function serviceToDraft(service: MarketingServiceRecord): Partial<MarketingServi
   };
 }
 
+function EditorSection({
+  eyebrow,
+  description,
+  children,
+  className,
+}: {
+  eyebrow?: string;
+  description?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={cn("space-y-3", className)}>
+      {(eyebrow || description) && (
+        <div className="space-y-1 px-0.5">
+          {eyebrow ? (
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{eyebrow}</p>
+          ) : null}
+          {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
+        </div>
+      )}
+      <div className="rounded-2xl border border-border/60 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] dark:bg-white">
+        {children}
+      </div>
+    </section>
+  );
+}
+
 function FormField({
   label,
   value,
@@ -100,78 +126,149 @@ function FormField({
   return (
     <div className="space-y-2">
       <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} />
-      {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
+      <Input className={adminWhiteInputClassName} value={value} onChange={(e) => onChange(e.target.value)} />
+      {hint ? <p className="text-[11px] leading-relaxed text-muted-foreground">{hint}</p> : null}
     </div>
+  );
+}
+
+function LocaleColumnHeader({ code, label }: { code: string; label: string }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="flex h-5 shrink-0 items-center justify-center rounded-md bg-background px-1.5 text-[10px] font-bold tracking-wide text-muted-foreground ring-1 ring-inset ring-border/60">
+        {code}
+      </span>
+      <span className="truncate text-xs font-medium text-foreground">{label}</span>
+    </div>
+  );
+}
+
+function FeatureCard({
+  index,
+  feature,
+  inputClassName,
+  onChange,
+  onRemove,
+  removeLabel,
+}: {
+  index: number;
+  feature: ServiceFeature;
+  inputClassName?: string;
+  onChange: (next: ServiceFeature) => void;
+  onRemove: () => void;
+  removeLabel: string;
+}) {
+  return (
+    <article className="group rounded-2xl border border-border/60 bg-white p-4 shadow-sm ring-1 ring-black/[0.03] transition-shadow hover:shadow-md dark:bg-white">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold tabular-nums text-primary">
+            {index + 1}
+          </span>
+          <span className="text-xs font-medium text-muted-foreground">
+            #{index + 1}
+          </span>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 shrink-0 bg-white opacity-80 transition-opacity group-hover:opacity-100"
+          onClick={onRemove}
+          aria-label={removeLabel}
+        >
+          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="space-y-2 rounded-xl border border-border/40 bg-muted/10 p-3">
+          <LocaleColumnHeader code="SQ" label="Shqip" />
+          <Input
+            className={cn(inputClassName, "h-10 text-sm")}
+            placeholder="P.sh. Monitorim 24/7"
+            value={feature.sq}
+            onChange={(e) => onChange({ ...feature, sq: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2 rounded-xl border border-border/40 bg-muted/10 p-3">
+          <LocaleColumnHeader code="EN" label="English" />
+          <Input
+            className={cn(inputClassName, "h-10 text-sm")}
+            placeholder="e.g. 24/7 monitoring"
+            value={feature.en}
+            onChange={(e) => onChange({ ...feature, en: e.target.value })}
+          />
+        </div>
+      </div>
+    </article>
   );
 }
 
 function FeaturesEditor({
   features,
   onChange,
+  inputClassName,
 }: {
   features: ServiceFeature[];
   onChange: (f: ServiceFeature[]) => void;
+  inputClassName?: string;
 }) {
   const t = useTranslations("admin.siteSettingsPage.serviceEditor");
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label className="text-xs font-medium text-muted-foreground">{t("features")}</Label>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/20 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <ListChecks className="h-4 w-4" strokeWidth={2} />
+          </span>
+          <p className="text-sm font-medium">{t("featuresCount", { count: features.length })}</p>
+        </div>
         <Button
           type="button"
-          variant="outline"
           size="sm"
+          className="h-8 shrink-0 gap-1.5 shadow-sm"
           onClick={() => onChange([...features, { sq: "", en: "" }])}
         >
-          <Plus className="mr-1 h-3.5 w-3.5" />
+          <Plus className="h-3.5 w-3.5" />
           {t("addFeature")}
         </Button>
       </div>
+
       {features.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
-          {t("noFeatures")}
-        </p>
+        <button
+          type="button"
+          onClick={() => onChange([{ sq: "", en: "" }])}
+          className="flex w-full flex-col items-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 px-4 py-12 text-center transition-colors hover:border-primary/30 hover:bg-primary/[0.02]"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
+            <ListChecks className="h-5 w-5" strokeWidth={2} />
+          </span>
+          <div>
+            <p className="text-sm font-medium text-foreground">{t("noFeatures")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("addFeature")}</p>
+          </div>
+        </button>
       ) : (
-        <div className="space-y-2">
+        <ul className="flex flex-col gap-3">
           {features.map((f, i) => (
-            <div key={i} className="rounded-lg border bg-muted/20 p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  #{i + 1}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => onChange(features.filter((_, j) => j !== i))}
-                >
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                </Button>
-              </div>
-              <Input
-                placeholder="Shqip"
-                value={f.sq}
-                onChange={(e) => {
-                  const next = [...features];
-                  next[i] = { ...f, sq: e.target.value };
-                  onChange(next);
+            <li key={i} className="min-w-0">
+              <FeatureCard
+                index={i}
+                feature={f}
+                inputClassName={inputClassName}
+                removeLabel={t("removeFeature")}
+                onRemove={() => onChange(features.filter((_, j) => j !== i))}
+                onChange={(next) => {
+                  const updated = [...features];
+                  updated[i] = next;
+                  onChange(updated);
                 }}
               />
-              <Input
-                placeholder="English"
-                value={f.en}
-                onChange={(e) => {
-                  const next = [...features];
-                  next[i] = { ...f, en: e.target.value };
-                  onChange(next);
-                }}
-              />
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
@@ -190,11 +287,13 @@ export function ServiceEditorSheet({
 }) {
   const t = useTranslations("admin.siteSettingsPage.serviceEditor");
   const tRoot = useTranslations("admin.siteSettingsPage");
+  const tSections = useTranslations("admin.siteSettingsPage.sections");
   const [draft, setDraft] = useState<Partial<MarketingServiceRecord>>(emptyDraft);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const isEdit = Boolean(serviceId);
+  const Icon = getLucideIcon(draft.iconKey ?? "Monitor");
 
   useEffect(() => {
     if (!open) return;
@@ -238,9 +337,7 @@ export function ServiceEditorSheet({
 
     setSaving(true);
     try {
-      const url = isEdit
-        ? `/api/admin/site/services/${serviceId}`
-        : "/api/admin/site/services";
+      const url = isEdit ? `/api/admin/site/services/${serviceId}` : "/api/admin/site/services";
       const res = await fetch(url, {
         method: isEdit ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -276,28 +373,38 @@ export function ServiceEditorSheet({
     }
   };
 
-  const Icon = getLucideIcon(draft.iconKey ?? "Monitor");
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-0 border-l p-0 sm:max-w-xl">
-        <SheetHeader className="border-b px-6 py-5 text-left">
-          <div className="flex items-start gap-4">
+      <SheetContent
+        side="right"
+        className={cn(
+          "flex w-full flex-col gap-0 overflow-hidden p-0",
+          "data-[side=right]:!w-[min(48vw,40rem)] data-[side=right]:!max-w-[40rem]",
+          adminWhiteDialogClassName
+        )}
+      >
+        <SheetHeader className="shrink-0 space-y-0 border-b border-border/60 bg-white px-5 pb-4 pt-5 text-left sm:pr-14 dark:bg-white">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            {tSections("services")}
+          </p>
+          <div className="mt-2 flex items-start gap-4">
             <div
               className={cn(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border",
-                draft.colorClass || "bg-muted"
+                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border shadow-sm ring-1 ring-black/[0.04]",
+                draft.colorClass || "bg-muted/30"
               )}
             >
-              <Icon className="h-6 w-6" />
+              <Icon className="h-7 w-7" strokeWidth={2} />
             </div>
-            <div className="min-w-0 flex-1">
-              <SheetTitle className="text-lg">
+            <div className="min-w-0 flex-1 space-y-2">
+              <SheetTitle className="text-left text-lg font-semibold tracking-tight">
                 {isEdit ? tRoot("editService") : tRoot("addService")}
               </SheetTitle>
-              <SheetDescription className="mt-1">
+              <SheetDescription className="text-left text-xs leading-relaxed">
                 {isEdit && draft.slug ? (
-                  <span className="font-mono text-xs">/sherbime/{draft.slug}</span>
+                  <span className="inline-flex rounded-md bg-muted/40 px-2 py-0.5 font-mono text-[11px] text-muted-foreground ring-1 ring-inset ring-border/50">
+                    /sherbime/{draft.slug}
+                  </span>
                 ) : (
                   t("addDescription")
                 )}
@@ -307,172 +414,79 @@ export function ServiceEditorSheet({
         </SheetHeader>
 
         {loading ? (
-          <div className="flex flex-1 items-center justify-center py-16">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-white py-20 dark:bg-white">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto px-6 py-5">
-            <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="mb-5 grid w-full grid-cols-3 h-10">
-                <TabsTrigger value="basic">{t("tabBasic")}</TabsTrigger>
-                <TabsTrigger value="display">{t("tabDisplay")}</TabsTrigger>
-                <TabsTrigger value="seo">{t("tabSeo")}</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="basic" className="mt-0 space-y-5">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-white px-5 py-5 pb-8 dark:bg-white">
+            <div className="space-y-5">
+              <EditorSection eyebrow={t("sectionIdentity")}>
                 {!isEdit && (
                   <FormField
                     label={t("slug")}
                     hint={t("slugHint")}
                     value={draft.slug ?? ""}
-                    onChange={(slug) => setDraft({ ...draft, slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                    onChange={(slug) =>
+                      setDraft({ ...draft, slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "") })
+                    }
                   />
                 )}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    label={t("nameSq")}
-                    value={draft.nameSq ?? ""}
-                    onChange={(nameSq) => setDraft({ ...draft, nameSq })}
-                  />
-                  <FormField
-                    label={t("nameEn")}
-                    value={draft.nameEn ?? ""}
-                    onChange={(nameEn) => setDraft({ ...draft, nameEn })}
+                <div className={cn(!isEdit && "mt-4")}>
+                  <IconPicker
+                    label={t("icon")}
+                    value={draft.iconKey ?? "Monitor"}
+                    onChange={(iconKey) => setDraft({ ...draft, iconKey })}
                   />
                 </div>
-                <IconPicker
-                  label={t("icon")}
-                  value={draft.iconKey ?? "Monitor"}
-                  onChange={(iconKey) => setDraft({ ...draft, iconKey })}
-                />
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">{t("shortDescSq")}</Label>
-                  <Textarea
+              </EditorSection>
+
+              <EditorSection eyebrow={t("sectionCopy")}>
+                <div className="space-y-5">
+                  <BilingualInput
+                    label={t("nameLabel")}
+                    value={{ sq: draft.nameSq ?? "", en: draft.nameEn ?? "" }}
+                    onChange={({ sq, en }) => setDraft({ ...draft, nameSq: sq, nameEn: en })}
+                    inputClassName={adminWhiteInputClassName}
+                  />
+                  <BilingualInput
+                    label={t("shortDescLabel")}
+                    value={{ sq: draft.shortDescSq ?? "", en: draft.shortDescEn ?? "" }}
+                    onChange={({ sq, en }) => setDraft({ ...draft, shortDescSq: sq, shortDescEn: en })}
+                    multiline
                     rows={3}
-                    value={draft.shortDescSq ?? ""}
-                    onChange={(e) => setDraft({ ...draft, shortDescSq: e.target.value })}
+                    inputClassName={adminWhiteInputClassName}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">{t("shortDescEn")}</Label>
-                  <Textarea
-                    rows={3}
-                    value={draft.shortDescEn ?? ""}
-                    onChange={(e) => setDraft({ ...draft, shortDescEn: e.target.value })}
-                  />
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">{t("fullDescSq")}</Label>
-                  <Textarea
+                  <BilingualInput
+                    label={t("fullDescLabel")}
+                    value={{ sq: draft.fullDescSq ?? "", en: draft.fullDescEn ?? "" }}
+                    onChange={({ sq, en }) => setDraft({ ...draft, fullDescSq: sq, fullDescEn: en })}
+                    multiline
                     rows={5}
-                    value={draft.fullDescSq ?? ""}
-                    onChange={(e) => setDraft({ ...draft, fullDescSq: e.target.value })}
+                    inputClassName={adminWhiteInputClassName}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">{t("fullDescEn")}</Label>
-                  <Textarea
-                    rows={5}
-                    value={draft.fullDescEn ?? ""}
-                    onChange={(e) => setDraft({ ...draft, fullDescEn: e.target.value })}
-                  />
-                </div>
+              </EditorSection>
+
+              <EditorSection eyebrow={t("features")} description={t("featuresHint")}>
                 <FeaturesEditor
                   features={(draft.featuresJson as ServiceFeature[]) ?? []}
                   onChange={(featuresJson) => setDraft({ ...draft, featuresJson })}
+                  inputClassName={adminWhiteInputClassName}
                 />
-              </TabsContent>
-
-              <TabsContent value="display" className="mt-0 space-y-5">
-                <div className="rounded-xl border bg-muted/30 p-4 space-y-4">
-                  <ToggleRow
-                    label={t("enabled")}
-                    checked={draft.enabled ?? true}
-                    onCheckedChange={(enabled) => setDraft({ ...draft, enabled })}
-                  />
-                  <ToggleRow
-                    label={t("featured")}
-                    checked={draft.featured ?? false}
-                    onCheckedChange={(featured) => setDraft({ ...draft, featured })}
-                  />
-                  <ToggleRow
-                    label={t("showOnHomepage")}
-                    checked={draft.showOnHomepage ?? true}
-                    onCheckedChange={(showOnHomepage) => setDraft({ ...draft, showOnHomepage })}
-                  />
-                </div>
-                <FormField
-                  label={t("colorClass")}
-                  hint={t("colorClassHint")}
-                  value={draft.colorClass ?? ""}
-                  onChange={(colorClass) => setDraft({ ...draft, colorClass })}
-                />
-                <FormField
-                  label={t("accentClass")}
-                  value={draft.accentClass ?? ""}
-                  onChange={(accentClass) => setDraft({ ...draft, accentClass })}
-                />
-                <FormField
-                  label={t("gradientClass")}
-                  value={draft.gradientClass ?? ""}
-                  onChange={(gradientClass) => setDraft({ ...draft, gradientClass })}
-                />
-                <Separator />
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("cta")}</p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    label={t("ctaTextSq")}
-                    value={draft.ctaTextSq ?? ""}
-                    onChange={(ctaTextSq) => setDraft({ ...draft, ctaTextSq })}
-                  />
-                  <FormField
-                    label={t("ctaTextEn")}
-                    value={draft.ctaTextEn ?? ""}
-                    onChange={(ctaTextEn) => setDraft({ ...draft, ctaTextEn })}
-                  />
-                </div>
-                <FormField
-                  label={t("ctaLink")}
-                  value={draft.ctaLink ?? ""}
-                  onChange={(ctaLink) => setDraft({ ...draft, ctaLink })}
-                />
-              </TabsContent>
-
-              <TabsContent value="seo" className="mt-0 space-y-4">
-                <FormField
-                  label={t("metaTitleSq")}
-                  value={draft.metaTitleSq ?? ""}
-                  onChange={(metaTitleSq) => setDraft({ ...draft, metaTitleSq })}
-                />
-                <FormField
-                  label={t("metaTitleEn")}
-                  value={draft.metaTitleEn ?? ""}
-                  onChange={(metaTitleEn) => setDraft({ ...draft, metaTitleEn })}
-                />
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">{t("metaDescSq")}</Label>
-                  <Textarea
-                    rows={3}
-                    value={draft.metaDescSq ?? ""}
-                    onChange={(e) => setDraft({ ...draft, metaDescSq: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium text-muted-foreground">{t("metaDescEn")}</Label>
-                  <Textarea
-                    rows={3}
-                    value={draft.metaDescEn ?? ""}
-                    onChange={(e) => setDraft({ ...draft, metaDescEn: e.target.value })}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
+              </EditorSection>
+            </div>
           </div>
         )}
 
-        <SheetFooter className="border-t bg-muted/20 px-6 py-4 sm:flex-row sm:justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+        <SheetFooter className="shrink-0 border-t border-border/60 bg-white px-5 py-4 sm:flex-row sm:justify-end gap-2 dark:bg-white">
+          <Button
+            type="button"
+            variant="outline"
+            className="bg-white"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+          >
             {t("cancel")}
           </Button>
           <Button type="button" onClick={() => void save()} disabled={saving || loading}>
@@ -482,22 +496,5 @@ export function ServiceEditorSheet({
         </SheetFooter>
       </SheetContent>
     </Sheet>
-  );
-}
-
-function ToggleRow({
-  label,
-  checked,
-  onCheckedChange,
-}: {
-  label: string;
-  checked: boolean;
-  onCheckedChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <Label className="text-sm font-medium">{label}</Label>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
-    </div>
   );
 }

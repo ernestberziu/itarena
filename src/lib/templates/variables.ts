@@ -1,7 +1,7 @@
-import type { ContractParty, EmploymentPayload, ServiceContractPayload, TemplateLanguage, TemplateSettingsConfig } from "./types";
+import type { ContractParty, EmploymentPayload, PartnerPayload, ServiceContractPayload, TemplateLanguage, TemplateSettingsConfig } from "./types";
 import { computeContractTotals, formatMoney, lineItemTotal } from "./calculate";
 import { formatRecurringSchedule } from "./recurring";
-import { resolveServiceForLanguage, resolveEmploymentForLanguage, getServiceLocalized } from "./localized";
+import { resolveServiceForLanguage, resolveEmploymentForLanguage, resolvePartnerForLanguage, getServiceLocalized } from "./localized";
 import { resolvePartyCompanyName, resolvePartyTaxId, resolvePartyTaxIdLabel } from "./party";
 
 export type VariableContext = {
@@ -11,6 +11,7 @@ export type VariableContext = {
   documentNumber?: string;
   service?: ServiceContractPayload;
   employment?: EmploymentPayload;
+  partner?: PartnerPayload;
 };
 
 export function buildVariableMap(ctx: VariableContext): Record<string, string> {
@@ -24,9 +25,9 @@ export function buildVariableMap(ctx: VariableContext): Record<string, string> {
     customer_address: ctx.party.address ?? "—",
     customer_phone: ctx.party.phone ?? "—",
     customer_email: ctx.party.email ?? "—",
-    contract_date: ctx.service?.contractDate ?? ctx.employment?.startDate ?? new Date().toISOString().slice(0, 10),
-    contract_start: ctx.service?.startDate ?? ctx.employment?.startDate ?? "—",
-    contract_end: ctx.service?.endDate ?? ctx.employment?.endDate ?? "—",
+    contract_date: ctx.service?.contractDate ?? ctx.partner?.contractDate ?? ctx.employment?.startDate ?? new Date().toISOString().slice(0, 10),
+    contract_start: ctx.service?.startDate ?? ctx.partner?.startDate ?? ctx.employment?.startDate ?? "—",
+    contract_end: ctx.service?.endDate ?? ctx.partner?.endDate ?? ctx.employment?.endDate ?? "—",
     payment_terms: ctx.service?.paymentTerms ?? "—",
     delivery_terms: ctx.service?.deliveryTerms ?? "—",
     recurring_schedule: "—",
@@ -192,8 +193,26 @@ export function buildVariableMap(ctx: VariableContext): Record<string, string> {
     vars.employer_duties = resolved.employerDuties ?? "—";
     vars.employee_duties = resolved.employeeDuties ?? "—";
     vars.annual_leave = resolved.annualLeave ?? "—";
-    // Append end date clause if endDate is set
     const endDate = ctx.employment.endDate;
+    vars.contract_end_clause = endDate
+      ? (ctx.language === "en" ? ` until ${endDate}` : ` deri më ${endDate}`)
+      : (ctx.language === "en" ? " (indefinite duration)" : " (kohëzgjatje e pacaktuar)");
+  }
+
+  if (ctx.partner) {
+    const resolved = resolvePartnerForLanguage(ctx.partner, ctx.language);
+    vars.partner_name = `${ctx.partner.firstName} ${ctx.partner.lastName}`.trim();
+    vars.partner_id = ctx.partner.idNumber;
+    vars.partner_role = ctx.partner.role;
+    vars.partner_commission = ctx.partner.commission;
+    vars.partner_obligations = resolved.partnerObligations ?? "—";
+    vars.itarena_obligations = resolved.itarenaObligations ?? "—";
+    vars.commission_terms = resolved.commissionTerms ?? "—";
+    vars.partner_territory = resolved.territory;
+    vars.brand_usage = resolved.brandUsage ?? "—";
+    vars.partner_contract_type = resolved.contractType;
+    vars.notice_period = resolved.noticePeriod ?? "—";
+    const endDate = ctx.partner.endDate;
     vars.contract_end_clause = endDate
       ? (ctx.language === "en" ? ` until ${endDate}` : ` deri më ${endDate}`)
       : (ctx.language === "en" ? " (indefinite duration)" : " (kohëzgjatje e pacaktuar)");
@@ -238,4 +257,14 @@ export const TEMPLATE_VARIABLES = [
   "employee_duties",
   "annual_leave",
   "contract_end_clause",
+  "partner_name",
+  "partner_id",
+  "partner_role",
+  "partner_commission",
+  "partner_obligations",
+  "itarena_obligations",
+  "commission_terms",
+  "partner_territory",
+  "brand_usage",
+  "partner_contract_type",
 ] as const;

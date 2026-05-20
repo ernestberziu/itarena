@@ -1,3 +1,5 @@
+import type { RegistrationCompanySnapshot } from "@/lib/registration-company-snapshot";
+
 export type AdminClientRow = {
   id: string;
   firstName: string;
@@ -8,6 +10,8 @@ export type AdminClientRow = {
   role: string;
   createdAt: string;
   lastLoginAt: string | null;
-  company: { name: string; tier: string | null; isApproved: boolean } | null;
+  company: { id: string; name: string; tier: string | null; isApproved: boolean } | null;
+  registrationCompanySnapshot: RegistrationCompanySnapshot | null;
+  hasRegistrationCompanyData: boolean;
   _count: { tickets: number; orders: number };
 };

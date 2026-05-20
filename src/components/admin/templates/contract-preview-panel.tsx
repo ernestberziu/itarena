@@ -16,10 +16,16 @@ export function ContractPreviewPanel({
   party: ContractParty;
   settings: TemplateSettingsConfig;
   documentNumber?: string;
-  variant: "service" | "employment";
+  variant: "service" | "employment" | "partner";
 }) {
   const t = useTranslations("admin.templatesPage");
 
+  const leftPartyLabel =
+    variant === "employment"
+      ? t("previewEmployee")
+      : variant === "partner"
+        ? t("previewPartner")
+        : t("previewClient");
   return (
     <div className="contract-preview-panel min-h-[640px] rounded-2xl border border-border/50 bg-white text-slate-900 shadow-lg print:shadow-none">
       <div className="border-b border-slate-200 px-8 py-6">
@@ -36,9 +42,7 @@ export function ContractPreviewPanel({
       </article>
       <div className="grid grid-cols-2 gap-8 border-t border-slate-200 px-8 py-8 text-sm">
         <div>
-          <p className="font-semibold text-slate-800">
-            {variant === "employment" ? t("previewEmployee") : t("previewClient")}
-          </p>
+          <p className="font-semibold text-slate-800">{leftPartyLabel}</p>
           <p className="mt-1">{party.fullName}</p>
           <div className="mt-8 border-b border-slate-400" />
           <p className="mt-2 text-xs text-slate-500">{t("previewSignature")}</p>

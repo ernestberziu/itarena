@@ -1,19 +1,22 @@
 import { db } from "@/lib/db";
 import {
   composeEmploymentBody,
+  composePartnerBody,
   composeServiceBody,
   employmentPartyFromPayload,
+  partnerPartyFromPayload,
 } from "./compose-body";
 import { buildContractPdfBuffer } from "./export-contract-pdf";
 import { getTemplateSettings } from "./settings";
 import type {
   ContractParty,
   EmploymentPayload,
+  PartnerPayload,
   ServiceContractPayload,
   TemplateLanguage,
 } from "./types";
-import { employmentPayloadSchema, servicePayloadSchema } from "./schemas";
-import { migrateEmploymentPayload, migrateServicePayload } from "./localized";
+import { employmentPayloadSchema, partnerPayloadSchema, servicePayloadSchema } from "./schemas";
+import { migrateEmploymentPayload, migratePartnerPayload, migrateServicePayload } from "./localized";
 import { normalizeServicePayload } from "./recurring";
 
 type PdfBuildResult = {
@@ -33,9 +36,9 @@ export async function buildPdfBufferForDocument(
   const language = languageOverride ?? (doc.language as TemplateLanguage);
 
   let markdown: string;
-  let variant: "service" | "employment";
+  let variant: "service" | "employment" | "partner";
   let title: string;
-  let employeeName: string | undefined;
+  let counterpartyName: string | undefined;
 
   if (doc.type === "SERVICE_CONTRACT") {
     const raw = servicePayloadSchema.parse(doc.payloadJson);
@@ -45,6 +48,17 @@ export async function buildPdfBufferForDocument(
     markdown = composeServiceBody(party, payload, language, settings, doc.documentNumber);
     variant = "service";
     title = language === "en" ? "Service Agreement" : "Kontratë Shërbimi";
+  } else if (doc.type === "PARTNER_CONTRACT") {
+    const raw = partnerPayloadSchema.parse(doc.payloadJson);
+    const payload = migratePartnerPayload(
+      raw as Record<string, unknown>,
+      language
+    ) as PartnerPayload;
+    const partnerParty = partnerPartyFromPayload(payload);
+    markdown = composePartnerBody(partnerParty, payload, language, settings, doc.documentNumber);
+    variant = "partner";
+    title = language === "en" ? "Partnership Agreement" : "Kontratë Partneriteti";
+    counterpartyName = `${payload.firstName} ${payload.lastName}`.trim();
   } else {
     const raw = employmentPayloadSchema.parse(doc.payloadJson);
     const payload = migrateEmploymentPayload(
@@ -54,7 +68,7 @@ export async function buildPdfBufferForDocument(
     markdown = composeEmploymentBody(empParty, payload, language, settings, doc.documentNumber);
     variant = "employment";
     title = language === "en" ? "Employment Agreement" : "Kontratë Pune";
-    employeeName = `${payload.firstName} ${payload.lastName}`.trim();
+    counterpartyName = `${payload.firstName} ${payload.lastName}`.trim();
   }
 
   const buffer = await buildContractPdfBuffer({
@@ -65,7 +79,7 @@ export async function buildPdfBufferForDocument(
     settings,
     language,
     variant,
-    employeeName,
+    counterpartyName,
   });
 
   return { buffer, filename: `${doc.documentNumber}.pdf` };

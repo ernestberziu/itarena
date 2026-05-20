@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   Copy,
   Eye,
+  KeyRound,
   Mail,
   MoreHorizontal,
   Package,
@@ -15,7 +16,11 @@ import {
   Trash2,
   UserX,
   UserCheck,
+  Building2,
 } from "lucide-react";
+import { AdminClientResetPasswordDialog } from "@/components/admin/admin-client-reset-password-dialog";
+import { AdminAssignCompanyDialog } from "@/components/admin/admin-assign-company-dialog";
+import type { RegistrationCompanySnapshot } from "@/lib/registration-company-snapshot";
 import {
   StartDirectMessageButton,
   StartDirectMessageMenuItem,
@@ -30,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ConfirmDangerDialog } from "@/components/admin/users/confirm-danger-dialog";
+import { adminWhiteDialogClassName } from "@/components/admin/admin-white-dialog";
 
 export type AdminClientActionRow = {
   id: string;
@@ -37,6 +43,8 @@ export type AdminClientActionRow = {
   firstName: string;
   lastName: string;
   isActive: boolean;
+  companyId: string | null;
+  registrationCompanySnapshot: RegistrationCompanySnapshot | null;
 };
 
 function copyText(text: string, okSq: string, okEn: string, locale: string) {
@@ -71,6 +79,8 @@ export function AdminClientRowActions({
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [danger, setDanger] = useState<null | "delete" | "suspend" | "activate">(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function patchBody(body: Record<string, unknown>) {
@@ -130,6 +140,14 @@ export function AdminClientRowActions({
       <DropdownMenuItem render={<Link href={`${detailHref}#account`} />}>
         <Pencil className="mr-2 h-4 w-4" />
         {t("Ndrysho", "Edit")}
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setAssignOpen(true)}>
+        <Building2 className="mr-2 h-4 w-4" />
+        {t("Cakto kompani", "Assign company")}
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => setResetOpen(true)}>
+        <KeyRound className="mr-2 h-4 w-4" />
+        {t("Rivendos fjalëkalimin", "Reset password")}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem render={<Link href={ticketsHref} />}>
@@ -329,7 +347,7 @@ export function AdminClientRowActions({
             >
               <MoreHorizontal className="h-4 w-4" />
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-2xl">
+            <SheetContent side="bottom" className={`rounded-t-2xl ${adminWhiteDialogClassName}`}>
               <SheetHeader>
                 <SheetTitle>
                   {user.firstName} {user.lastName}
@@ -382,6 +400,26 @@ export function AdminClientRowActions({
         loading={loading}
         confirmVariant="default"
         onConfirm={() => setActive(true)}
+      />
+
+      <AdminAssignCompanyDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        userId={user.id}
+        locale={locale}
+        currentCompanyId={user.companyId}
+        registrationSnapshot={user.registrationCompanySnapshot}
+        onAssigned={() => router.refresh()}
+      />
+
+      <AdminClientResetPasswordDialog
+        userId={user.id}
+        userEmail={user.email}
+        userName={`${user.firstName} ${user.lastName}`}
+        locale={locale}
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        hideTrigger
       />
     </>
   );

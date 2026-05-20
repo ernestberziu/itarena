@@ -5,6 +5,7 @@ import { ItArenaLogo } from "@/components/brand/logo";
 import { shopUrl } from "@/lib/shop-url";
 import type { MarketingServiceRecord, SiteSettingsBundle } from "@/lib/site-content/types";
 import { pickLocale, serviceName } from "@/lib/site-content/locale";
+import { SocialLinks } from "@/components/public/social-links";
 
 export function Footer({
   siteSettings,
@@ -21,6 +22,7 @@ export function Footer({
 
   const contact = siteSettings?.contact;
   const footer = siteSettings?.footer;
+  const socialLinks = siteSettings?.social.links;
   const serviceLinks = cmsServices?.length
     ? cmsServices.filter((s) => s.enabled).slice(0, 5).map((s) => ({
         key: s.slug,
@@ -61,6 +63,7 @@ export function Footer({
                 <span className="text-xs font-semibold text-slate-200">ISO 27001:2022 Certified</span>
               </div>
             </div>
+            <SocialLinks links={socialLinks} className="mt-6" />
           </div>
 
           {/* Services */}

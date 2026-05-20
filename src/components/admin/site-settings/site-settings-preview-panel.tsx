@@ -1,12 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { CheckCircle2, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSiteSettings } from "./site-settings-context";
-import { getLucideIcon } from "@/lib/site-content/icons";
 import { pickLocale } from "@/lib/site-content/locale";
+import { SocialLinks } from "@/components/public/social-links";
 
 export function SiteSettingsPreviewPanel() {
   const t = useTranslations("admin.siteSettingsPage");
@@ -24,51 +23,12 @@ export function SiteSettingsPreviewPanel() {
           {t("previewHint")}
         </div>
         <div className="max-h-[calc(100vh-12rem)] overflow-y-auto p-4 text-sm">
-          {activeSection === "hero" && (
-            <section className={cn("relative rounded-lg p-6 text-center", settings.hero.gradientClass)}>
-              <PreviewBadge>{pl(settings.hero.badge)}</PreviewBadge>
-              <h2 className="mt-4 text-2xl font-extrabold">
-                {pl(settings.hero.titleLine1)}{" "}
-                <span className="bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">
-                  {pl(settings.hero.titleHighlight)}
-                </span>{" "}
-                {pl(settings.hero.titleLine2)}
-              </h2>
-              <p className="mt-3 text-muted-foreground">{pl(settings.hero.subtitle)}</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <Button size="sm">{pl(settings.hero.ctaPrimaryText)}</Button>
-                <Button size="sm" variant="outline">
-                  {pl(settings.hero.ctaTertiaryText)}
-                </Button>
-              </div>
-              <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs text-muted-foreground">
-                {settings.hero.quickStats.map((s) => {
-                  const Icon = getLucideIcon(s.iconKey);
-                  return (
-                    <span key={s.value} className="flex items-center gap-1">
-                      <Icon className="h-3 w-3 text-primary" />
-                      <strong>{s.value}</strong> {pl(s.label)}
-                    </span>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
           {activeSection === "testimonials" && (
             <PreviewTestimonials testimonials={testimonials} loc={loc} />
           )}
 
           {activeSection === "social" && (
-            <div className="flex flex-wrap gap-2">
-              {settings.social.links
-                .filter((l) => l.enabled && l.url)
-                .map((l) => (
-                  <span key={l.network} className="rounded-full bg-muted px-3 py-1 text-xs capitalize">
-                    {l.network}
-                  </span>
-                ))}
-            </div>
+            <SocialLinks links={settings.social.links} size="sm" variant="light" />
           )}
 
           {(activeSection === "contact" || activeSection === "footer") && (
@@ -82,15 +42,6 @@ export function SiteSettingsPreviewPanel() {
 
         </div>
       </div>
-    </div>
-  );
-}
-
-function PreviewBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs text-primary">
-      <CheckCircle2 className="h-3 w-3" />
-      {children}
     </div>
   );
 }

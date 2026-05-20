@@ -93,8 +93,37 @@ export const employmentPayloadSchema = z.object({
   bodyMarkdown: z.string().optional(),
 });
 
+const partnerLocalizedSchema = z.object({
+  bodyMarkdown: z.string().min(1),
+  partnerObligations: z.string().optional().default(""),
+  itarenaObligations: z.string().optional().default(""),
+  commissionTerms: z.string().optional().default(""),
+  territory: z.string().min(1),
+  brandUsage: z.string().optional().default(""),
+  contractType: z.string().min(1),
+  noticePeriod: z.string().optional(),
+});
+
+export const partnerPayloadSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  idNumber: z.string().min(1),
+  role: z.string().min(1),
+  commission: z.string().min(1),
+  contractDate: z.string().min(1),
+  startDate: z.string().min(1),
+  endDate: z.string().optional(),
+  localized: z
+    .object({
+      sq: partnerLocalizedSchema,
+      en: partnerLocalizedSchema,
+    })
+    .optional(),
+  bodyMarkdown: z.string().optional(),
+});
+
 export const createDocumentSchema = z.object({
-  type: z.enum(["SERVICE_CONTRACT", "EMPLOYMENT"]),
+  type: z.enum(["SERVICE_CONTRACT", "EMPLOYMENT", "PARTNER_CONTRACT"]),
   language: z.enum(["sq", "en"]).optional(),
   partyJson: partySchema,
   payloadJson: z.record(z.string(), z.unknown()),
@@ -110,7 +139,7 @@ export const updateDocumentSchema = z.object({
 
 export const libraryTemplateSchema = z.object({
   name: z.string().min(1).max(120),
-  type: z.enum(["SERVICE_CONTRACT", "EMPLOYMENT"]),
+  type: z.enum(["SERVICE_CONTRACT", "EMPLOYMENT", "PARTNER_CONTRACT"]),
   bodyMarkdownSq: z.string().min(10),
   bodyMarkdownEn: z.string().min(10),
   defaultLanguage: z.enum(["sq", "en"]).optional(),

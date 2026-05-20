@@ -8,10 +8,12 @@ import { createDocumentSchema } from "@/lib/templates/schemas";
 import { generateContractNumber } from "@/lib/templates/document-number";
 import {
   defaultEmploymentPayload,
+  defaultPartnerPayload,
   defaultServicePayload,
   employmentPartyFromPayload,
+  partnerPartyFromPayload,
 } from "@/lib/templates/compose-body";
-import type { ContractParty, EmploymentPayload, ServiceContractPayload } from "@/lib/templates/types";
+import type { ContractParty, EmploymentPayload, PartnerPayload, ServiceContractPayload } from "@/lib/templates/types";
 import { paginatedResponse, parseListPageParams } from "@/lib/admin-list-pagination";
 
 export type DocumentListRow = {
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
 
   const language = parsed.data.language ?? "sq";
-  let payloadJson: ServiceContractPayload | EmploymentPayload;
+  let payloadJson: ServiceContractPayload | EmploymentPayload | PartnerPayload;
   let partyJson = parsed.data.partyJson as ContractParty;
 
   if (parsed.data.type === "SERVICE_CONTRACT") {
@@ -62,6 +64,14 @@ export async function POST(req: NextRequest) {
       ...defaultServicePayload(),
       ...(parsed.data.payloadJson as Partial<ServiceContractPayload>),
     };
+  } else if (parsed.data.type === "PARTNER_CONTRACT") {
+    payloadJson = {
+      ...defaultPartnerPayload(),
+      ...(parsed.data.payloadJson as Partial<PartnerPayload>),
+    };
+    if (!partyJson.fullName?.trim()) {
+      partyJson = partnerPartyFromPayload(payloadJson);
+    }
   } else {
     payloadJson = {
       ...defaultEmploymentPayload(),

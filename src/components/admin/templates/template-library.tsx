@@ -27,7 +27,7 @@ export function TemplateLibrary({ lp }: { lp: string }) {
   const [bodySq, setBodySq] = useState(() => defaultClauseForLibrary("SERVICE_CONTRACT", "sq"));
   const [bodyEn, setBodyEn] = useState(() => defaultClauseForLibrary("SERVICE_CONTRACT", "en"));
   const [editorLang, setEditorLang] = useState<"sq" | "en">("sq");
-  const [type, setType] = useState<"SERVICE_CONTRACT" | "EMPLOYMENT">("SERVICE_CONTRACT");
+  const [type, setType] = useState<"SERVICE_CONTRACT" | "EMPLOYMENT" | "PARTNER_CONTRACT">("SERVICE_CONTRACT");
 
   function load() {
     void fetch("/api/admin/templates/library").then((r) => r.json()).then(setTemplates);
@@ -85,6 +85,7 @@ export function TemplateLibrary({ lp }: { lp: string }) {
             >
               <option value="SERVICE_CONTRACT">{t("serviceContract")}</option>
               <option value="EMPLOYMENT">{t("employment")}</option>
+              <option value="PARTNER_CONTRACT">{t("partnerContract")}</option>
             </select>
           </div>
           <div>
@@ -128,7 +129,11 @@ export function TemplateLibrary({ lp }: { lp: string }) {
             <li key={tpl.id} className="rounded-lg border border-border/40 p-3 text-sm">
               <p className="font-medium">{tpl.name}</p>
               <p className="text-muted-foreground">
-                {tpl.type === "SERVICE_CONTRACT" ? t("serviceContract") : t("employment")}
+                {tpl.type === "SERVICE_CONTRACT"
+                  ? t("serviceContract")
+                  : tpl.type === "EMPLOYMENT"
+                    ? t("employment")
+                    : t("partnerContract")}
                 {" · "}
                 {t("langSq")} / {t("langEn")}
                 {tpl.isDefault ? ` · ${t("defaultTemplate")}` : ""}

@@ -6,13 +6,14 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Plus, Pencil, Trash2, GripVertical } from "lucide-react";
 import { useSiteSettings } from "../site-settings-context";
 import { SettingsGlassCard } from "../shared/settings-glass-card";
 import { BilingualInput } from "../shared/bilingual-input";
 import { ServiceEditorSheet } from "../service-editor-sheet";
+import { SocialNetworkIcon, SOCIAL_NETWORK_LABELS } from "@/components/public/social-network-icon";
 import { getLucideIcon } from "@/lib/site-content/icons";
 import { cn } from "@/lib/utils";
 import type { SiteSettingsSectionKey } from "@/lib/site-content/types";
@@ -24,31 +25,98 @@ export function SiteSettingsSectionForm({ section }: { section: SiteSectionId })
   return <JsonSection section={section as SiteSettingsSectionKey} />;
 }
 
+function HeroSection() {
+  const t = useTranslations("admin.siteSettingsPage.heroEditor");
+  const { settings, updateSection } = useSiteSettings();
+  const h = settings.hero;
+
+  return (
+    <div className="space-y-4">
+      <SettingsGlassCard title={t("titleHeading")}>
+        <p className="mb-4 text-xs text-muted-foreground">{t("titleHint")}</p>
+        <div className="space-y-4">
+          <BilingualInput
+            label={t("titleLine1")}
+            value={h.titleLine1}
+            onChange={(titleLine1) => updateSection("hero", { ...h, titleLine1 })}
+          />
+          <BilingualInput
+            label={t("titleLine2")}
+            value={h.titleLine2}
+            onChange={(titleLine2) => updateSection("hero", { ...h, titleLine2 })}
+          />
+          <BilingualInput
+            label={t("titleHighlight")}
+            value={h.titleHighlight}
+            onChange={(titleHighlight) => updateSection("hero", { ...h, titleHighlight })}
+          />
+        </div>
+      </SettingsGlassCard>
+
+      <SettingsGlassCard title={t("subtitleHeading")}>
+        <BilingualInput
+          label={t("subtitle")}
+          value={h.subtitle}
+          onChange={(subtitle) => updateSection("hero", { ...h, subtitle })}
+          multiline
+        />
+      </SettingsGlassCard>
+
+      <SettingsGlassCard title={t("ctaHeading")}>
+        <div className="space-y-6">
+          <div className="space-y-3 rounded-xl border border-border/50 bg-muted/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ctaPrimary")}</p>
+            <BilingualInput
+              label={t("ctaText")}
+              value={h.ctaPrimaryText}
+              onChange={(ctaPrimaryText) => updateSection("hero", { ...h, ctaPrimaryText })}
+            />
+            <Field
+              label={t("ctaLink")}
+              value={h.ctaPrimaryLink}
+              onChange={(ctaPrimaryLink) => updateSection("hero", { ...h, ctaPrimaryLink })}
+            />
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-border/50 bg-muted/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ctaShop")}</p>
+            <BilingualInput
+              label={t("ctaText")}
+              value={h.ctaSecondaryText}
+              onChange={(ctaSecondaryText) => updateSection("hero", { ...h, ctaSecondaryText })}
+            />
+            <Field
+              label={t("ctaLink")}
+              value={h.ctaSecondaryLink}
+              onChange={(ctaSecondaryLink) => updateSection("hero", { ...h, ctaSecondaryLink })}
+            />
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-border/50 bg-muted/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("ctaServices")}</p>
+            <BilingualInput
+              label={t("ctaText")}
+              value={h.ctaTertiaryText}
+              onChange={(ctaTertiaryText) => updateSection("hero", { ...h, ctaTertiaryText })}
+            />
+            <Field
+              label={t("ctaLink")}
+              hint={t("ctaServicesLinkHint")}
+              value={h.ctaTertiaryLink}
+              onChange={(ctaTertiaryLink) => updateSection("hero", { ...h, ctaTertiaryLink })}
+            />
+          </div>
+        </div>
+      </SettingsGlassCard>
+    </div>
+  );
+}
+
 function JsonSection({ section }: { section: SiteSettingsSectionKey }) {
   const { settings, updateSection } = useSiteSettings();
 
   if (section === "hero") {
-    const h = settings.hero;
-    return (
-      <div className="space-y-4">
-        <SettingsGlassCard title="Hero copy">
-          <div className="space-y-4">
-            <BilingualInput label="Badge" value={h.badge} onChange={(badge) => updateSection("hero", { ...h, badge })} />
-            <BilingualInput label="Title line 1" value={h.titleLine1} onChange={(titleLine1) => updateSection("hero", { ...h, titleLine1 })} />
-            <BilingualInput label="Highlight" value={h.titleHighlight} onChange={(titleHighlight) => updateSection("hero", { ...h, titleHighlight })} />
-            <BilingualInput label="Title line 2" value={h.titleLine2} onChange={(titleLine2) => updateSection("hero", { ...h, titleLine2 })} />
-            <BilingualInput label="Subtitle" value={h.subtitle} onChange={(subtitle) => updateSection("hero", { ...h, subtitle })} multiline />
-            <BilingualInput label="Primary CTA" value={h.ctaPrimaryText} onChange={(ctaPrimaryText) => updateSection("hero", { ...h, ctaPrimaryText })} />
-            <Field label="Primary CTA link" value={h.ctaPrimaryLink} onChange={(ctaPrimaryLink) => updateSection("hero", { ...h, ctaPrimaryLink })} />
-            <BilingualInput label="Secondary CTA" value={h.ctaSecondaryText} onChange={(ctaSecondaryText) => updateSection("hero", { ...h, ctaSecondaryText })} />
-            <Field label="Secondary link" value={h.ctaSecondaryLink} onChange={(ctaSecondaryLink) => updateSection("hero", { ...h, ctaSecondaryLink })} />
-            <BilingualInput label="Tertiary CTA" value={h.ctaTertiaryText} onChange={(ctaTertiaryText) => updateSection("hero", { ...h, ctaTertiaryText })} />
-            <Field label="Tertiary link" value={h.ctaTertiaryLink} onChange={(ctaTertiaryLink) => updateSection("hero", { ...h, ctaTertiaryLink })} />
-            <Field label="Gradient class" value={h.gradientClass} onChange={(gradientClass) => updateSection("hero", { ...h, gradientClass })} />
-          </div>
-        </SettingsGlassCard>
-      </div>
-    );
+    return <HeroSection />;
   }
 
   if (section === "contact") {
@@ -61,28 +129,7 @@ function JsonSection({ section }: { section: SiteSettingsSectionKey }) {
   }
 
   if (section === "social") {
-    const s = settings.social;
-    return (
-      <SettingsGlassCard title="Social">
-        <div className="space-y-3">
-          {s.links.map((link, i) => (
-            <div key={link.network} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-              <span className="w-24 text-sm font-medium capitalize">{link.network}</span>
-              <Input className="flex-1 min-w-[200px]" value={link.url} onChange={(e) => {
-                const links = [...s.links];
-                links[i] = { ...link, url: e.target.value };
-                updateSection("social", { links });
-              }} />
-              <Switch checked={link.enabled} onCheckedChange={(enabled) => {
-                const links = [...s.links];
-                links[i] = { ...link, enabled };
-                updateSection("social", { links });
-              }} />
-            </div>
-          ))}
-        </div>
-      </SettingsGlassCard>
-    );
+    return <SocialSection />;
   }
 
   if (section === "footer") {
@@ -100,6 +147,87 @@ function JsonSection({ section }: { section: SiteSettingsSectionKey }) {
   }
 
   return null;
+}
+
+function SocialSection() {
+  const t = useTranslations("admin.siteSettingsPage.socialEditor");
+  const { settings, updateSection } = useSiteSettings();
+  const s = settings.social;
+
+  const updateLink = (index: number, patch: Partial<(typeof s.links)[number]>) => {
+    const links = [...s.links];
+    links[index] = { ...links[index], ...patch };
+    updateSection("social", { links });
+  };
+
+  return (
+    <SettingsGlassCard title={t("title")}>
+      <p className="mb-4 text-xs text-muted-foreground">{t("hint")}</p>
+      <div className="space-y-3">
+        {s.links.map((link, i) => (
+          <SocialNetworkToggle
+            key={link.network}
+            link={link}
+            onEnabledChange={(enabled) => updateLink(i, { enabled })}
+            onUrlChange={(url) => updateLink(i, { url })}
+            urlLabel={t("url")}
+          />
+        ))}
+      </div>
+    </SettingsGlassCard>
+  );
+}
+
+function SocialNetworkToggle({
+  link,
+  onEnabledChange,
+  onUrlChange,
+  urlLabel,
+}: {
+  link: { network: keyof typeof SOCIAL_NETWORK_LABELS; url: string; enabled: boolean };
+  onEnabledChange: (enabled: boolean) => void;
+  onUrlChange: (url: string) => void;
+  urlLabel: string;
+}) {
+  const id = `social-${link.network}`;
+
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border transition-all duration-200",
+        link.enabled
+          ? "border-primary/35 bg-primary/[0.06] shadow-sm ring-1 ring-primary/15"
+          : "border-border/60 bg-muted/10 hover:border-border hover:bg-muted/20"
+      )}
+    >
+      <label htmlFor={id} className="flex cursor-pointer items-start gap-3 p-4">
+        <Checkbox
+          id={id}
+          checked={link.enabled}
+          onCheckedChange={(v) => onEnabledChange(v === true)}
+          className="mt-0.5 size-5 rounded-md border-2 data-checked:border-primary data-checked:bg-primary"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                link.enabled ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+              )}
+            >
+              <SocialNetworkIcon network={link.network} className="h-4 w-4" />
+            </span>
+            <span className="text-sm font-semibold leading-snug">{SOCIAL_NETWORK_LABELS[link.network]}</span>
+          </div>
+        </div>
+      </label>
+      {link.enabled ? (
+        <div className="space-y-4 border-t border-border/50 bg-background/50 px-4 pb-4 pt-4">
+          <Field label={urlLabel} value={link.url} onChange={onUrlChange} />
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function ContactFormFields({
@@ -125,15 +253,18 @@ function Field({
   label,
   value,
   onChange,
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  hint?: string;
 }) {
   return (
     <div className="space-y-2">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Input value={value} onChange={(e) => onChange(e.target.value)} />
+      {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

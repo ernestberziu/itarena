@@ -1,8 +1,9 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { subDays } from "date-fns";
-import { Users, UserCheck, UserX, Sparkles } from "lucide-react";
+import { Users, UserCheck, UserX, Sparkles, Plus } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -38,12 +39,14 @@ export default async function AdminClientsPage({
   const tier = sp.tier?.trim();
   const approved = sp.approved?.trim();
   const active = sp.active?.trim() || "all";
+  const affiliation = sp.affiliation?.trim() || "all";
 
   const where = adminClientsListWhere({
     q,
     tier: tier || undefined,
     approved: approved || undefined,
     active: active || undefined,
+    affiliation: affiliation || undefined,
   });
 
   const thirtyDaysAgo = subDays(new Date(), 30);
@@ -53,13 +56,25 @@ export default async function AdminClientsPage({
   if (tier) filterQueryParts.set("tier", tier);
   if (approved) filterQueryParts.set("approved", approved);
   if (active && active !== "all") filterQueryParts.set("active", active);
+  if (affiliation && affiliation !== "all") filterQueryParts.set("affiliation", affiliation);
   const filterQuery = filterQueryParts.toString();
 
   const [users, totalCount, activeCount, suspendedCount, newCount] = await Promise.all([
     db.user.findMany({
       where,
-      include: {
-        company: { select: { name: true, tier: true, isApproved: true } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        isActive: true,
+        emailVerified: true,
+        role: true,
+        createdAt: true,
+        lastLoginAt: true,
+        registrationCompanySnapshot: true,
+        registeredCompanyId: true,
+        company: { select: { id: true, name: true, tier: true, isApproved: true } },
         _count: { select: { tickets: true, orders: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -79,7 +94,7 @@ export default async function AdminClientsPage({
 
   const initialClients = users.map(mapClientToAdminRow);
 
-  const hasFilters = Boolean(q || tier || approved || (active && active !== "all"));
+  const hasFilters = Boolean(q || tier || approved || (active && active !== "all") || (affiliation && affiliation !== "all"));
 
   return (
     <div className="space-y-6">
@@ -87,8 +102,17 @@ export default async function AdminClientsPage({
         title={locale === "sq" ? "Klientët" : "Clients"}
         description={
           locale === "sq"
-            ? "Menaxho llogaritë e portalit dhe kompanitë B2B."
-            : "Manage portal accounts and B2B companies."
+            ? "Menaxho llogaritë e portalit dhe lidhjet me kompanitë."
+            : "Manage portal accounts and company links."
+        }
+        actions={
+          <Link
+            href={`${lp}/admin/clients/new`}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            {locale === "sq" ? "Klient i ri" : "New client"}
+          </Link>
         }
         toolbar={
           <FilterBar className="rounded-2xl border-border/40 bg-muted/10 p-3 shadow-sm ring-1 ring-black/[0.02] dark:ring-white/[0.04]">
@@ -99,6 +123,7 @@ export default async function AdminClientsPage({
               tier={tier}
               approved={approved}
               active={active}
+              affiliation={affiliation}
             />
           </FilterBar>
         }

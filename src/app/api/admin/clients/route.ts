@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { adminClientsListWhere } from "@/lib/admin-clients-list-where";
 import { mapClientToAdminRow } from "@/lib/admin-clients-list-dto";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { paginatedResponse, parseListPageParams } from "@/lib/admin-list-pagination";
+import { sendAdminClientAccountUpdateEmail } from "@/lib/portal-invite-email";
 
-const clientInclude = {
-  company: { select: { name: true, tier: true, isApproved: true } },
+
+const clientListSelect = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  isActive: true,
+  emailVerified: true,
+  role: true,
+  createdAt: true,
+  lastLoginAt: true,
+  registrationCompanySnapshot: true,
+  registeredCompanyId: true,
+  company: { select: { id: true, name: true, tier: true, isApproved: true } },
   _count: { select: { tickets: true, orders: true } },
 } as const;
 
@@ -29,12 +45,13 @@ export async function GET(req: NextRequest) {
     tier: searchParams.get("tier"),
     approved: searchParams.get("approved"),
     active: searchParams.get("active") ?? "all",
+    affiliation: searchParams.get("affiliation"),
   });
 
   const [users, total] = await Promise.all([
     db.user.findMany({
       where,
-      include: clientInclude,
+      select: clientListSelect,
       orderBy: { createdAt: "desc" },
       skip,
       take: pageSize,
@@ -44,4 +61,110 @@ export async function GET(req: NextRequest) {
 
   const items = users.map(mapClientToAdminRow);
   return NextResponse.json(paginatedResponse(items, total, page, pageSize));
+}
+
+const postSchema = z
+  .object({
+    firstName: z.string().min(1).max(120),
+    lastName: z.string().min(1).max(120),
+    email: z.string().email().max(255),
+    phone: z.string().max(40).optional().nullable(),
+    companyId: z.string().min(1).optional().nullable(),
+    language: z.enum(["sq", "en"]).optional().default("sq"),
+    newPassword: z.string().min(8).max(128).optional(),
+    generateTemporaryPassword: z.boolean().optional(),
+    notifyCustomer: z.boolean().optional(),
+  })
+  .strict();
+
+function generateTemporaryPassword(): string {
+  return randomBytes(14).toString("base64url").replace(/=/g, "").slice(0, 20);
+}
+
+function forbidIfNotStaff(role: string | undefined) {
+  const allowed = ["ADMIN", "SALES"];
+  if (!role || !allowed.includes(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return null;
+}
+
+export async function POST(req: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const forbidden = forbidIfNotStaff(session.user.role);
+  if (forbidden) return forbidden;
+  const denied = await assertAdminApiAcl(session.user.id, "clients", "write");
+  if (denied) return denied;
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = postSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const data = parsed.data;
+  const email = data.email.trim().toLowerCase();
+
+  const dup = await db.user.findFirst({ where: { email }, select: { id: true } });
+  if (dup) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+
+  if (data.companyId) {
+    const company = await db.company.findUnique({ where: { id: data.companyId }, select: { id: true } });
+    if (!company) return NextResponse.json({ error: "Company not found" }, { status: 404 });
+  }
+
+  let plainPassword: string | undefined;
+  if (data.newPassword?.trim()) plainPassword = data.newPassword.trim();
+  else if (data.generateTemporaryPassword || data.notifyCustomer) plainPassword = generateTemporaryPassword();
+
+  if (!plainPassword) {
+    return NextResponse.json(
+      { error: "Provide newPassword (min 8) or generateTemporaryPassword: true" },
+      { status: 400 }
+    );
+  }
+
+  const user = await db.user.create({
+    data: {
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      email,
+      phone: data.phone?.trim() || null,
+      passwordHash: await bcrypt.hash(plainPassword, 12),
+      role: "CLIENT",
+      language: data.language,
+      companyId: data.companyId ?? null,
+    },
+    select: { id: true, email: true, firstName: true, lastName: true, language: true },
+  });
+
+  let credentialsEmailSent = false;
+  if (data.notifyCustomer) {
+    const mail = await sendAdminClientAccountUpdateEmail({
+      to: email,
+      firstName: user.firstName,
+      mailLocale: user.language === "en" ? "en" : "sq",
+      temporaryPassword: plainPassword,
+      signInEmail: email,
+      emailChanged: false,
+    });
+    credentialsEmailSent = mail.sent;
+  }
+
+  return NextResponse.json(
+    {
+      id: user.id,
+      notifyEmailAttempted: Boolean(data.notifyCustomer),
+      credentialsEmailSent,
+      temporaryPassword: data.notifyCustomer && credentialsEmailSent ? undefined : plainPassword,
+    },
+    { status: 201 }
+  );
 }

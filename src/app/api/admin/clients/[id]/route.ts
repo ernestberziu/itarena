@@ -15,11 +15,9 @@ const patchSchema = z
     firstName: z.string().min(1).max(120).optional(),
     lastName: z.string().min(1).max(120).optional(),
     email: z.string().email().max(255).optional(),
-    /** Admin-set password (min 8). Ignored if empty when generateTemporaryPassword or notifyCustomer applies. */
+    companyId: z.string().min(1).nullable().optional(),
     newPassword: z.string().min(8).max(128).optional(),
-    /** If true and newPassword is empty, server generates a random temporary password. */
     generateTemporaryPassword: z.boolean().optional(),
-    /** Sends SMTP email to the customer with sign-in email + temporary password (generates one if needed). */
     notifyCustomer: z.boolean().optional(),
   })
   .strict();
@@ -104,6 +102,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     lastName?: string;
     email?: string;
     isActive?: boolean;
+    companyId?: string | null;
     passwordHash?: string;
     emailVerified?: null;
   } = {};
@@ -116,6 +115,16 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
   if (patch.isActive !== undefined) prismaData.isActive = patch.isActive;
 
+  if (patch.companyId !== undefined) {
+    if (patch.companyId === null) {
+      prismaData.companyId = null;
+    } else {
+      const company = await db.company.findUnique({ where: { id: patch.companyId }, select: { id: true } });
+      if (!company) return NextResponse.json({ error: "Company not found" }, { status: 404 });
+      prismaData.companyId = patch.companyId;
+    }
+  }
+
   if (plainPassword) {
     prismaData.passwordHash = await bcrypt.hash(plainPassword, 10);
   }
@@ -123,10 +132,6 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const hasPrismaUpdates = Object.keys(prismaData).length > 0;
   if (!hasPrismaUpdates && !patch.notifyCustomer) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });
-  }
-
-  if (patch.notifyCustomer && !plainPassword) {
-    return NextResponse.json({ error: "Internal: notify without password" }, { status: 500 });
   }
 
   const shouldClearSessions = Boolean(plainPassword || emailChanged);
@@ -163,8 +168,15 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   return NextResponse.json(
     patch.notifyCustomer
-      ? { ok: true, notifyEmailAttempted: true, credentialsEmailSent }
-      : { ok: true }
+      ? {
+          ok: true,
+          notifyEmailAttempted: true,
+          credentialsEmailSent,
+          temporaryPassword: credentialsEmailSent ? undefined : plainPassword,
+        }
+      : plainPassword
+        ? { ok: true, temporaryPassword: plainPassword }
+        : { ok: true }
   );
 }
 

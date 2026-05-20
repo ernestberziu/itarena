@@ -1,4 +1,4 @@
-import type { ContractParty, EmploymentPayload, ServiceContractPayload, TemplateLanguage } from "./types";
+import type { ContractParty, EmploymentPayload, PartnerPayload, ServiceContractPayload, TemplateLanguage } from "./types";
 
 /**
  * Remove the inline signature block that was historically appended to the
@@ -31,8 +31,10 @@ import { formatRecurringSchedule } from "./recurring";
 import type { TemplateSettingsConfig } from "./types";
 import {
   defaultEmploymentLocalized,
+  defaultPartnerLocalized,
   defaultServiceLocalized,
   resolveEmploymentForLanguage,
+  resolvePartnerForLanguage,
   resolveServiceForLanguage,
 } from "./localized";
 
@@ -80,6 +82,19 @@ export function composeEmploymentBody(
   return interpolateMarkdown(base, vars);
 }
 
+export function composePartnerBody(
+  party: ContractParty,
+  payload: PartnerPayload,
+  language: TemplateLanguage,
+  settings: TemplateSettingsConfig,
+  documentNumber?: string
+): string {
+  const resolved = resolvePartnerForLanguage(payload, language);
+  const vars = buildVariableMap({ language, party, settings, partner: resolved, documentNumber });
+  const base = stripSignatureBlock(resolved.bodyMarkdown?.trim() || getDefaultClauseBody("PARTNER_CONTRACT", language));
+  return interpolateMarkdown(base, vars);
+}
+
 export function defaultServicePayload(): ServiceContractPayload {
   const today = new Date().toISOString().slice(0, 10);
   const sq = defaultServiceLocalized("sq");
@@ -122,9 +137,35 @@ export function defaultEmploymentPayload(): EmploymentPayload {
   };
 }
 
+export function defaultPartnerPayload(): PartnerPayload {
+  const today = new Date().toISOString().slice(0, 10);
+  const sq = defaultPartnerLocalized("sq");
+  const en = defaultPartnerLocalized("en");
+  return {
+    firstName: "",
+    lastName: "",
+    idNumber: "",
+    role: "",
+    commission: "",
+    contractDate: today,
+    startDate: today,
+    localized: { sq, en },
+    bodyMarkdown: sq.bodyMarkdown,
+  };
+}
+
 export function employmentPartyFromPayload(payload: EmploymentPayload): ContractParty {
   return {
     mode: "manual",
     fullName: `${payload.firstName} ${payload.lastName}`.trim(),
+    idNumber: payload.idNumber,
+  };
+}
+
+export function partnerPartyFromPayload(payload: PartnerPayload): ContractParty {
+  return {
+    mode: "manual",
+    fullName: `${payload.firstName} ${payload.lastName}`.trim(),
+    idNumber: payload.idNumber,
   };
 }

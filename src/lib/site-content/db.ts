@@ -97,6 +97,28 @@ function mapTestimonial(row: {
   return row;
 }
 
+function normalizeSocialSettings(
+  social: SiteSettingsBundle["social"]
+): SiteSettingsBundle["social"] {
+  const links = social.links.map((link) => {
+    if ((link.network as string) !== "linkedin") return link;
+    return {
+      ...link,
+      network: "tiktok" as const,
+      url: link.url.includes("linkedin.com") ? "https://tiktok.com/@itarena" : link.url,
+    };
+  });
+
+  const seen = new Set<string>();
+  return {
+    links: links.filter((link) => {
+      if (seen.has(link.network)) return false;
+      seen.add(link.network);
+      return true;
+    }),
+  };
+}
+
 function rowToBundle(row: {
   generalJson: unknown;
   brandingJson: unknown;
@@ -117,7 +139,7 @@ function rowToBundle(row: {
       ctaSecondaryLink: normalizeShopMarketingLink(hero.ctaSecondaryLink),
     },
     contact: parseJson(row.contactJson, d.contact),
-    social: parseJson(row.socialJson, d.social),
+    social: normalizeSocialSettings(parseJson(row.socialJson, d.social)),
     footer: parseJson(row.footerJson, d.footer),
     seo: parseJson(row.seoJson, d.seo),
     landing: parseJson(row.landingJson, d.landing),

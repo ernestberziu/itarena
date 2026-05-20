@@ -20,7 +20,12 @@ model User {
   role             String    @default("CLIENT")
   language         String    @default("sq")
   companyId        String?
-  company          Company?  @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  company          Company?  @relation("UserActiveCompany", fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  /// Company record created at self-registration (immutable; preserved when admin reassigns active company).
+  registeredCompanyId String?
+  registeredCompany   Company?  @relation("UserRegisteredCompany", fields: [registeredCompanyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  /// Optional company fields entered at signup (immutable snapshot).
+  registrationCompanySnapshot Json?
   emailVerified    DateTime?
   verifyToken      String?
   resetToken       String?
@@ -108,12 +113,15 @@ model Company {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  users          User[]
+  users              User[]          @relation("UserActiveCompany")
+  registeredUsers    User[]          @relation("UserRegisteredCompany")
   tickets        Ticket[]
   quotes         Quote[]
   orders         Order[]
   projectClients ProjectClient[]
 
+  @@index([name])
+  @@index([vatNumber])
   @@map("companies")
 }
 

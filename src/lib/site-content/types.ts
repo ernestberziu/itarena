@@ -54,7 +54,6 @@ export type SiteContactSettings = {
 export type SocialNetwork =
   | "facebook"
   | "instagram"
-  | "linkedin"
   | "tiktok"
   | "youtube"
   | "twitter"

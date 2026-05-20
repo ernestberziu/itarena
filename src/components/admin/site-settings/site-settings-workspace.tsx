@@ -23,7 +23,7 @@ function WorkspaceInner({ locale }: { locale: string }) {
     <div className="space-y-4">
       <AdminPageHeader title={t("title")} description={t("subtitle")} />
 
-      {activeSection !== "services" && (
+      {activeSection !== "services" && activeSection !== "hero" && (
         <LocaleToggle previewLocale={previewLocale} setPreviewLocale={setPreviewLocale} />
       )}
 
@@ -32,7 +32,7 @@ function WorkspaceInner({ locale }: { locale: string }) {
       ) : (
         <div
           className={
-            activeSection === "services"
+            activeSection === "services" || activeSection === "hero"
               ? "grid gap-6 lg:grid-cols-[200px_1fr]"
               : "grid gap-6 lg:grid-cols-[200px_1fr_280px]"
           }
@@ -42,7 +42,7 @@ function WorkspaceInner({ locale }: { locale: string }) {
             <SiteSettingsSectionForm section={activeSection} />
             <SiteSettingsStickyBar />
           </div>
-          {activeSection !== "services" && <SiteSettingsPreviewPanel />}
+          {activeSection !== "services" && activeSection !== "hero" && <SiteSettingsPreviewPanel />}
         </div>
       )}
     </div>

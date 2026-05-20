@@ -15,7 +15,14 @@ import { Button } from "@/components/ui/button";
 import { AdminInfiniteTable } from "@/components/admin/admin-infinite-table";
 import { TemplatesSubnav } from "./templates-subnav";
 import type { DocumentListRow } from "@/app/api/admin/templates/documents/route";
+import { contractDocumentPath } from "@/lib/templates/document-routes";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
+
+function documentTypeLabel(type: string, t: (key: string) => string) {
+  if (type === "EMPLOYMENT") return t("employment");
+  if (type === "PARTNER_CONTRACT") return t("partnerContract");
+  return t("serviceContract");
+}
 
 export function DocumentsTable({
   lp,
@@ -52,11 +59,7 @@ export function DocumentsTable({
     const res = await fetch(`/api/admin/templates/documents/${id}/duplicate`, { method: "POST" });
     if (res.ok) {
       const d = (await res.json()) as DocumentListRow;
-      const path =
-        d.type === "EMPLOYMENT"
-          ? `${lp}/admin/templates/contracts/employment/${d.id}`
-          : `${lp}/admin/templates/contracts/service/${d.id}`;
-      window.location.href = path;
+      window.location.href = contractDocumentPath(d.type, d.id, lp);
     }
   }
 
@@ -81,8 +84,7 @@ export function DocumentsTable({
         accessorKey: "type",
         header: "Type",
         enableSorting: true,
-        cell: ({ row }) =>
-          row.original.type === "EMPLOYMENT" ? t("employment") : t("serviceContract"),
+        cell: ({ row }) => documentTypeLabel(row.original.type, t),
       },
       {
         accessorKey: "status",
@@ -105,13 +107,7 @@ export function DocumentsTable({
             <div className="flex flex-wrap justify-end gap-1" onClick={(e) => e.stopPropagation()}>
               {r.status === "DRAFT" ? (
                 <Button size="sm" variant="outline" asChild>
-                  <Link
-                    href={
-                      r.type === "EMPLOYMENT"
-                        ? `${lp}/admin/templates/contracts/employment/${r.id}`
-                        : `${lp}/admin/templates/contracts/service/${r.id}`
-                    }
-                  >
+                  <Link href={contractDocumentPath(r.type, r.id, lp)}>
                     Edit
                   </Link>
                 </Button>

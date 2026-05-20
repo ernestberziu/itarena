@@ -276,7 +276,13 @@ export function AdminClientsTable({
           row.original.company ? (
             <div className="flex items-center gap-1.5 min-w-0">
               <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={2} />
-              <span className="text-xs truncate">{row.original.company.name}</span>
+              <Link
+                href={`${lp}/admin/companies/${row.original.company.id}`}
+                className="text-xs truncate hover:text-primary"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {row.original.company.name}
+              </Link>
               {row.original.company.tier && (
                 <span
                   className={`text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0 ${TIER_BADGE[row.original.company.tier ?? ""] ?? ""}`}
@@ -290,12 +296,13 @@ export function AdminClientsTable({
           ),
       },
       {
-        accessorKey: "role",
-        header: th("Roli", "Role"),
-        enableSorting: true,
+        id: "type",
+        header: th("Lloji", "Type"),
         cell: ({ row }) => (
           <Badge variant="outline" className="text-xs">
-            {row.original.role === "COMPANY_ADMIN" ? th("B2B Admin", "B2B Admin") : th("Klient", "Client")}
+            {row.original.company || row.original.hasRegistrationCompanyData
+              ? th("Biznes", "Business")
+              : th("Individual", "Individual")}
           </Badge>
         ),
       },
@@ -368,6 +375,8 @@ export function AdminClientsTable({
                 firstName: row.original.firstName,
                 lastName: row.original.lastName,
                 isActive: row.original.isActive,
+                companyId: row.original.company?.id ?? null,
+                registrationCompanySnapshot: row.original.registrationCompanySnapshot,
               }}
               locale={locale}
               detailHref={`${lp}/admin/clients/${row.original.id}`}
@@ -485,6 +494,8 @@ export function AdminClientsTable({
                         firstName: u.firstName,
                         lastName: u.lastName,
                         isActive: u.isActive,
+                        companyId: u.company?.id ?? null,
+                        registrationCompanySnapshot: u.registrationCompanySnapshot,
                       }}
                       locale={locale}
                       detailHref={`${lp}/admin/clients/${u.id}`}

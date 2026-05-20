@@ -63,7 +63,6 @@ export const socialSchema = z.object({
       network: z.enum([
         "facebook",
         "instagram",
-        "linkedin",
         "tiktok",
         "youtube",
         "twitter",

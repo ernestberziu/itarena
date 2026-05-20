@@ -24,7 +24,10 @@ const engineerOverlay = resolveEffectiveAcl({
 });
 assert(engineerOverlay.clients === "read", "overlay clients");
 assert(engineerOverlay.catalog === "write", "overlay catalog");
-assert(engineerOverlay.tickets === "write", "overlay preserves default tickets");
+const sales = resolveEffectiveAcl({ role: "SALES", adminAclJson: null });
+assert(sales.companies === "write", "SALES default companies");
+assert(sales.clients === "write", "SALES default clients");
+assert(engineer.companies === "none", "ENGINEER default companies");
 
 const client = resolveEffectiveAcl({ role: "CLIENT", adminAclJson: { tickets: "write" } });
 assert(client.tickets === "none", "non-staff ignores overlay");

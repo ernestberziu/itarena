@@ -10,6 +10,7 @@ import {
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { hasAclLevel } from "@/lib/admin-acl/features";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { parseRegistrationCompanySnapshot } from "@/lib/registration-company-snapshot";
 
 export default async function AdminClientDetailPage({
   params,
@@ -32,12 +33,23 @@ export default async function AdminClientDetailPage({
     include: {
       company: {
         select: {
+          id: true,
           name: true,
           tier: true,
           isApproved: true,
           vatNumber: true,
           city: true,
           country: true,
+        },
+      },
+      registeredCompany: {
+        select: {
+          id: true,
+          name: true,
+          vatNumber: true,
+          city: true,
+          tier: true,
+          isApproved: true,
         },
       },
       _count: { select: { tickets: true, orders: true, quotes: true } },
@@ -70,6 +82,8 @@ export default async function AdminClientDetailPage({
     createdAt: user.createdAt.toISOString(),
     role: user.role,
     company: user.company,
+    registeredCompany: user.registeredCompany,
+    registrationSnapshot: parseRegistrationCompanySnapshot(user.registrationCompanySnapshot),
     _count: user._count,
     recentTickets: user.tickets.map((t) => ({
       id: t.id,

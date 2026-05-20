@@ -1,4 +1,4 @@
-import type { TemplateLanguage } from "./types";
+import type { DocumentType, TemplateLanguage } from "./types";
 
 const SERVICE_SQ = `## 1. Hyrje
 
@@ -462,10 +462,179 @@ This Agreement is signed in two original copies. Any amendment is made by addend
 
 `;
 
+const PARTNER_SQ = `## 1. Kontratë partneriteti
+
+Kjo kontratë partneriteti ("Kontrata") lidhet ndërmjet **{{itarena_company}}** ("IT Arena"), me NIPT {{itarena_nipt}}, me seli në {{itarena_address}}, i përfaqësuar nga {{itarena_representative}}, {{itarena_title}}, dhe **{{partner_name}}** ("Partneri"), Nr. ID: {{partner_id}}, me datë {{contract_date}}.
+
+Kontrata hyn në fuqi me datë {{contract_start}} dhe rregullohet nga legjislacioni civil dhe tregtar i Republikës së Shqipërisë.
+
+---
+
+## 2. Roli dhe fusha e partneritetit
+
+Partneri ushtron rolin **{{partner_role}}** në territorin: **{{partner_territory}}**.
+
+Lloji i partneritetit: **{{partner_contract_type}}**.
+
+Partneri vepron si partner i pavarur dhe jo si punonjës, agjent ose përfaqësues ligjor i IT Arena, përveç rasteve të autorizuara me shkrim.
+
+---
+
+## 3. Detyrimet e IT Arena
+
+{{itarena_obligations}}
+
+---
+
+## 4. Detyrimet e Partnerit
+
+{{partner_obligations}}
+
+---
+
+## 5. Komisioni dhe kompensimi
+
+**Përmbledhje e komisionit:** {{partner_commission}}
+
+{{commission_terms}}
+
+Pagesat kryhen sipas faturave të aprovuara dhe raporteve të shitjeve të dorëzuara brenda afateve të përcaktuara në këtë Kontratë ose në aneks të veçantë.
+
+---
+
+## 6. Përdorimi i markës
+
+{{brand_usage}}
+
+Partneri nuk mund të regjistrojë, modifikojë ose përdorë emrin, logon ose markat e IT Arena pa miratim paraprak me shkrim. Çdo material promocional duhet të aprovohet nga IT Arena para publikimit.
+
+---
+
+## 7. Konfidencialitet
+
+Partneri mban konfidenciale të gjitha informacionet e IT Arena, klientëve, çmimeve, proceseve teknike dhe strategjive tregtare gjatë dhe pas marrëdhënies së partneritetit. Ky detyrim zbatohet pa kufizim kohor për informacionet që përbëjnë sekret tregtar.
+
+---
+
+## 8. Afati dhe kohëzgjatja
+
+Kontrata është e vlefshme nga data {{contract_start}}{{contract_end_clause}}. Çdo ndryshim i kushteve kërkon aneks të nënshkruar nga të dyja palët.
+
+---
+
+## 9. Jo-konkurrenca dhe jo-rekrutimi
+
+Gjatë periudhës së partneritetit dhe **6 (gjashtë) muajve** pas zgjidhjes, Partneri nuk mund të rekrutojë punonjës të IT Arena ose t'u ofrojë shërbime të drejtpërdrejta klientëve aktivë të IT Arena pa miratim me shkrim. Kjo dispozitë nuk e kufizon Partnerin të ushtrojë aktivitetin e tij të përgjithshëm tregtar.
+
+---
+
+## 10. Zgjidhja e kontratës
+
+Secila palë mund ta zgjidhë këtë Kontratë me njoftim me shkrim jo më pak se **{{notice_period}}** para. IT Arena mund ta zgjidhë menjëherë nëse Partneri shkel detyrimet e konfidencialitetit, përdorimin e markës ose raportimin e rregullt të shitjeve.
+
+---
+
+## 11. Zgjidhja e mosmarrëveshjeve
+
+Mosmarrëveshjet zgjidhen fillimisht me negociata brenda 15 ditëve. Nëse dështojnë, palët i drejtohen gjykatave kompetente të Tiranës, Shqipëri.
+
+---
+
+## 12. Dispozita përfundimtare
+
+Kjo Kontratë nënshkruhet në dy kopje origjinale. Çdo ndryshim bëhet me aneks të nënshkruar nga të dyja palët. Kontrata rregullohet nga ligjet e Republikës së Shqipërisë.
+
+`;
+
+const PARTNER_EN = `## 1. Partnership Agreement
+
+This Partnership Agreement ("Agreement") is entered into between **{{itarena_company}}** ("IT Arena"), NIPT: {{itarena_nipt}}, registered at {{itarena_address}}, represented by {{itarena_representative}}, {{itarena_title}}, and **{{partner_name}}** ("Partner"), ID No.: {{partner_id}}, as of {{contract_date}}.
+
+This Agreement enters into force on {{contract_start}} and is governed by the civil and commercial legislation of the Republic of Albania.
+
+---
+
+## 2. Role and scope
+
+The Partner acts in the role of **{{partner_role}}** within the territory: **{{partner_territory}}**.
+
+Partnership type: **{{partner_contract_type}}**.
+
+The Partner acts as an independent partner and not as an employee, agent or legal representative of IT Arena, except where expressly authorized in writing.
+
+---
+
+## 3. IT Arena obligations
+
+{{itarena_obligations}}
+
+---
+
+## 4. Partner obligations
+
+{{partner_obligations}}
+
+---
+
+## 5. Commission and compensation
+
+**Commission summary:** {{partner_commission}}
+
+{{commission_terms}}
+
+Payments are made against approved invoices and submitted sales reports within the timeframes set out in this Agreement or in a separate addendum.
+
+---
+
+## 6. Brand usage
+
+{{brand_usage}}
+
+The Partner may not register, modify or use the name, logo or trademarks of IT Arena without prior written approval. All promotional materials must be approved by IT Arena before publication.
+
+---
+
+## 7. Confidentiality
+
+The Partner shall keep confidential all information regarding IT Arena, its clients, pricing, technical processes and commercial strategies during and after the partnership. This obligation applies without time limit to information constituting trade secrets.
+
+---
+
+## 8. Term and duration
+
+This Agreement is valid from {{contract_start}}{{contract_end_clause}}. Any change to the terms requires a written addendum signed by both parties.
+
+---
+
+## 9. Non-compete and non-solicitation
+
+During the partnership and for **6 (six) months** after termination, the Partner may not recruit IT Arena employees or directly offer services to IT Arena's active clients without written approval. This provision does not restrict the Partner's general commercial activity.
+
+---
+
+## 10. Termination
+
+Either party may terminate this Agreement upon written notice of not less than **{{notice_period}}**. IT Arena may terminate immediately if the Partner breaches confidentiality, brand usage or regular sales reporting obligations.
+
+---
+
+## 11. Dispute resolution
+
+Disputes shall first be resolved through negotiation within 15 days. If unsuccessful, the parties may refer the matter to the competent courts of Tirana, Albania.
+
+---
+
+## 12. Final provisions
+
+This Agreement is signed in two original copies. Any amendment is made by addendum signed by both parties. This Agreement is governed by the laws of the Republic of Albania.
+
+`;
+
 export function getDefaultClauseBody(
-  type: "SERVICE_CONTRACT" | "EMPLOYMENT",
+  type: DocumentType,
   language: TemplateLanguage
 ): string {
   if (type === "SERVICE_CONTRACT") return language === "en" ? SERVICE_EN : SERVICE_SQ;
-  return language === "en" ? EMPLOYMENT_EN : EMPLOYMENT_SQ;
+  if (type === "EMPLOYMENT") return language === "en" ? EMPLOYMENT_EN : EMPLOYMENT_SQ;
+  return language === "en" ? PARTNER_EN : PARTNER_SQ;
 }

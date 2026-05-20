@@ -77,7 +77,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     links: [
       { network: "facebook", url: "https://facebook.com/itarena", enabled: true },
       { network: "instagram", url: "https://instagram.com/itarena", enabled: true },
-      { network: "linkedin", url: "https://linkedin.com/company/itarena", enabled: true },
+      { network: "tiktok", url: "https://tiktok.com/@itarena", enabled: true },
       { network: "whatsapp", url: "https://wa.me/355696314319", enabled: true },
     ],
   },

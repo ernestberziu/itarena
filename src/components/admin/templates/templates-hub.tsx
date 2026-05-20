@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { FileSignature, Briefcase, History, Library, Settings } from "lucide-react";
+import { FileSignature, Briefcase, Handshake, History, Library, Settings } from "lucide-react";
 import { TemplatesSubnav } from "./templates-subnav";
 
 const cards = [
   { key: "serviceContract", href: "contracts/service/new", icon: FileSignature, color: "from-violet-500/10 to-indigo-500/5" },
   { key: "employment", href: "contracts/employment/new", icon: Briefcase, color: "from-blue-500/10 to-cyan-500/5" },
+  { key: "partnerContract", href: "contracts/partner/new", icon: Handshake, color: "from-amber-500/10 to-orange-500/5" },
   { key: "history", href: "history", icon: History, color: "from-emerald-500/10 to-teal-500/5" },
   { key: "saved", href: "saved", icon: Library, color: "from-slate-500/10 to-zinc-500/5" },
   { key: "settings", href: "settings", icon: Settings, color: "from-purple-500/10 to-pink-500/5" },

@@ -17,8 +17,9 @@ function buildClientsHref(
     tier?: string;
     approved?: string;
     active?: string;
+    affiliation?: string;
   },
-  patch: Partial<Record<"q" | "tier" | "approved" | "active", string | null | undefined>>
+  patch: Partial<Record<"q" | "tier" | "approved" | "active" | "affiliation", string | null | undefined>>
 ) {
   const p = new URLSearchParams();
   const merged = { ...base, ...patch };
@@ -26,6 +27,7 @@ function buildClientsHref(
   if (merged.tier?.trim()) p.set("tier", merged.tier.trim());
   if (merged.approved === "true" || merged.approved === "false") p.set("approved", merged.approved);
   if (merged.active && merged.active !== "all") p.set("active", merged.active);
+  if (merged.affiliation && merged.affiliation !== "all") p.set("affiliation", merged.affiliation);
   const qs = p.toString();
   return qs ? `${lp}/admin/clients?${qs}` : `${lp}/admin/clients`;
 }
@@ -37,6 +39,7 @@ export function AdminUsersToolbar({
   tier,
   approved,
   active,
+  affiliation,
 }: {
   locale: string;
   lp: string;
@@ -44,14 +47,18 @@ export function AdminUsersToolbar({
   tier?: string;
   approved?: string;
   active?: string;
+  affiliation?: string;
 }) {
   const en = locale === "en";
   const t = (sq: string, e: string) => (en ? e : sq);
   const activeNorm = active || "all";
+  const affiliationNorm = affiliation || "all";
   const qTrim = q?.trim();
-  const base = { q, tier, approved, active: activeNorm };
+  const base = { q, tier, approved, active: activeNorm, affiliation: affiliationNorm };
 
-  const filtersActive = Boolean(qTrim || tier || approved || (activeNorm && activeNorm !== "all"));
+  const filtersActive = Boolean(
+    qTrim || tier || approved || (activeNorm && activeNorm !== "all") || (affiliationNorm && affiliationNorm !== "all")
+  );
   const defaultOpen = filtersActive;
 
   const tierSummary =
@@ -72,8 +79,14 @@ export function AdminUsersToolbar({
       : activeNorm === "suspended"
         ? t("Të pezulluara", "Suspended")
         : null;
+  const affiliationSummary =
+    affiliationNorm === "linked"
+      ? t("Me kompani", "With company")
+      : affiliationNorm === "individual"
+        ? t("Individual", "Individual")
+        : null;
 
-  const summaryParts = [tierSummary, approvedSummary, accountSummary].filter(Boolean);
+  const summaryParts = [tierSummary, approvedSummary, accountSummary, affiliationSummary].filter(Boolean);
   const searchHint =
     qTrim &&
     (en
@@ -121,6 +134,7 @@ export function AdminUsersToolbar({
         {tier && <input type="hidden" name="tier" value={tier} />}
         {approved && <input type="hidden" name="approved" value={approved} />}
         {activeNorm !== "all" ? <input type="hidden" name="active" value={activeNorm} /> : null}
+        {affiliationNorm !== "all" ? <input type="hidden" name="affiliation" value={affiliationNorm} /> : null}
         <Button type="submit" className="h-10 shrink-0 gap-2 rounded-xl px-5 shadow-sm sm:w-auto w-full">
           <Search className="h-4 w-4" strokeWidth={2} aria-hidden />
           {t("Kërko", "Search")}
@@ -199,6 +213,28 @@ export function AdminUsersToolbar({
                 href={buildClientsHref(lp, base, { active: "suspended" })}
                 label={t("Të pezulluara", "Suspended")}
                 selected={activeNorm === "suspended"}
+              />
+            </SegmentedFilterTrack>
+          </div>
+          <div className="space-y-2">
+            <span className="text-xs font-semibold tracking-tight text-foreground">
+              {t("Lidhja me kompani", "Company link")}
+            </span>
+            <SegmentedFilterTrack>
+              <SegmentedFilterLink
+                href={buildClientsHref(lp, base, { affiliation: "all" })}
+                label={t("Të gjitha", "All")}
+                selected={affiliationNorm === "all"}
+              />
+              <SegmentedFilterLink
+                href={buildClientsHref(lp, base, { affiliation: "linked" })}
+                label={t("Me kompani", "With company")}
+                selected={affiliationNorm === "linked"}
+              />
+              <SegmentedFilterLink
+                href={buildClientsHref(lp, base, { affiliation: "individual" })}
+                label={t("Individual", "Individual")}
+                selected={affiliationNorm === "individual"}
               />
             </SegmentedFilterTrack>
           </div>

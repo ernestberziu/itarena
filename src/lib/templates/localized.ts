@@ -3,13 +3,15 @@ import type {
   DocumentType,
   EmploymentLocalizedContent,
   EmploymentPayload,
+  PartnerLocalizedContent,
+  PartnerPayload,
   ServiceContractPayload,
   ServiceLocalizedContent,
   TemplateLanguage,
 } from "./types";
 import { normalizeServicePayload } from "./recurring";
 
-export type { ServiceLocalizedContent, EmploymentLocalizedContent };
+export type { ServiceLocalizedContent, EmploymentLocalizedContent, PartnerLocalizedContent };
 
 export function defaultServiceLocalized(lang: TemplateLanguage): ServiceLocalizedContent {
   return {
@@ -83,15 +85,71 @@ export function defaultEmploymentLocalized(lang: TemplateLanguage): EmploymentLo
   };
 }
 
+const DEFAULT_ITARENA_OBLIGATIONS_SQ = `IT Arena detyrohet të:
+1. Ofrojë materiale trajnimi, informacion produktesh dhe mbështetje teknike për Partnerin.
+2. Përcaktojë çmimet, politikat e zbritjeve dhe kushtet komerciale me shkrim.
+3. Informojë Partnerin për ndryshime materiale në produkte, çmime ose politika.
+4. Paguajë komisionin e aprovuar brenda afateve të dakorduara.
+5. Respektojë konfidencialitetin e informacionit të Partnerit.`;
+
+const DEFAULT_ITARENA_OBLIGATIONS_EN = `IT Arena shall:
+1. Provide training materials, product information and technical support to the Partner.
+2. Set pricing, discount policies and commercial terms in writing.
+3. Inform the Partner of material changes to products, pricing or policies.
+4. Pay approved commission within the agreed timeframes.
+5. Respect the confidentiality of the Partner's information.`;
+
+const DEFAULT_PARTNER_OBLIGATIONS_SQ = `Partneri detyrohet të:
+1. Promovojë produktet dhe shërbimet e IT Arena me profesionalizëm dhe në përputhje me udhëzimet e markës.
+2. Raportojë shitjet, lead-et dhe aktivitetin tregtar sipas formularëve të IT Arena.
+3. Respektojë çmimet dhe politikat komerciale të aprovuara.
+4. Mos bëjë premtime jashtë autorizimit të dhënë nga IT Arena.
+5. Ruajë konfidencialitetin e informacionit të klientëve dhe të kompanisë.
+6. Informojë IT Arena për çdo konflikt interesi ose marrëveshje konkurruese relevante.`;
+
+const DEFAULT_PARTNER_OBLIGATIONS_EN = `The Partner shall:
+1. Promote IT Arena products and services professionally and in accordance with brand guidelines.
+2. Report sales, leads and commercial activity using IT Arena forms.
+3. Respect approved pricing and commercial policies.
+4. Not make commitments outside the authorization granted by IT Arena.
+5. Maintain confidentiality of client and company information.
+6. Inform IT Arena of any relevant conflict of interest or competing arrangement.`;
+
+const DEFAULT_COMMISSION_TERMS_SQ = `Komisioni llogaritet mbi shitjet neto të aprovuara, pas zbritjeve dhe kthimeve. Pagesa kryhet brenda 30 ditëve nga mbyllja e muajit raportues, me bazë faturë ose deklaratë komisioni të aprovuar nga IT Arena.`;
+
+const DEFAULT_COMMISSION_TERMS_EN = `Commission is calculated on approved net sales, after discounts and returns. Payment is made within 30 days of the end of the reporting month, based on an invoice or commission statement approved by IT Arena.`;
+
+const DEFAULT_BRAND_USAGE_SQ = `Partneri mund të përdorë logon dhe materialet e IT Arena vetëm për qëllime promocionale të aprovuara. Çdo faqe web, profil social ose material print duhet të respektojë udhëzimet e markës dhe të përmendë IT Arena si partner i autorizuar.`;
+
+const DEFAULT_BRAND_USAGE_EN = `The Partner may use the IT Arena logo and materials only for approved promotional purposes. Any website, social profile or printed material must follow brand guidelines and identify IT Arena as an authorized partner.`;
+
+export function defaultPartnerLocalized(lang: TemplateLanguage): PartnerLocalizedContent {
+  return {
+    bodyMarkdown: getDefaultClauseBody("PARTNER_CONTRACT", lang),
+    partnerObligations: lang === "en" ? DEFAULT_PARTNER_OBLIGATIONS_EN : DEFAULT_PARTNER_OBLIGATIONS_SQ,
+    itarenaObligations: lang === "en" ? DEFAULT_ITARENA_OBLIGATIONS_EN : DEFAULT_ITARENA_OBLIGATIONS_SQ,
+    commissionTerms: lang === "en" ? DEFAULT_COMMISSION_TERMS_EN : DEFAULT_COMMISSION_TERMS_SQ,
+    territory: lang === "en" ? "Republic of Albania" : "Republika e Shqipërisë",
+    brandUsage: lang === "en" ? DEFAULT_BRAND_USAGE_EN : DEFAULT_BRAND_USAGE_SQ,
+    contractType: lang === "en" ? "Non-exclusive" : "Jo-ekskluzive",
+    noticePeriod: lang === "en" ? "30 days from written notice" : "30 ditë nga njoftimi me shkrim",
+  };
+}
+
 function hasBilingualLocalized(
-  localized: ServiceContractPayload["localized"] | EmploymentPayload["localized"] | undefined
+  localized:
+    | ServiceContractPayload["localized"]
+    | EmploymentPayload["localized"]
+    | PartnerPayload["localized"]
+    | undefined
 ): boolean {
   if (!localized?.sq?.bodyMarkdown?.trim() || !localized?.en?.bodyMarkdown?.trim()) return false;
-  // Force re-migration if employment localized is missing new required fields
-  const empLocalized = localized as EmploymentPayload["localized"] | undefined;
-  if (empLocalized?.sq) {
-    const sq = empLocalized.sq as Record<string, unknown>;
+  const sq = localized.sq as Record<string, unknown>;
+  if ("workingHours" in sq) {
     if (!("employerDuties" in sq) || !("employeeDuties" in sq) || !("annualLeave" in sq)) return false;
+  }
+  if ("territory" in sq || "partnerObligations" in sq) {
+    if (!("partnerObligations" in sq) || !("itarenaObligations" in sq) || !("territory" in sq)) return false;
   }
   return true;
 }
@@ -308,6 +366,116 @@ export function resolveEmploymentForLanguage(
     employerDuties: c.employerDuties,
     employeeDuties: c.employeeDuties,
     annualLeave: c.annualLeave,
+  };
+}
+
+function repairPartnerEnglishMirror(payload: PartnerPayload): PartnerPayload {
+  const localized = payload.localized;
+  if (!localized?.sq || !localized?.en) return payload;
+  if (localized.en.bodyMarkdown.trim() !== localized.sq.bodyMarkdown.trim()) return payload;
+
+  const defEn = defaultPartnerLocalized("en");
+  return {
+    ...payload,
+    localized: {
+      ...localized,
+      en: {
+        ...defEn,
+        noticePeriod: localized.en.noticePeriod ?? defEn.noticePeriod,
+      },
+    },
+  };
+}
+
+export function migratePartnerPayload(
+  raw: Record<string, unknown>,
+  documentLanguage: TemplateLanguage = "sq"
+): PartnerPayload {
+  const p = raw as PartnerPayload;
+  if (hasBilingualLocalized(p.localized)) {
+    return repairPartnerEnglishMirror(p);
+  }
+
+  const legacyBody = typeof raw.bodyMarkdown === "string" ? raw.bodyMarkdown : "";
+  const defSq = defaultPartnerLocalized("sq");
+  const defEn = defaultPartnerLocalized("en");
+
+  const sq: PartnerLocalizedContent =
+    documentLanguage === "sq"
+      ? {
+          bodyMarkdown: legacyBody || defSq.bodyMarkdown,
+          partnerObligations: defSq.partnerObligations,
+          itarenaObligations: defSq.itarenaObligations,
+          commissionTerms: defSq.commissionTerms,
+          territory: defSq.territory,
+          brandUsage: defSq.brandUsage,
+          contractType: defSq.contractType,
+          noticePeriod: defSq.noticePeriod,
+        }
+      : defSq;
+
+  const en: PartnerLocalizedContent =
+    documentLanguage === "en"
+      ? {
+          bodyMarkdown: legacyBody || defEn.bodyMarkdown,
+          partnerObligations: defEn.partnerObligations,
+          itarenaObligations: defEn.itarenaObligations,
+          commissionTerms: defEn.commissionTerms,
+          territory: defEn.territory,
+          brandUsage: defEn.brandUsage,
+          contractType: defEn.contractType,
+          noticePeriod: defEn.noticePeriod,
+        }
+      : defEn;
+
+  const { bodyMarkdown: _b, localized: _l, ...rest } = p as PartnerPayload & { bodyMarkdown?: string };
+
+  return {
+    ...(rest as Omit<PartnerPayload, "localized">),
+    localized: { sq, en },
+  };
+}
+
+export function getPartnerLocalized(
+  payload: PartnerPayload,
+  lang: TemplateLanguage
+): PartnerLocalizedContent {
+  return payload.localized?.[lang] ?? defaultPartnerLocalized(lang);
+}
+
+export function patchPartnerLocalized(
+  payload: PartnerPayload,
+  lang: TemplateLanguage,
+  patch: Partial<PartnerLocalizedContent>
+): PartnerPayload {
+  const localized = payload.localized ?? {
+    sq: defaultPartnerLocalized("sq"),
+    en: defaultPartnerLocalized("en"),
+  };
+  return {
+    ...payload,
+    localized: {
+      ...localized,
+      [lang]: { ...localized[lang], ...patch },
+    },
+  };
+}
+
+export function resolvePartnerForLanguage(
+  payload: PartnerPayload,
+  lang: TemplateLanguage
+): PartnerPayload & PartnerLocalizedContent {
+  const c = getPartnerLocalized(payload, lang);
+  return {
+    ...payload,
+    bodyMarkdown: c.bodyMarkdown,
+    partnerObligations: c.partnerObligations,
+    itarenaObligations: c.itarenaObligations,
+    commissionTerms: c.commissionTerms,
+    territory: c.territory,
+    brandUsage: c.brandUsage,
+    contractType: c.contractType,
+    noticePeriod: c.noticePeriod,
   };
 }
 

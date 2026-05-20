@@ -1,5 +1,5 @@
 export type TemplateLanguage = "sq" | "en";
-export type DocumentType = "SERVICE_CONTRACT" | "EMPLOYMENT";
+export type DocumentType = "SERVICE_CONTRACT" | "EMPLOYMENT" | "PARTNER_CONTRACT";
 export type DocumentStatus = "DRAFT" | "GENERATED" | "ARCHIVED";
 
 export type PartyMode = "portal" | "manual";
@@ -98,6 +98,30 @@ export type EmploymentPayload = {
   startDate: string;
   endDate?: string;
   localized: BilingualLocalized<EmploymentLocalizedContent>;
+  bodyMarkdown: string;
+};
+
+export type PartnerLocalizedContent = {
+  bodyMarkdown: string;
+  partnerObligations: string;
+  itarenaObligations: string;
+  commissionTerms: string;
+  territory: string;
+  brandUsage: string;
+  contractType: string;
+  noticePeriod?: string;
+};
+
+export type PartnerPayload = {
+  firstName: string;
+  lastName: string;
+  idNumber: string;
+  role: string;
+  commission: string;
+  contractDate: string;
+  startDate: string;
+  endDate?: string;
+  localized: BilingualLocalized<PartnerLocalizedContent>;
   bodyMarkdown: string;
 };
 

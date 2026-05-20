@@ -14,6 +14,7 @@ export function TemplatesSubnav({ lp }: { lp: string }) {
     { href: base, label: t("title"), exact: true },
     { href: `${base}/contracts/service/new`, label: t("serviceContract") },
     { href: `${base}/contracts/employment/new`, label: t("employment") },
+    { href: `${base}/contracts/partner/new`, label: t("partnerContract") },
     { href: `${base}/history`, label: t("history") },
     { href: `${base}/saved`, label: t("saved") },
     { href: `${base}/settings`, label: t("settings") },

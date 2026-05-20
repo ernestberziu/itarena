@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Shield, StickyNote, Ticket, ShoppingBag, FileText } from "lucide-react";
+import { Shield, StickyNote, Ticket, ShoppingBag, FileText } from "lucide-react";
 import { formatDate, timeAgo } from "@/lib/utils";
 import {
   AdminStatCard,
@@ -10,6 +10,8 @@ import {
   AdminClientRowActions,
   type UserStatusBadgeInput,
 } from "@/components/admin/users";
+import { AdminClientCompanyPanel } from "@/components/admin/admin-client-company-panel";
+import type { RegistrationCompanySnapshot } from "@/lib/registration-company-snapshot";
 
 export type AdminClientDetailModel = {
   id: string;
@@ -25,6 +27,7 @@ export type AdminClientDetailModel = {
   createdAt: string;
   role: string;
   company: {
+    id: string;
     name: string;
     tier: string | null;
     isApproved: boolean;
@@ -32,6 +35,15 @@ export type AdminClientDetailModel = {
     city: string | null;
     country: string | null;
   } | null;
+  registeredCompany: {
+    id: string;
+    name: string;
+    vatNumber: string | null;
+    city: string | null;
+    tier: string | null;
+    isApproved: boolean;
+  } | null;
+  registrationSnapshot: RegistrationCompanySnapshot | null;
   _count: { tickets: number; orders: number; quotes: number };
   recentTickets: { id: string; number: string; title: string; status: string; createdAt: string }[];
   recentOrders: {
@@ -83,9 +95,11 @@ export function AdminClientDetailView({
                   <UserStatusBadges user={badgeInput} locale={locale} />
                   <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <div>
-                      <dt className="inline font-medium text-foreground">{t("Roli", "Role")}: </dt>
+                      <dt className="inline font-medium text-foreground">{t("Lloji", "Type")}: </dt>
                       <dd className="inline">
-                        {user.role === "COMPANY_ADMIN" ? t("B2B Admin", "B2B Admin") : t("Klient", "Client")}
+                        {user.company || user.registeredCompany || user.registrationSnapshot
+                          ? t("Kontakt biznesi", "Business contact")
+                          : t("Individual", "Individual")}
                       </dd>
                     </div>
                     <div>
@@ -113,6 +127,8 @@ export function AdminClientDetailView({
                     firstName: user.firstName,
                     lastName: user.lastName,
                     isActive: user.isActive,
+                    companyId: user.company?.id ?? null,
+                    registrationCompanySnapshot: user.registrationSnapshot,
                   }}
                   locale={locale}
                   detailHref={detailHref}
@@ -149,54 +165,43 @@ export function AdminClientDetailView({
 
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-tight">
-                <Building2 className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-                {t("Kompania", "Company")}
+                <Shield className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+                {t("Siguria", "Security")}
               </h2>
-              {user.company ? (
-                <dl className="space-y-2 text-sm">
-                  <div>
-                    <dt className="text-muted-foreground">{t("Emri", "Name")}</dt>
-                    <dd className="font-medium">{user.company.name}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">{t("Niveli", "Tier")}</dt>
-                    <dd>{user.company.tier ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">{t("NIPT / TVSH", "VAT")}</dt>
-                    <dd>{user.company.vatNumber ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">{t("Vendndodhja", "Location")}</dt>
-                    <dd>
-                      {[user.company.city, user.company.country].filter(Boolean).join(", ") || "—"}
-                    </dd>
-                  </div>
-                </dl>
-              ) : (
-                <p className="text-sm text-muted-foreground">{t("Pa kompani të lidhur", "No linked company")}</p>
-              )}
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  {user.twoFactorEnabled
+                    ? t("2FA është aktivizuar", "Two-factor authentication is on")
+                    : t("2FA është i fikur", "Two-factor authentication is off")}
+                </li>
+                <li>
+                  {user.emailVerified
+                    ? t("Email i verifikuar", "Email verified")
+                    : t("Email pa verifikuar", "Email not verified")}
+                </li>
+              </ul>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-tight">
-              <Shield className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-              {t("Siguria", "Security")}
-            </h2>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                {user.twoFactorEnabled
-                  ? t("2FA është aktivizuar", "Two-factor authentication is on")
-                  : t("2FA është i fikur", "Two-factor authentication is off")}
-              </li>
-              <li>
-                {user.emailVerified
-                  ? t("Email i verifikuar", "Email verified")
-                  : t("Email pa verifikuar", "Email not verified")}
-              </li>
-            </ul>
-          </div>
+          <AdminClientCompanyPanel
+            userId={user.id}
+            locale={locale}
+            lp={lp}
+            activeCompany={
+              user.company
+                ? {
+                    id: user.company.id,
+                    name: user.company.name,
+                    tier: user.company.tier,
+                    isApproved: user.company.isApproved,
+                    vatNumber: user.company.vatNumber,
+                    city: user.company.city,
+                  }
+                : null
+            }
+            registeredCompany={user.registeredCompany}
+            registrationSnapshot={user.registrationSnapshot}
+          />
 
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-5">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold tracking-tight text-muted-foreground">

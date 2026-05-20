@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Building2,
   LayoutDashboard,
   Ticket,
   Users,
@@ -73,6 +74,13 @@ export const MAIN_NAV: AdminNavItem[] = [
     transKey: "clients",
     href: "/admin/clients",
     icon: Users,
+    roles: ["ADMIN", "SALES"],
+  },
+  {
+    id: "companies",
+    transKey: "companies",
+    href: "/admin/companies",
+    icon: Building2,
     roles: ["ADMIN", "SALES"],
   },
   {
