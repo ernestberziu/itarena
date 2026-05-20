@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { STAFF_ROLES } from "@/types/domain";
+import { activeStaffWhere } from "@/lib/staff/active-staff-where";
 
 const postSchema = z
   .object({
@@ -30,7 +31,7 @@ export async function GET() {
   if (denied) return denied;
 
   const staff = await db.user.findMany({
-    where: { role: { in: [...STAFF_ROLES] } },
+    where: activeStaffWhere(),
     select: {
       id: true,
       firstName: true,

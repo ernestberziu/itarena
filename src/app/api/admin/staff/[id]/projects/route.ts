@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
-import { STAFF_ROLES } from "@/types/domain";
+import { activeStaffWhere } from "@/lib/staff/active-staff-where";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: Params) {
 
   const { id: userId } = await params;
   const user = await db.user.findFirst({
-    where: { id: userId, role: { in: [...STAFF_ROLES] } },
+    where: { id: userId, ...activeStaffWhere() },
     select: { id: true },
   });
   if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -34,12 +34,25 @@ import {
   getYesterdayCalendarDate,
 } from "@/lib/calendar";
 import { DashboardStaffReportsSection } from "@/components/admin/dashboard-staff-reports-section";
-import { countMissedSlaTickets, countSlaCompliance, isSlaBreached } from "@/lib/sla";
+import { countSlaCompliance, isSlaBreached, getMissedSlaTicketIds } from "@/lib/sla";
+import { shouldScopeTicketsToAssignee, ticketsAssignedToWhere } from "@/lib/admin-tickets-scope";
+import type { Prisma } from "@prisma/client";
 
-async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
+async function fetchAdminDashboardData(
+  thirtyDaysAgo: Date,
+  todayStart: Date,
+  userId: string,
+  scopeTickets: boolean
+) {
+  const ticketScope: Prisma.TicketWhereInput = scopeTickets
+    ? ticketsAssignedToWhere(userId)
+    : {};
+
+  const missedSlaIdsPromise = getMissedSlaTicketIds(db);
+
   const [
     openTickets,
-    breachedTickets,
+    missedSlaIds,
     missedSlaTickets,
     resolvedToday,
     totalClients,
@@ -52,19 +65,27 @@ async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
     ticketsByStatus,
     recentOrders30d,
   ] = await Promise.all([
-    db.ticket.count({ where: { status: { notIn: ["RESOLVED", "CLOSED"] } } }),
-    countMissedSlaTickets(db),
+    db.ticket.count({
+      where: { ...ticketScope, status: { notIn: ["RESOLVED", "CLOSED"] } },
+    }),
+    missedSlaIdsPromise,
     db.ticket.findMany({
-      where: { slaDeadline: { not: null }, status: { not: "CLOSED" } },
+      where: {
+        ...ticketScope,
+        slaDeadline: { not: null },
+        status: { not: "CLOSED" },
+      },
       select: { slaDeadline: true, status: true, resolvedAt: true },
     }),
-    db.ticket.count({ where: { status: "RESOLVED", resolvedAt: { gte: todayStart } } }),
+    db.ticket.count({
+      where: { ...ticketScope, status: "RESOLVED", resolvedAt: { gte: todayStart } },
+    }),
     db.user.count({ where: { role: { in: ["CLIENT", "COMPANY_ADMIN"] } } }),
     db.quote.count({ where: { status: "PENDING" } }),
     db.order.count({ where: { status: "PLACED" } }),
     db.order.aggregate({ _sum: { total: true }, where: { status: { notIn: ["CANCELLED"] } } }),
     db.ticket.findMany({
-      where: { status: { notIn: ["RESOLVED", "CLOSED"] } },
+      where: { ...ticketScope, status: { notIn: ["RESOLVED", "CLOSED"] } },
       orderBy: [{ slaDeadline: "asc" }, { priority: "desc" }, { createdAt: "asc" }],
       take: 8,
       select: {
@@ -86,6 +107,7 @@ async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
       include: { user: { select: { firstName: true, lastName: true } } },
     }),
     db.ticketHistory.findMany({
+      where: scopeTickets ? { ticket: { assignedToId: userId } } : undefined,
       orderBy: { createdAt: "desc" },
       take: 10,
       include: {
@@ -93,13 +115,26 @@ async function fetchAdminDashboardData(thirtyDaysAgo: Date, todayStart: Date) {
         ticket: { select: { number: true, title: true } },
       },
     }),
-    db.ticket.groupBy({ by: ["status"], _count: true }),
+    db.ticket.groupBy({
+      by: ["status"],
+      where: ticketScope,
+      _count: true,
+    }),
     db.order.findMany({
       where: { createdAt: { gte: thirtyDaysAgo }, status: { notIn: ["CANCELLED"] } },
       select: { createdAt: true, total: true },
       orderBy: { createdAt: "asc" },
     }),
   ]);
+
+  const breachedTickets =
+    missedSlaIds.length === 0
+      ? 0
+      : scopeTickets
+        ? await db.ticket.count({
+            where: { ...ticketScope, id: { in: missedSlaIds } },
+          })
+        : missedSlaIds.length;
 
   const slaCompliance = countSlaCompliance(missedSlaTickets);
 
@@ -139,6 +174,7 @@ export default async function AdminDashboardPage({
   const todayStart = startOfDay(now);
   const canViewCalendar = hasAclLevel(acl, "calendar", "read");
   const isAdmin = session.user.role === "ADMIN";
+  const scopeTickets = await shouldScopeTicketsToAssignee(session.user.id);
 
   let staffReports: {
     today: Awaited<ReturnType<typeof getCalendarDay>>;
@@ -161,7 +197,7 @@ export default async function AdminDashboardPage({
 
   let data: Awaited<ReturnType<typeof fetchAdminDashboardData>>;
   try {
-    data = await fetchAdminDashboardData(thirtyDaysAgo, todayStart);
+    data = await fetchAdminDashboardData(thirtyDaysAgo, todayStart, session.user.id, scopeTickets);
   } catch {
     return (
       <div className="space-y-6">
@@ -237,8 +273,26 @@ export default async function AdminDashboardPage({
     label: statusLabels[s.status] ?? s.status,
   }));
 
-  const kpis = [
+  const canTickets = hasAclLevel(acl, "tickets", "read");
+  const canClients = hasAclLevel(acl, "clients", "read");
+  const canQuotes = hasAclLevel(acl, "quotes", "read");
+  const canOrders = hasAclLevel(acl, "orders", "read");
+  const canReports = hasAclLevel(acl, "reports", "read");
+  const canWriteTickets = hasAclLevel(acl, "tickets", "write");
+  const canWriteOrders = hasAclLevel(acl, "orders", "write");
+  const canWriteQuotes = hasAclLevel(acl, "quotes", "write");
+
+  const kpiDefinitions: {
+    feature: "tickets" | "clients" | "quotes" | "orders" | "reports";
+    title: string;
+    value: string | number;
+    icon: typeof Ticket;
+    href: string;
+    iconColor: string;
+    iconBg: string;
+  }[] = [
     {
+      feature: "tickets",
       title: locale === "sq" ? "Bileta Aktive" : "Active Tickets",
       value: openTickets,
       icon: Ticket,
@@ -247,6 +301,7 @@ export default async function AdminDashboardPage({
       iconBg: "bg-blue-50 dark:bg-blue-950/40",
     },
     {
+      feature: "tickets",
       title: locale === "sq" ? "SLA Shkelur" : "SLA Breached",
       value: breachedTickets,
       icon: AlertTriangle,
@@ -255,6 +310,7 @@ export default async function AdminDashboardPage({
       iconBg: "bg-red-50 dark:bg-red-950/40",
     },
     {
+      feature: "tickets",
       title: locale === "sq" ? "Zgjidhur Sot" : "Resolved Today",
       value: resolvedToday,
       icon: CheckCircle2,
@@ -263,6 +319,7 @@ export default async function AdminDashboardPage({
       iconBg: "bg-emerald-50 dark:bg-emerald-950/40",
     },
     {
+      feature: "clients",
       title: locale === "sq" ? "Klientë Total" : "Total Clients",
       value: totalClients,
       icon: Users,
@@ -271,6 +328,7 @@ export default async function AdminDashboardPage({
       iconBg: "bg-purple-50 dark:bg-purple-950/40",
     },
     {
+      feature: "quotes",
       title: locale === "sq" ? "Oferta Pritëse" : "Pending Quotes",
       value: pendingQuotes,
       icon: FileText,
@@ -279,6 +337,7 @@ export default async function AdminDashboardPage({
       iconBg: "bg-amber-50 dark:bg-amber-950/40",
     },
     {
+      feature: "orders",
       title: locale === "sq" ? "Porosi Pritëse" : "Pending Orders",
       value: pendingOrders,
       icon: ShoppingBag,
@@ -287,6 +346,7 @@ export default async function AdminDashboardPage({
       iconBg: "bg-indigo-50 dark:bg-indigo-950/40",
     },
     {
+      feature: "reports",
       title: locale === "sq" ? "Xhiro Totale" : "Total Revenue",
       value: formatPrice(Number(totalRevenue._sum.total ?? 0)),
       icon: TrendingUp,
@@ -295,6 +355,8 @@ export default async function AdminDashboardPage({
       iconBg: "bg-teal-50 dark:bg-teal-950/40",
     },
   ];
+
+  const kpis = kpiDefinitions.filter((kpi) => hasAclLevel(acl, kpi.feature, "read"));
 
   return (
     <div className="space-y-6">
@@ -307,28 +369,38 @@ export default async function AdminDashboardPage({
         }
         toolbar={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" asChild className="text-xs">
-              <Link href={`${lp}/admin/tickets/new`}>{locale === "sq" ? "Biletë e re" : "New ticket"}</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild className="text-xs">
-              <Link href={`${lp}/admin/orders`}>{locale === "sq" ? "Porosi" : "Orders"}</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild className="text-xs">
-              <Link href={`${lp}/admin/quotes`}>{locale === "sq" ? "Oferta" : "Quotes"}</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild className="text-xs">
-              <Link href={`${lp}/admin/reports`}>{locale === "sq" ? "Raportet" : "Reports"}</Link>
-            </Button>
+            {canWriteTickets && (
+              <Button variant="outline" size="sm" asChild className="text-xs">
+                <Link href={`${lp}/admin/tickets/new`}>{locale === "sq" ? "Biletë e re" : "New ticket"}</Link>
+              </Button>
+            )}
+            {canWriteOrders && (
+              <Button variant="outline" size="sm" asChild className="text-xs">
+                <Link href={`${lp}/admin/orders`}>{locale === "sq" ? "Porosi" : "Orders"}</Link>
+              </Button>
+            )}
+            {canWriteQuotes && (
+              <Button variant="outline" size="sm" asChild className="text-xs">
+                <Link href={`${lp}/admin/quotes`}>{locale === "sq" ? "Oferta" : "Quotes"}</Link>
+              </Button>
+            )}
+            {canReports && (
+              <Button variant="outline" size="sm" asChild className="text-xs">
+                <Link href={`${lp}/admin/reports`}>{locale === "sq" ? "Raportet" : "Reports"}</Link>
+              </Button>
+            )}
           </div>
         }
       />
 
       {/* KPI grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-3">
-        {kpis.map((kpi) => (
-          <StatCard key={kpi.title} {...kpi} />
-        ))}
-      </div>
+      {kpis.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-7 gap-3">
+          {kpis.map((kpi) => (
+            <StatCard key={kpi.title} {...kpi} />
+          ))}
+        </div>
+      )}
 
       {staffReports && (
         <DashboardStaffReportsSection
@@ -341,8 +413,9 @@ export default async function AdminDashboardPage({
       )}
 
       {/* Charts row */}
+      {(canReports || canTickets) && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Revenue chart */}
+        {canReports && (
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -354,9 +427,10 @@ export default async function AdminDashboardPage({
             <RevenueChart data={revenueData} />
           </CardContent>
         </Card>
+        )}
 
-        {/* SLA ring */}
-        <Card>
+        {canTickets && (
+        <Card className={canReports ? undefined : "lg:col-span-3"}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Activity className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
@@ -367,9 +441,11 @@ export default async function AdminDashboardPage({
             <SlaRing compliant={slaCompliance.compliant} breached={slaCompliance.breached} />
           </CardContent>
         </Card>
+        )}
       </div>
+      )}
 
-      {/* Ticket chart */}
+      {canTickets && (
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -381,10 +457,12 @@ export default async function AdminDashboardPage({
           <TicketBarChart data={ticketChartData} />
         </CardContent>
       </Card>
+      )}
 
       {/* Bottom grid */}
+      {canTickets && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Active Tickets list */}
+        {canTickets && (
         <Card className="lg:col-span-2">
           <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
             <CardTitle className="text-sm font-semibold">
@@ -432,8 +510,9 @@ export default async function AdminDashboardPage({
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Activity feed */}
+        {canTickets && (
         <Card>
           <CardHeader className="pb-3 border-b">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -467,9 +546,11 @@ export default async function AdminDashboardPage({
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
+      )}
 
-      {/* Pending Orders */}
+      {canOrders && (
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between border-b">
           <CardTitle className="text-sm font-semibold">
@@ -511,6 +592,7 @@ export default async function AdminDashboardPage({
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

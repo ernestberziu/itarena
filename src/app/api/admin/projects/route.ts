@@ -100,9 +100,13 @@ export async function POST(req: NextRequest) {
       if (m.userId === session.user.id) continue;
       const user = await tx.user.findUnique({
         where: { id: m.userId },
-        select: { id: true, role: true, isActive: true },
+        select: { id: true, role: true, isActive: true, deletedAt: true },
       });
-      if (!user?.isActive || !STAFF_ROLES.includes(user.role as (typeof STAFF_ROLES)[number])) {
+      if (
+        !user?.isActive ||
+        user.deletedAt ||
+        !STAFF_ROLES.includes(user.role as (typeof STAFF_ROLES)[number])
+      ) {
         continue;
       }
       await tx.projectMember.upsert({

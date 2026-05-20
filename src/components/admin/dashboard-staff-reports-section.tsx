@@ -36,7 +36,11 @@ function StaffReportsCard({
             {title}
           </CardTitle>
           <p className="mt-1 text-xs tabular-nums text-muted-foreground">
-            {t("Dorëzuar", "Submitted")}: {payload.submittedCount}/{payload.staffTotal}
+            {isAdmin
+              ? t("Dorëzuar", "Submitted") + `: ${payload.submittedCount}/${payload.staffTotal}`
+              : payload.ownReport
+                ? t("Dorëzuar", "Submitted")
+                : t("Pa dorëzuar", "Not submitted")}
           </p>
         </div>
         <Link
@@ -141,14 +145,14 @@ export function DashboardStaffReportsSection({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <StaffReportsCard
-        title={en ? "Today's staff reports" : "Raportet e stafit — sot"}
+        title={isAdmin ? (en ? "Today's staff reports" : "Raportet e stafit — sot") : en ? "My report — today" : "Raporti im — sot"}
         payload={today}
         locale={locale}
         lp={lp}
         isAdmin={isAdmin}
       />
       <StaffReportsCard
-        title={en ? "Yesterday's staff reports" : "Raportet e stafit — dje"}
+        title={isAdmin ? (en ? "Yesterday's staff reports" : "Raportet e stafit — dje") : en ? "My report — yesterday" : "Raporti im — dje"}
         payload={yesterday}
         locale={locale}
         lp={lp}

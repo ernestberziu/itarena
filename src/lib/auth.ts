@@ -53,7 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         if (!user || !user.passwordHash) return null;
-        if (!user.isActive) return null;
+        if (!user.isActive || user.deletedAt) return null;
 
         const valid = await bcrypt.compare(
           credentials.password as string,

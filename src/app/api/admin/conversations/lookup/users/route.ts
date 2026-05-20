@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
   const users = await db.user.findMany({
     where: {
       isActive: true,
+      deletedAt: null,
       id: { not: session.user.id },
       role: { in: allowedRoles },
       OR: [

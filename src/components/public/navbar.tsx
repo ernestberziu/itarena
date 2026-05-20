@@ -95,7 +95,7 @@ export function Navbar({
 
   const dashboardPath =
     session?.user && isStaff(session.user.role)
-      ? "/admin/dashboard"
+      ? "/admin"
       : "/portal/dashboard";
   const dashboardHref = navLink(dashboardPath);
   const dashboardLabel =

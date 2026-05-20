@@ -13,7 +13,8 @@ import {
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { hasAclLevel, isStaffRole, type StaffRole } from "@/lib/admin-acl/features";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
-import { STAFF_ROLES } from "@/types/domain";
+import { activeStaffWhere } from "@/lib/staff/active-staff-where";
+import { AdminStaffRemoveButton } from "@/components/admin/users/admin-staff-remove-button";
 
 export default async function AdminStaffDetailPage({
   params,
@@ -29,7 +30,7 @@ export default async function AdminStaffDetailPage({
   requireAdminPageRead(locale, acl, "staff");
 
   const user = await db.user.findFirst({
-    where: { id, role: { in: [...STAFF_ROLES] } },
+    where: { id, ...activeStaffWhere() },
     select: {
       id: true,
       firstName: true,
@@ -126,6 +127,29 @@ export default async function AdminStaffDetailPage({
 
       {canWriteStaff ? (
         <AdminStaffProjectAssignments staffId={user.id} locale={locale} />
+      ) : null}
+
+      {canWriteStaff && user.id !== session.user.id ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-5">
+          <h2 className="text-sm font-semibold text-destructive">
+            {locale === "sq" ? "Zona e rrezikshme" : "Danger zone"}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {locale === "sq"
+              ? "Hiq këtë anëtar nga stafi. Biletat dhe projektet mbeten; caktimet aktive shlyhen."
+              : "Remove this member from staff. Tickets and projects remain; active assignments are cleared."}
+          </p>
+          <AdminStaffRemoveButton
+            staffId={user.id}
+            staffName={`${user.firstName} ${user.lastName}`}
+            locale={locale}
+            lp={lp}
+            canRemove
+            variant="destructive"
+            className="mt-4"
+            redirectAfterRemove
+          />
+        </div>
       ) : null}
     </div>
   );

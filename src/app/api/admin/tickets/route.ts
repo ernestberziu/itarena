@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { adminTicketsListWhere } from "@/lib/admin-tickets-list-query";
+import { mergeStaffTicketScope } from "@/lib/admin-tickets-scope";
 import { mapTicketToAdminRow } from "@/lib/admin-tickets-list-dto";
 import { paginatedResponse, parseListPageParams } from "@/lib/admin-list-pagination";
 
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const { page, pageSize, skip } = parseListPageParams(searchParams);
 
-  const where = adminTicketsListWhere({
+  const baseWhere = adminTicketsListWhere({
     q: searchParams.get("q"),
     status: searchParams.get("status"),
     priority: searchParams.get("priority"),
@@ -42,6 +43,7 @@ export async function GET(req: NextRequest) {
     requester: searchParams.get("requester"),
     projectId: searchParams.get("projectId"),
   });
+  const where = await mergeStaffTicketScope(baseWhere, session.user.id);
 
   const [rows, total] = await Promise.all([
     db.ticket.findMany({

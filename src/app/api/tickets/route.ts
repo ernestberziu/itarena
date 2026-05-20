@@ -144,11 +144,12 @@ export async function POST(req: NextRequest) {
   if (assigneeId) {
     const assignee = await db.user.findUnique({
       where: { id: assigneeId },
-      select: { id: true, role: true, isActive: true },
+      select: { id: true, role: true, isActive: true, deletedAt: true },
     });
     if (
       !assignee ||
       !assignee.isActive ||
+      assignee.deletedAt ||
       !STAFF_ROLES.includes(assignee.role as (typeof STAFF_ROLES)[number])
     ) {
       return NextResponse.json({ error: "Invalid assignee" }, { status: 400 });

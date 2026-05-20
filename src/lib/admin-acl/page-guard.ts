@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import type { AdminFeature, AclLevel } from "./features";
 import { hasAclLevel } from "./features";
 import { resolveEffectiveAcl, type UserAclInput } from "./resolve";
+import { resolveStaffHomeHref } from "./staff-home";
 
 export function requireAdminPageRead(
   locale: string,
@@ -10,7 +11,7 @@ export function requireAdminPageRead(
   options?: { redirectTo?: string }
 ): void {
   if (!hasAclLevel(acl, feature, "read")) {
-    redirect(options?.redirectTo ?? (locale === "en" ? "/en/admin/dashboard" : "/admin/dashboard"));
+    redirect(options?.redirectTo ?? resolveStaffHomeHref(locale, acl));
   }
 }
 
@@ -21,7 +22,7 @@ export function requireAdminPageWrite(
   options?: { redirectTo?: string }
 ): void {
   if (!hasAclLevel(acl, feature, "write")) {
-    redirect(options?.redirectTo ?? (locale === "en" ? "/en/admin/dashboard" : "/admin/dashboard"));
+    redirect(options?.redirectTo ?? resolveStaffHomeHref(locale, acl));
   }
 }
 

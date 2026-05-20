@@ -22,6 +22,10 @@ import {
   ADMIN_TICKET_PRIORITY_OPTIONS,
 } from "@/lib/admin-ticket-filters";
 import { adminTicketsListWhere } from "@/lib/admin-tickets-list-query";
+import {
+  mergeStaffTicketScope,
+  shouldScopeTicketsToAssignee,
+} from "@/lib/admin-tickets-scope";
 import { mapTicketToAdminRow } from "@/lib/admin-tickets-list-dto";
 import { getMissedSlaTicketIds } from "@/lib/sla";
 import { cn } from "@/lib/utils";
@@ -56,16 +60,19 @@ export default async function AdminTicketsPage({
   const requesterFilter = sp.requester?.trim();
   const projectIdFilter = sp.projectId?.trim();
 
+  const ticketsScopedToAssignee = await shouldScopeTicketsToAssignee(session.user.id);
+
   const listQuery = {
     q,
     status: statusFilter,
     priority: priorityFilter,
     filter: breachedOnly ? ("breached" as const) : null,
-    assignee: assigneeFilter,
-    requester: requesterFilter,
+    assignee: ticketsScopedToAssignee ? null : assigneeFilter,
+    requester: ticketsScopedToAssignee ? null : requesterFilter,
     projectId: projectIdFilter,
   };
   let where = adminTicketsListWhere(listQuery);
+  where = await mergeStaffTicketScope(where, session.user.id);
   const missedSlaIds = await getMissedSlaTicketIds(db);
 
   if (breachedOnly) {
@@ -241,9 +248,13 @@ export default async function AdminTicketsPage({
       <AdminPageHeader
         title={locale === "sq" ? "Biletat" : "Tickets"}
         description={
-          locale === "sq"
-            ? "Menaxho kërkesat e mbështetjes dhe SLA-të."
-            : "Manage support requests and SLAs."
+          ticketsScopedToAssignee
+            ? locale === "sq"
+              ? "Biletat e caktuara për ju."
+              : "Tickets assigned to you."
+            : locale === "sq"
+              ? "Menaxho kërkesat e mbështetjes dhe SLA-të."
+              : "Manage support requests and SLAs."
         }
         actions={
           <Button asChild size="sm" className="shadow-sm">
@@ -425,6 +436,7 @@ export default async function AdminTicketsPage({
                     />
                   </div>
 
+                  {!ticketsScopedToAssignee && (
                   <div className="space-y-2">
                     <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {locale === "sq" ? "Inxhinieri" : "Assignee"}
@@ -446,6 +458,7 @@ export default async function AdminTicketsPage({
                       }}
                     />
                   </div>
+                  )}
                 </div>
 
                 <Separator className="bg-border/60" />
@@ -510,6 +523,7 @@ export default async function AdminTicketsPage({
             locale={locale}
             listPrefix={lp}
             filterQuery={filterQuery}
+            hideAssigneeColumn={ticketsScopedToAssignee}
           />
         </div>
       )}

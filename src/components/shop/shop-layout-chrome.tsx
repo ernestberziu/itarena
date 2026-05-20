@@ -25,7 +25,7 @@ export function ShopLayoutChrome({
   const isAdmin = ["ADMIN", "OPS"].includes(session?.user?.role ?? "");
   const mainDashboardPath =
     session?.user && isStaff(session.user.role)
-      ? "admin/dashboard"
+      ? "admin"
       : "portal/dashboard";
 
   if (isShopAdmin) {

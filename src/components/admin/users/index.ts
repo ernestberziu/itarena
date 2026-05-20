@@ -12,3 +12,4 @@ export { AdminStaffNewForm } from "./admin-staff-new-form";
 export { AdminStaffAclEditor } from "./admin-staff-acl-editor";
 export { AdminStaffProjectAssignments } from "./admin-staff-project-assignments";
 export { AdminStaffDetailActions } from "./admin-staff-detail-actions";
+export { AdminStaffRemoveButton } from "./admin-staff-remove-button";

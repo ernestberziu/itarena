@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
+import { isCalendarAdmin } from "@/lib/calendar/access";
 import { calendarMonthQuerySchema } from "@/lib/calendar/schemas";
 import { getCalendarMonth } from "@/lib/calendar/queries";
 
@@ -24,7 +25,8 @@ export async function GET(req: NextRequest) {
   const payload = await getCalendarMonth(
     parsed.data.year,
     parsed.data.month,
-    session.user.id
+    session.user.id,
+    isCalendarAdmin(session.user.role)
   );
   return NextResponse.json(payload);
 }

@@ -6,6 +6,11 @@ import type { TicketStatus, Priority, Role } from "@/types/domain";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 import { projectsListWhere } from "@/lib/projects";
+import {
+  canStaffAccessTicket,
+  mergeStaffTicketScope,
+  shouldScopeTicketsToAssignee,
+} from "@/lib/admin-tickets-scope";
 
 export default async function AdminTicketDetailPage({
   params,
@@ -57,6 +62,7 @@ export default async function AdminTicketDetailPage({
   ]);
 
   if (!ticket) notFound();
+  if (!(await canStaffAccessTicket(session.user.id, ticket))) notFound();
 
   const projectOptions = [...projects];
   if (ticket.project && !projectOptions.some((p) => p.id === ticket.project!.id)) {

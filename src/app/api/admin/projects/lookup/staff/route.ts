@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import type { ProjectLookupItem } from "@/lib/projects/lookup-types";
 import { parseLookupLimit } from "@/lib/projects/lookup-types";
-import { STAFF_ROLES } from "@/types/domain";
+import { activeStaffMemberWhere } from "@/lib/staff/active-staff-where";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -30,8 +30,7 @@ export async function GET(req: NextRequest) {
 
   const users = await db.user.findMany({
     where: {
-      isActive: true,
-      role: { in: [...STAFF_ROLES] },
+      ...activeStaffMemberWhere(),
       ...(excludeUserIds.length > 0 ? { id: { notIn: excludeUserIds } } : {}),
       OR: [
         { firstName: { contains: q } },

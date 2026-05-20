@@ -86,25 +86,35 @@ export function CalendarDayCell({
 
         {inMonth && !isFuture && staffTotal > 0 && (
           <div className="mt-auto space-y-1.5 pt-2">
-            <div className="h-1 overflow-hidden rounded-full bg-muted/80">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  complete ? "bg-emerald-500" : partial ? "bg-amber-500" : "bg-muted-foreground/30"
-                )}
-                style={{ width: `${Math.min(100, progress)}%` }}
-              />
-            </div>
-            <p className="text-[10px] font-medium tabular-nums text-muted-foreground sm:text-xs">
-              {t("submittedCount", {
-                submitted: day.submittedCount,
-                total: staffTotal,
-              })}
-            </p>
+            {staffTotal > 1 ? (
+              <>
+                <div className="h-1 overflow-hidden rounded-full bg-muted/80">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      complete ? "bg-emerald-500" : partial ? "bg-amber-500" : "bg-muted-foreground/30"
+                    )}
+                    style={{ width: `${Math.min(100, progress)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] font-medium tabular-nums text-muted-foreground sm:text-xs">
+                  {t("submittedCount", {
+                    submitted: day.submittedCount,
+                    total: staffTotal,
+                  })}
+                </p>
+              </>
+            ) : day.hasOwnReport ? (
+              <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 sm:text-xs">
+                {t("youSubmitted")}
+              </p>
+            ) : (
+              <p className="text-[10px] font-medium text-muted-foreground sm:text-xs">{t("missing")}</p>
+            )}
           </div>
         )}
 
-        {day.hasOwnReport && inMonth && (
+        {day.hasOwnReport && inMonth && staffTotal > 1 && (
           <span className="mt-1 inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
             <Check className="h-3 w-3" />
             {t("youSubmitted")}

@@ -34,6 +34,8 @@ model User {
   twoFactorSecret  String?
   isActive         Boolean   @default(true)
   lastLoginAt      DateTime?
+  /// Set when an admin removes a staff member; account stays for historical FK references.
+  deletedAt        DateTime?
   /// Optional per-user admin area overrides (read/write). Null = use role defaults.
   adminAclJson     Json?
   createdAt        DateTime  @default(now())

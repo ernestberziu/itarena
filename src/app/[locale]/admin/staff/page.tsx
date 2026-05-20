@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { AdminStatCard, UserAvatar, UserStatusBadges, AdminStaffRowActions } from "@/components/admin/users";
 
 import { STAFF_ROLES } from "@/types/domain";
+import { activeStaffWhere } from "@/lib/staff/active-staff-where";
 
 const ROLE_LABELS: Record<string, { sq: string; en: string; color: string }> = {
   ADMIN: {
@@ -59,7 +60,7 @@ export default async function AdminStaffPage({
   const canCreateStaff = canWriteStaff && session.user.role === "ADMIN";
   const canMessage = hasAclLevel(acl, "messages", "write");
 
-  const staffWhere = { role: { in: STAFF_ROLES as unknown as string[] } };
+  const staffWhere = activeStaffWhere();
 
   const [staff, totalCount, activeCount, suspendedCount, roleGroups] = await Promise.all([
     db.user.findMany({
@@ -179,6 +180,7 @@ export default async function AdminStaffPage({
                     messagesBasePath={lp}
                     currentUserId={session.user.id}
                     canMessage={canMessage}
+                    canRemove={canWriteStaff && member.id !== session.user.id}
                   />
                 </div>
                 <div className="flex items-start gap-3 pr-10">

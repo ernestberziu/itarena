@@ -100,10 +100,14 @@ export function CalendarToolbar({
           </div>
           {viewingCurrentMonth && (
             <div className="shrink-0 rounded-full border border-border/60 bg-muted/30 px-3 py-1 text-xs font-medium tabular-nums">
-              {t("submittedCount", {
-                submitted: data.todaySubmittedCount,
-                total: data.staffTotal,
-              })}
+              {isAdmin
+                ? t("submittedCount", {
+                    submitted: data.todaySubmittedCount,
+                    total: data.staffTotal,
+                  })
+                : data.days.find((d) => d.date === data.todayDate)?.hasOwnReport
+                  ? t("youSubmitted")
+                  : t("notSubmittedToday")}
             </div>
           )}
         </div>

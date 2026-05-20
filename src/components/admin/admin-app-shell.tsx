@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname as useNextPathname } from "next/navigation";
+import { usePathname as useIntlPathname, useRouter as useIntlRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
 import {
@@ -14,6 +15,8 @@ import {
   LogOut,
   User,
   ChevronDown,
+  Globe,
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,6 +45,7 @@ import { SHOP_CATEGORY_SELECTED_TEXT } from "@/lib/shop-category-selected-color"
 import type { Role } from "@/types/domain";
 import type { AdminFeature, AclLevel } from "@/lib/admin-acl/features";
 import { hasAclLevel } from "@/lib/admin-acl/features";
+import { staffRoleLabelFromRole } from "@/lib/staff-role-labels";
 
 const COLLAPSE_KEY = "admin-sidebar-collapsed";
 
@@ -76,10 +80,20 @@ export function AdminAppShell({
   notificationCount = 0,
   effectiveAcl = null,
 }: AdminAppShellProps) {
-  const pathname = usePathname();
+  const pathname = useNextPathname();
+  const intlPathname = useIntlPathname();
+  const intlRouter = useIntlRouter();
   const t = useTranslations("admin");
   const tNav = useTranslations("nav");
   const { open, setOpen } = useCommandMenu();
+
+  const homeHref = locale === "en" ? "/en" : "/";
+  const otherLocale = locale === "sq" ? "en" : "sq";
+
+  function switchLanguage() {
+    intlRouter.replace(intlPathname, { locale: otherLocale });
+    setMobileOpen(false);
+  }
 
   const [collapsed, setCollapsed] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -231,15 +245,21 @@ export function AdminAppShell({
         )}
       >
         <div className={cn("flex min-w-0 items-center gap-2", collapsed && "justify-center")}>
-          <ItArenaLogo
-            variant="light"
-            size="sm"
-            markOnly={collapsed}
-            className={collapsed ? "h-4 w-auto shrink-0" : undefined}
-          />
+          <Link
+            href={homeHref}
+            className="rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/40"
+            aria-label={tNav("home")}
+          >
+            <ItArenaLogo
+              variant="light"
+              size="sm"
+              markOnly={collapsed}
+              className={collapsed ? "h-4 w-auto shrink-0" : undefined}
+            />
+          </Link>
           {!collapsed && (
             <span className="rounded-md border border-border/80 bg-muted/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {t("badge")}
+              {staffRoleLabelFromRole(userRole, locale)}
             </span>
           )}
         </div>
@@ -381,7 +401,13 @@ export function AdminAppShell({
                 <div className="h-full w-full max-w-[20rem]">{sidebarInner}</div>
               </SheetContent>
             </Sheet>
-            <ItArenaLogo variant="light" size="sm" />
+            <Link
+              href={homeHref}
+              className="rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring/40"
+              aria-label={tNav("home")}
+            >
+              <ItArenaLogo variant="light" size="sm" />
+            </Link>
           </div>
 
           <Button
@@ -417,6 +443,30 @@ export function AdminAppShell({
             adminContext={contextApp}
             adminLocale={locale}
           />
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 shrink-0 gap-1.5 border-border/40 bg-background/80 px-2.5 shadow-none hover:bg-muted/60"
+            asChild
+          >
+            <Link href={homeHref}>
+              <Home className="h-4 w-4 shrink-0" strokeWidth={2} />
+              <span className="hidden text-xs font-medium sm:inline">{tNav("home")}</span>
+            </Link>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 shrink-0 gap-1.5 border-border/40 bg-background/80 px-2.5 shadow-none hover:bg-muted/60"
+            onClick={switchLanguage}
+            aria-label={locale === "sq" ? "Switch to English" : "Kalo në shqip"}
+          >
+            <Globe className="h-4 w-4 shrink-0" strokeWidth={2} />
+            <span className="text-xs font-semibold uppercase tabular-nums">{otherLocale}</span>
+          </Button>
 
           {canSeeNotifications ? (
           <Button
@@ -455,6 +505,10 @@ export function AdminAppShell({
               <ChevronDown className="h-3.5 w-3.5 opacity-50" strokeWidth={2} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-48">
+              <DropdownMenuItem render={<Link href={homeHref} />}>
+                <Home className="h-4 w-4" strokeWidth={2} />
+                {tNav("home")}
+              </DropdownMenuItem>
               {canSeeProfile ? (
               <DropdownMenuItem render={<Link href={profileHref} />}>
                 <User className="h-4 w-4" strokeWidth={2} />

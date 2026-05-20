@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TicketStatusBadge } from "@/components/portal/ticket-status-badge";
+import type { TicketStatus } from "@/types/domain";
 import { cn, timeAgo } from "@/lib/utils";
 import { projectStatusBadgeClass, projectStatusLabel } from "@/lib/projects/status-ui";
 import {
@@ -152,9 +154,11 @@ export function ProjectWorkspace({
                           {ticket.number}
                         </span>
                         <span className="flex-1 truncate text-sm font-medium">{ticket.title}</span>
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {ticket.status}
-                        </Badge>
+                        <TicketStatusBadge
+                          status={ticket.status as TicketStatus}
+                          locale={locale}
+                          className="shrink-0"
+                        />
                       </Link>
                     </li>
                   ))}

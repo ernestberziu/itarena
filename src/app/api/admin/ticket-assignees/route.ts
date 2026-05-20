@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
-import { isStaff, STAFF_ROLES } from "@/types/domain";
+import { activeStaffMemberWhere } from "@/lib/staff/active-staff-where";
+import { isStaff } from "@/types/domain";
 
 export async function GET() {
   const session = await auth();
@@ -14,10 +15,7 @@ export async function GET() {
   if (denied) return denied;
 
   const users = await db.user.findMany({
-    where: {
-      role: { in: [...STAFF_ROLES] },
-      isActive: true,
-    },
+    where: activeStaffMemberWhere(),
     select: {
       id: true,
       email: true,

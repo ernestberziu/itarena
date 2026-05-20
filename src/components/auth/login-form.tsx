@@ -61,7 +61,7 @@ export function LoginForm() {
     const role = session?.user?.role;
     const adminRoles = ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"];
     const roleDefault =
-      role && adminRoles.includes(role) ? `${lp}/admin/dashboard` : `${lp}/portal/dashboard`;
+      role && adminRoles.includes(role) ? `${lp}/admin` : `${lp}/portal/dashboard`;
 
     const dest = safeInternalPath(callbackParam, roleDefault);
     window.location.assign(dest);

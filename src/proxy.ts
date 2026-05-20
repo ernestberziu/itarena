@@ -85,7 +85,7 @@ export async function proxy(req: NextRequest) {
       const role = session.user.role;
       const lp = localeUrlPrefix(pathname);
       const dest = ADMIN_ROLES.includes(role)
-        ? `${lp}/admin/dashboard`
+        ? `${lp}/admin`
         : `${lp}/portal/dashboard`;
       return NextResponse.redirect(new URL(dest, req.url));
     }

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
+import { canStaffAccessTicket } from "@/lib/admin-tickets-scope";
 import {
   WORKING_HOURS_PER_DAY,
   MAX_RESOLUTION_HOURS,
@@ -53,6 +54,9 @@ export async function PATCH(
   if (isStaff) {
     const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
     if (denied) return denied;
+    if (!(await canStaffAccessTicket(session.user.id, ticket))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   const updateData: Record<string, unknown> = {};
@@ -312,6 +316,9 @@ export async function GET(
   if (isStaff) {
     const denied = await assertAdminApiAcl(session.user.id, "tickets", "read");
     if (denied) return denied;
+    if (!(await canStaffAccessTicket(session.user.id, ticket))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
   }
 
   if (!isStaff) {

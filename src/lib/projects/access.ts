@@ -49,7 +49,12 @@ export async function listAccessibleProjectIds(userId: string): Promise<string[]
     where: { userId },
     select: { projectId: true },
   });
-  return members.map((m) => m.projectId);
+  const created = await db.project.findMany({
+    where: { createdById: userId },
+    select: { id: true },
+  });
+  const ids = new Set([...members.map((m) => m.projectId), ...created.map((p) => p.id)]);
+  return [...ids];
 }
 
 export async function canAccessProject(

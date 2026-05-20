@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { STAFF_ROLES } from "@/types/domain";
+import { activeStaffMemberWhere } from "@/lib/staff/active-staff-where";
 import {
   buildMonthGrid,
   countPastDaysInMonth,
@@ -56,13 +56,13 @@ function serializeReport(report: {
 
 export async function getActiveStaffCount(): Promise<number> {
   return db.user.count({
-    where: { role: { in: [...STAFF_ROLES] }, isActive: true },
+    where: activeStaffMemberWhere(),
   });
 }
 
 export async function getActiveStaffRoster() {
   return db.user.findMany({
-    where: { role: { in: [...STAFF_ROLES] }, isActive: true },
+    where: activeStaffMemberWhere(),
     select: {
       id: true,
       firstName: true,
@@ -76,9 +76,10 @@ export async function getActiveStaffRoster() {
 export async function getCalendarMonth(
   year: number,
   month: number,
-  currentUserId: string
+  currentUserId: string,
+  isAdminView = false
 ): Promise<CalendarMonthPayload> {
-  const staffTotal = await getActiveStaffCount();
+  const staffTotal = isAdminView ? await getActiveStaffCount() : 1;
   const { from, to } = getMonthDateRange(year, month);
   const todayDate = getTodayCalendarDate();
 
@@ -88,6 +89,7 @@ export async function getCalendarMonth(
         gte: parseCalendarDateForDb(from),
         lte: parseCalendarDateForDb(to),
       },
+      ...(isAdminView ? {} : { userId: currentUserId }),
     },
     select: {
       userId: true,
@@ -116,11 +118,16 @@ export async function getCalendarMonth(
   const grid = buildMonthGrid(year, month);
   const days: CalendarDaySummary[] = grid.map(({ date }) => {
     const entry = byDate.get(date);
-    const submittedCount = entry?.userIds.size ?? 0;
+    const hasOwnReport = entry?.userIds.has(currentUserId) ?? false;
+    const submittedCount = isAdminView
+      ? (entry?.userIds.size ?? 0)
+      : hasOwnReport
+        ? 1
+        : 0;
     return {
       date,
       submittedCount,
-      hasOwnReport: entry?.userIds.has(currentUserId) ?? false,
+      hasOwnReport,
       hasAdminReply: entry?.ownHasAdminReply ?? false,
     };
   });
@@ -128,12 +135,21 @@ export async function getCalendarMonth(
   let monthSubmittedTotal = 0;
   for (const { date, inMonth } of grid) {
     if (!inMonth || isFutureCalendarDate(date)) continue;
-    monthSubmittedTotal += byDate.get(date)?.userIds.size ?? 0;
+    if (isAdminView) {
+      monthSubmittedTotal += byDate.get(date)?.userIds.size ?? 0;
+    } else if (byDate.get(date)?.userIds.has(currentUserId)) {
+      monthSubmittedTotal += 1;
+    }
   }
 
   const pastDaysInMonth = countPastDaysInMonth(year, month);
-  const monthPossibleTotal = pastDaysInMonth * staffTotal;
+  const monthPossibleTotal = isAdminView ? pastDaysInMonth * staffTotal : pastDaysInMonth;
   const todayEntry = byDate.get(todayDate);
+  const todaySubmittedCount = isAdminView
+    ? (todayEntry?.userIds.size ?? 0)
+    : todayEntry?.userIds.has(currentUserId)
+      ? 1
+      : 0;
 
   return {
     year,
@@ -142,7 +158,7 @@ export async function getCalendarMonth(
     monthSubmittedTotal,
     monthPossibleTotal,
     todayDate,
-    todaySubmittedCount: todayEntry?.userIds.size ?? 0,
+    todaySubmittedCount,
     days,
   };
 }
@@ -201,8 +217,8 @@ export async function getCalendarDay(
   const own = reportByUser.get(currentUserId);
   return {
     date: dateStr,
-    staffTotal,
-    submittedCount,
+    staffTotal: 1,
+    submittedCount: own ? 1 : 0,
     isAdminView: false,
     staff: [],
     ownReport: own

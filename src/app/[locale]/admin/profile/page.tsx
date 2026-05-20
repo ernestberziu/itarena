@@ -1,10 +1,12 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { getTranslations } from "next-intl/server";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { hasAclLevel } from "@/lib/admin-acl/features";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { AdminStaffProfileAccountSection } from "@/components/admin/admin-staff-profile-account-section";
 
 export default async function AdminProfilePage({
   params,
@@ -35,49 +37,36 @@ export default async function AdminProfilePage({
 
   if (!user) redirect("/hyr");
 
-  return (
-    <div className="space-y-6">
-      <AdminPageHeader
-        title={locale === "sq" ? "Profili" : "Profile"}
-        description={locale === "sq" ? "Të dhënat e llogarisë tuaj" : "Your account details"}
-      />
+  const t = await getTranslations("admin");
+  const en = locale === "en";
 
-      <Card>
-        <CardContent className="space-y-4 p-6 text-sm">
-          <div className="grid gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {locale === "sq" ? "Emri" : "Name"}
-            </span>
-            <span className="font-medium">
-              {user.firstName} {user.lastName}
-            </span>
-          </div>
-          <div className="grid gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</span>
-            <span>{user.email}</span>
-          </div>
-          {user.phone && (
-            <div className="grid gap-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {locale === "sq" ? "Telefon" : "Phone"}
-              </span>
-              <span>{user.phone}</span>
-            </div>
-          )}
-          <div className="grid gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {locale === "sq" ? "Roli" : "Role"}
-            </span>
-            <span className="font-mono text-xs">{user.role}</span>
-          </div>
-          <div className="grid gap-1">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {locale === "sq" ? "Gjuha" : "Language"}
-            </span>
-            <span>{user.language}</span>
-          </div>
-        </CardContent>
-      </Card>
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <AdminPageHeader
+        title={t("myWorkspace")}
+        description={
+          en
+            ? "Your account details and security settings."
+            : "Të dhënat e llogarisë dhe cilësimet e sigurisë."
+        }
+      />
+      <AdminStaffProfileAccountSection
+        user={user}
+        locale={locale}
+        canEdit={hasAclLevel(acl, "profile", "write")}
+        labels={{
+          account: t("profileDashboard.account"),
+          accountHint: t("profileDashboard.accountHint"),
+          password: t("profileDashboard.password"),
+          passwordHint: t("profileDashboard.passwordHint"),
+          currentPassword: t("profileDashboard.currentPassword"),
+          newPassword: t("profileDashboard.newPassword"),
+          confirmPassword: t("profileDashboard.confirmPassword"),
+          savePassword: t("profileDashboard.savePassword"),
+          saveProfile: t("profileDashboard.saveProfile"),
+          readOnlyHint: t("profileDashboard.readOnlyHint"),
+        }}
+      />
     </div>
   );
 }

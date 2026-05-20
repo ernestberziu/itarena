@@ -8,6 +8,8 @@ import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { adminAclOverlaySchema } from "@/lib/admin-acl/schema";
 import { STAFF_ROLES } from "@/types/domain";
+import { activeStaffWhere } from "@/lib/staff/active-staff-where";
+import { removeStaffMember } from "@/lib/staff/remove-staff-member";
 
 const staffRoleSchema = z.enum(["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"]);
 
@@ -43,7 +45,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
   const { id } = await ctx.params;
 
   const user = await db.user.findFirst({
-    where: { id, role: { in: [...STAFF_ROLES] } },
+    where: { id, ...activeStaffWhere() },
     select: {
       id: true,
       firstName: true,
@@ -87,7 +89,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   const patch = parsed.data;
 
   const current = await db.user.findFirst({
-    where: { id, role: { in: [...STAFF_ROLES] } },
+    where: { id, ...activeStaffWhere() },
     select: {
       id: true,
       email: true,
@@ -209,4 +211,44 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       ? { ok: true, temporaryPassword: plainPassword }
       : { ok: true }
   );
+}
+
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const denied = await assertAdminApiAcl(session.user.id, "staff", "write");
+  if (denied) return denied;
+
+  const { id } = await ctx.params;
+
+  if (session.user.id === id) {
+    return NextResponse.json({ error: "You cannot remove your own account." }, { status: 403 });
+  }
+
+  const current = await db.user.findFirst({
+    where: { id, ...activeStaffWhere() },
+    select: { id: true, role: true, isActive: true },
+  });
+  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (current.role === "ADMIN" && current.isActive) {
+    const others = await countOtherActiveAdmins(id);
+    if (others === 0) {
+      return NextResponse.json(
+        { error: "Cannot remove the last active administrator." },
+        { status: 409 }
+      );
+    }
+  }
+
+  try {
+    await db.$transaction(async (tx) => {
+      await removeStaffMember(id, tx);
+    });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Remove failed" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }

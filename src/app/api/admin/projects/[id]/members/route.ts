@@ -61,9 +61,13 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const user = await db.user.findUnique({
     where: { id: parsed.data.userId },
-    select: { id: true, role: true, isActive: true },
+    select: { id: true, role: true, isActive: true, deletedAt: true },
   });
-  if (!user?.isActive || !STAFF_ROLES.includes(user.role as (typeof STAFF_ROLES)[number])) {
+  if (
+    !user?.isActive ||
+    user.deletedAt ||
+    !STAFF_ROLES.includes(user.role as (typeof STAFF_ROLES)[number])
+  ) {
     return NextResponse.json({ error: "Invalid staff user" }, { status: 400 });
   }
 
