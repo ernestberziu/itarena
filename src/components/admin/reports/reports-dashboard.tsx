@@ -85,7 +85,7 @@ export function ReportsDashboard({ locale, lp }: { locale: string; lp: string })
       <ReportsToolbar lp={lp} onRefresh={() => void load()} />
 
       {loading && !data ? (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="h-32 animate-pulse rounded-2xl bg-muted/40" />
           ))}
@@ -99,7 +99,7 @@ export function ReportsDashboard({ locale, lp }: { locale: string; lp: string })
       {data ? (
         <>
           <ReportsInsightsPanel insights={data.insights} locale={locale} />
-          <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {data.kpis.map((kpi) => (
               <ReportsKpiCard key={kpi.key} kpi={kpi} locale={locale} />
             ))}

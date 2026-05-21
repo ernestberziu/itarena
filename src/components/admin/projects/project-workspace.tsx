@@ -92,7 +92,7 @@ export function ProjectWorkspace({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-        <nav className="flex flex-row gap-1 overflow-x-auto rounded-2xl border border-border/60 bg-card p-2 shadow-sm lg:flex-col lg:overflow-visible">
+        <nav className="flex flex-row gap-1 overflow-x-auto overscroll-x-contain snap-x snap-mandatory rounded-2xl border border-border/60 bg-card p-2 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-col lg:overflow-visible lg:snap-none">
           {SECTIONS.map((s) => {
             const count = sectionCounts[s];
             return (
@@ -101,7 +101,7 @@ export function ProjectWorkspace({
                 type="button"
                 onClick={() => setSection(s)}
                 className={cn(
-                  "flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors whitespace-nowrap lg:w-full",
+                  "flex shrink-0 snap-start items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors whitespace-nowrap lg:w-full lg:shrink",
                   section === s
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"

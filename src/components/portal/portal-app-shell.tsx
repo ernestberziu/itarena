@@ -52,6 +52,7 @@ import {
   NotificationCollapsedDot,
   NotificationNavBadge,
 } from "@/components/shared/notification-count-badge";
+import { AppShellMobileHeaderActions } from "@/components/shared/app-shell-mobile-header-actions";
 
 const COLLAPSE_KEY = "portal-sidebar-collapsed";
 
@@ -375,7 +376,7 @@ export function PortalAppShell({
     <TooltipProvider delay={200}>
       <div
         data-portal-shell
-        className="flex h-screen overflow-hidden bg-[hsl(var(--admin-canvas))]"
+        className="flex h-dvh min-h-dvh max-h-dvh overflow-hidden bg-[hsl(var(--admin-canvas))]"
       >
         <aside
           className={cn(
@@ -387,55 +388,189 @@ export function PortalAppShell({
         </aside>
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background/90 px-3 shadow-[var(--admin-shadow-sm)] backdrop-blur-md supports-[backdrop-filter]:bg-background/75 md:px-4">
-            <div className="flex items-center gap-1 md:hidden">
-              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                <SheetTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 w-9 border-border/40 bg-background/80 p-0 shadow-none hover:bg-muted/60"
-                    />
-                  }
+          <header className="z-40 shrink-0 border-b border-border/60 bg-background/90 shadow-[var(--admin-shadow-sm)] backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+            <div className="flex h-14 items-center gap-2 px-3 md:px-4">
+              <div className="flex shrink-0 items-center gap-1 md:hidden">
+                <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                  <SheetTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-10 w-10 border-border/40 bg-background/80 p-0 shadow-none hover:bg-muted/60"
+                      />
+                    }
+                  >
+                    <Menu className="h-5 w-5" strokeWidth={2} />
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[min(100%,20rem)] p-0">
+                    <div className="h-full w-full max-w-[20rem]">{sidebarInner}</div>
+                  </SheetContent>
+                </Sheet>
+                <Link
+                  href={`${lp}/portal/dashboard`}
+                  className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  aria-label="IT Arena Portal"
                 >
-                  <Menu className="h-5 w-5" strokeWidth={2} />
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[min(100%,20rem)] p-0">
-                  <div className="h-full w-full max-w-[20rem]">{sidebarInner}</div>
-                </SheetContent>
-              </Sheet>
-              <Link href={homeHref} aria-label={tNav("home")}>
-                <ItArenaLogo variant="light" size="sm" />
-              </Link>
+                  <ItArenaLogo variant="light" size="sm" />
+                </Link>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="hidden h-9 w-9 shrink-0 border-border/40 bg-background/80 p-0 shadow-none hover:bg-muted/60 md:inline-flex"
+                onClick={() => setCollapsed((c) => !c)}
+                aria-label={collapsed ? t("expand_sidebar") : t("collapse_sidebar")}
+              >
+                {collapsed ? (
+                  <PanelLeft className="h-4 w-4" strokeWidth={2} />
+                ) : (
+                  <PanelLeftClose className="h-4 w-4" strokeWidth={2} />
+                )}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="hidden min-w-0 flex-1 items-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 md:flex md:max-w-md"
+              >
+                <Search className="h-4 w-4 shrink-0 opacity-70" strokeWidth={2} />
+                <span className="flex-1 truncate text-xs">{t("search_placeholder")}</span>
+                <kbd className="hidden shrink-0 rounded border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground lg:inline">
+                  ⌘K
+                </kbd>
+              </button>
+
+              <div className="hidden items-center gap-2 md:flex">
+                <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5" asChild>
+                  <Link href={shopHref}>
+                    <ShoppingBag className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    <span className="text-xs font-medium">{t("shop")}</span>
+                  </Link>
+                </Button>
+
+                <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5" asChild>
+                  <Link href={quoteRequestHref}>
+                    <FileText className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    <span className="text-xs font-medium">{t("request_quote")}</span>
+                  </Link>
+                </Button>
+
+                <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5" asChild>
+                  <Link href={homeHref}>
+                    <Home className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    <span className="text-xs font-medium">{tNav("home")}</span>
+                  </Link>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 shrink-0 gap-1.5 border-border/40 bg-background/80 shadow-none hover:bg-muted/60"
+                  onClick={switchLanguage}
+                >
+                  <Globe className="h-4 w-4 shrink-0" strokeWidth={2} />
+                  <span className="text-xs font-semibold uppercase tabular-nums">{otherLocale}</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "relative h-9 w-9 shrink-0 overflow-visible border-border/40 p-0 shadow-none hover:bg-muted/60",
+                    liveNotificationCount > 0
+                      ? "bg-accent/15 border-amber-600/30 hover:bg-accent/25"
+                      : "bg-background/80"
+                  )}
+                  asChild
+                >
+                  <Link
+                    href={notificationsHref}
+                    className="relative inline-flex h-9 w-9 items-center justify-center overflow-visible"
+                    aria-label={
+                      liveNotificationCount > 0
+                        ? `${t("notifications")} (${liveNotificationCount})`
+                        : t("notifications")
+                    }
+                  >
+                    <Bell
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        liveNotificationCount > 0 && "text-[hsl(var(--brand-navy))]"
+                      )}
+                      strokeWidth={2}
+                    />
+                    <NotificationBellBadge count={liveNotificationCount} />
+                  </Link>
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button variant="outline" size="sm" className="h-9 gap-1.5 border-border/80 px-2" />
+                    }
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                      {userInitials}
+                    </span>
+                    <span className="max-w-[8rem] truncate text-xs font-medium">{userName}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50" strokeWidth={2} />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-48">
+                    <DropdownMenuItem render={<Link href={settingsHref} />}>
+                      <User className="h-4 w-4" strokeWidth={2} />
+                      {t("settings")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href={shopHref} />}>
+                      <ShoppingBag className="h-4 w-4" strokeWidth={2} />
+                      {t("shop")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                    >
+                      <LogOut className="h-4 w-4" strokeWidth={2} />
+                      {tNav("logout")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <AppShellMobileHeaderActions
+                searchLabel={t("search_placeholder")}
+                onOpenSearch={() => setOpen(true)}
+                notificationsHref={notificationsHref}
+                notificationsLabel={t("notifications")}
+                notificationCount={liveNotificationCount}
+                showNotifications
+                userInitials={userInitials}
+                userName={userName}
+                menuItems={[
+                  { key: "settings", label: t("settings"), icon: User, href: settingsHref },
+                  { key: "shop", label: t("shop"), icon: ShoppingBag, href: shopHref },
+                  {
+                    key: "quote",
+                    label: t("request_quote"),
+                    icon: FileText,
+                    href: quoteRequestHref,
+                  },
+                  { key: "home", label: tNav("home"), icon: Home, href: homeHref },
+                  {
+                    key: "lang",
+                    label: locale === "sq" ? "English" : "Shqip",
+                    icon: Globe,
+                    onClick: switchLanguage,
+                  },
+                ]}
+                logoutLabel={tNav("logout")}
+                onLogout={() => signOut({ callbackUrl: "/" })}
+              />
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="hidden h-9 w-9 shrink-0 border-border/40 bg-background/80 p-0 shadow-none hover:bg-muted/60 md:inline-flex"
-              onClick={() => setCollapsed((c) => !c)}
-              aria-label={collapsed ? t("expand_sidebar") : t("collapse_sidebar")}
-            >
-              {collapsed ? (
-                <PanelLeft className="h-4 w-4" strokeWidth={2} />
-              ) : (
-                <PanelLeftClose className="h-4 w-4" strokeWidth={2} />
-              )}
-            </Button>
-
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/60 md:max-w-md"
-            >
-              <Search className="h-4 w-4 shrink-0 opacity-70" strokeWidth={2} />
-              <span className="flex-1 truncate text-xs">{t("search_placeholder")}</span>
-              <kbd className="hidden shrink-0 rounded border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
-                ⌘K
-              </kbd>
-            </button>
             <CommandMenu
               open={open}
               onOpenChange={setOpen}
@@ -443,106 +578,9 @@ export function PortalAppShell({
               portalNavContext={navContext}
               portalLocale={locale}
             />
-
-            <Button variant="outline" size="sm" className="hidden h-9 shrink-0 gap-1.5 sm:inline-flex" asChild>
-              <Link href={shopHref}>
-                <ShoppingBag className="h-4 w-4 shrink-0" strokeWidth={2} />
-                <span className="text-xs font-medium">{t("shop")}</span>
-              </Link>
-            </Button>
-
-            <Button variant="outline" size="sm" className="hidden h-9 shrink-0 lg:inline-flex" asChild>
-              <Link href={quoteRequestHref}>
-                <FileText className="h-4 w-4 shrink-0" strokeWidth={2} />
-                <span className="text-xs font-medium">{t("request_quote")}</span>
-              </Link>
-            </Button>
-
-            <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5" asChild>
-              <Link href={homeHref}>
-                <Home className="h-4 w-4 shrink-0" strokeWidth={2} />
-                <span className="hidden text-xs font-medium sm:inline">{tNav("home")}</span>
-              </Link>
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 shrink-0 gap-1.5"
-              onClick={switchLanguage}
-            >
-              <Globe className="h-4 w-4 shrink-0" strokeWidth={2} />
-              <span className="text-xs font-semibold uppercase tabular-nums">{otherLocale}</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "relative h-9 w-9 shrink-0 overflow-visible p-0",
-                liveNotificationCount > 0
-                  ? "border-amber-600/30 bg-accent/15 hover:bg-accent/25"
-                  : undefined
-              )}
-              asChild
-            >
-              <Link
-                href={notificationsHref}
-                className="relative inline-flex h-9 w-9 items-center justify-center overflow-visible"
-                aria-label={
-                  liveNotificationCount > 0
-                    ? `${t("notifications")} (${liveNotificationCount})`
-                    : t("notifications")
-                }
-              >
-                <Bell
-                  className={cn(
-                    "h-4 w-4 shrink-0",
-                    liveNotificationCount > 0 && "text-[hsl(var(--brand-navy))]"
-                  )}
-                  strokeWidth={2}
-                />
-                <NotificationBellBadge count={liveNotificationCount} />
-              </Link>
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="outline" size="sm" className="h-9 gap-1.5 px-2" />
-                }
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                  {userInitials}
-                </span>
-                <span className="hidden max-w-[8rem] truncate text-xs font-medium sm:inline">
-                  {userName}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" strokeWidth={2} />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-48">
-                <DropdownMenuItem render={<Link href={settingsHref} />}>
-                  <User className="h-4 w-4" strokeWidth={2} />
-                  {t("settings")}
-                </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href={shopHref} />}>
-                  <ShoppingBag className="h-4 w-4" strokeWidth={2} />
-                  {t("shop")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                >
-                  <LogOut className="h-4 w-4" strokeWidth={2} />
-                  {tNav("logout")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </header>
 
-          <main className="admin-app-canvas admin-main-enter min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
+          <main className="admin-app-canvas admin-main-enter min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain p-4 md:p-6">
             <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 lg:py-8">{children}</div>
           </main>
         </div>

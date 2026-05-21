@@ -50,21 +50,21 @@ export function ReportsToolbar({
       )}
     >
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory">
           {DATE_PRESET_IDS.filter((id) => id !== "custom").map((id) => (
             <Button
               key={id}
               type="button"
               size="sm"
               variant={preset === id ? "default" : "outline"}
-              className="h-8 rounded-full text-xs"
+              className="h-8 shrink-0 snap-start rounded-full text-xs"
               onClick={() => pushParams({ preset: id, from: null, to: null })}
             >
               {t(`presets.${id}`)}
             </Button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <CalendarRange className="h-4 w-4 text-muted-foreground" />
           <input
             type="date"

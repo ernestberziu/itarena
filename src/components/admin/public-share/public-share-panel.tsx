@@ -311,7 +311,7 @@ export function PublicSharePanel({
           {shares.map((s) => (
             <li
               key={s.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2 text-sm"
+              className="flex flex-col gap-3 rounded-lg border border-border/50 px-3 py-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
             >
               <div className="min-w-0 flex-1">
                 <p className="font-medium truncate">{s.clientName}</p>
@@ -348,7 +348,7 @@ export function PublicSharePanel({
                 </p>
               </div>
               {canWrite && s.isActive && (
-                <div className="flex gap-1 shrink-0">
+                <div className="flex flex-wrap gap-1 shrink-0">
                   <Button
                     type="button"
                     variant="outline"

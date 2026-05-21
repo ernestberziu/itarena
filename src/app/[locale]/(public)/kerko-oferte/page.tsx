@@ -95,7 +95,7 @@ export default async function QuoteRequestPage({
 
   return (
     <div className="flex flex-col">
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-blue-700 to-violet-700 py-20 text-white">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary via-blue-700 to-violet-700 py-12 text-white md:py-20">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -right-20 -top-20 h-[400px] w-[400px] rounded-full bg-white/5 blur-3xl" />
           <div className="absolute bottom-0 left-1/4 h-[200px] w-[200px] rounded-full bg-amber-400/10 blur-3xl" />
@@ -116,9 +116,9 @@ export default async function QuoteRequestPage({
         </div>
       </section>
 
-      <section className="bg-slate-50 py-16">
+      <section className="bg-slate-50 py-10 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 lg:gap-10">
             <div className="space-y-6 lg:col-span-2">
               <div>
                 <h2 className="mb-5 text-xl font-extrabold">
@@ -174,7 +174,7 @@ export default async function QuoteRequestPage({
             </div>
 
             <div className="lg:col-span-3">
-              <div className="rounded-3xl border border-border/60 bg-white p-8 shadow-xl shadow-slate-200/50 md:p-10">
+              <div className="rounded-2xl border border-border/60 bg-white p-5 shadow-xl shadow-slate-200/50 sm:rounded-3xl sm:p-8 md:p-10">
                 <h2 className="mb-2 text-2xl font-extrabold">
                   {locale === "sq" ? "Detajet e Kërkesës" : "Request Details"}
                 </h2>

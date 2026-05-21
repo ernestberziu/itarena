@@ -26,14 +26,14 @@ export default async function AdminCalendarPage({
   const isAdmin = isCalendarAdmin(session.user.role);
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-[calc(100dvh-11rem)] flex-col gap-4 md:min-h-[min(70vh,640px)] md:gap-6">
       <AdminPageHeader title={t("title")} description={t("subtitle")} />
       <CalendarWorkspace
         locale={locale}
         currentUserId={session.user.id}
         isAdmin={isAdmin}
         canWrite={canWrite}
-        className="h-[calc(100vh-10rem)] min-h-[520px]"
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
       />
     </div>
   );

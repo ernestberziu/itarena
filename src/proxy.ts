@@ -117,6 +117,10 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Skip API, static assets, and Next metadata routes (manifest, robots, icons, OG).
+     * Without this, intl middleware handles /manifest.webmanifest and returns 404.
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest\\.webmanifest|robots\\.txt|sitemap\\.xml|icon\\.svg|apple-icon|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

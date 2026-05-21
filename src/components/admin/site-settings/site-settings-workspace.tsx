@@ -33,8 +33,8 @@ function WorkspaceInner({ locale }: { locale: string }) {
         <div
           className={
             activeSection === "services" || activeSection === "hero"
-              ? "grid gap-6 lg:grid-cols-[200px_1fr]"
-              : "grid gap-6 lg:grid-cols-[200px_1fr_280px]"
+              ? "grid grid-cols-1 gap-4 lg:grid-cols-[200px_1fr] lg:gap-6"
+              : "grid grid-cols-1 gap-4 lg:grid-cols-[200px_1fr_280px] lg:gap-6"
           }
         >
           <SiteSettingsNav active={activeSection} onChange={setActiveSection} />

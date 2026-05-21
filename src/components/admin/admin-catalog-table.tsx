@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   getCoreRowModel,
   getSortedRowModel,
@@ -18,6 +19,7 @@ import { shopUrl } from "@/lib/shop-url";
 import { Button } from "@/components/ui/button";
 import type { AdminCatalogRow } from "@/components/admin/admin-catalog-types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
+import { useMobileInfiniteSentinel } from "@/hooks/use-mobile-infinite-sentinel";
 
 export type { AdminCatalogRow } from "@/components/admin/admin-catalog-types";
 
@@ -36,8 +38,10 @@ export function AdminCatalogTable({
 }) {
   const [editRow, setEditRow] = useState<AdminCatalogRow | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const reduceMotion = useReducedMotion();
+  const th = (sq: string, enLabel: string) => (locale === "en" ? enLabel : sq);
 
-  const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount } =
+  const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount, loadNext } =
     useInfiniteList({
       initialItems: initialProducts,
       totalCount,
@@ -48,8 +52,9 @@ export function AdminCatalogTable({
       locale,
     });
 
+  const mobileSentinelRef = useMobileInfiniteSentinel(loadNext);
+
   const columns = useMemo<ColumnDef<AdminCatalogRow>[]>(() => {
-    const th = (sq: string, en: string) => (locale === "en" ? en : sq);
     return [
       {
         id: "product",
@@ -208,28 +213,132 @@ export function AdminCatalogTable({
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const emptyMessage = th("Nuk ka produkte", "No products");
+
+  function productImage(row: AdminCatalogRow): string | undefined {
+    try {
+      return JSON.parse(row.imagesJson)?.[0] as string | undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   return (
     <>
-      <AdminInfiniteTable
-        table={table}
-        locale={locale}
-        labels={{
-          entitySq: "produkte",
-          entityEn: "products",
-          emptySq: "Nuk ka produkte",
-          emptyEn: "No products",
-        }}
-        totalCount={totalCount}
-        loadedCount={loadedCount}
-        hasMore={hasMore}
-        loadingMore={loadingMore}
-        error={error}
-        scrollRef={scrollRef}
-        sentinelRef={sentinelRef}
-        getRowId={(r) => r.id}
-        minTableWidth="960px"
-        firstColumnId="product"
-      />
+      <div className="hidden lg:block">
+        <AdminInfiniteTable
+          table={table}
+          locale={locale}
+          labels={{
+            entitySq: "produkte",
+            entityEn: "products",
+            emptySq: emptyMessage,
+            emptyEn: emptyMessage,
+          }}
+          totalCount={totalCount}
+          loadedCount={loadedCount}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          error={error}
+          scrollRef={scrollRef}
+          sentinelRef={sentinelRef}
+          getRowId={(r) => r.id}
+          minTableWidth="960px"
+          firstColumnId="product"
+        />
+      </div>
+
+      <div className="space-y-3 border-t border-border/60 py-3 lg:hidden">
+        <p className="text-xs text-muted-foreground px-1">
+          <span className="font-medium tabular-nums text-foreground">{loadedCount}</span>
+          <span className="text-muted-foreground/70"> / </span>
+          <span className="tabular-nums">{totalCount}</span>
+        </p>
+        {rows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-16 text-center text-sm text-muted-foreground">
+            {emptyMessage}
+          </div>
+        ) : (
+          rows.map((row, i) => {
+            const title = locale === "sq" ? row.nameSq : row.nameEn;
+            const img = productImage(row);
+            const lowStock = row.stock <= row.lowStockAt;
+            return (
+              <motion.article
+                key={row.id}
+                layout
+                {...(!reduceMotion
+                  ? { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 } }
+                  : {})}
+                transition={{ duration: reduceMotion ? 0 : 0.2, delay: reduceMotion ? 0 : i * 0.03 }}
+                className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]"
+              >
+                <div className="flex gap-3">
+                  {img ? (
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border bg-muted">
+                      <Image src={img} alt={title} fill className="object-cover" sizes="56px" unoptimized />
+                    </div>
+                  ) : (
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border bg-muted">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold leading-snug line-clamp-2">{title}</p>
+                    <p className="mt-1 font-mono text-[11px] text-muted-foreground break-all">{row.sku}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {locale === "sq" ? row.category.nameSq : row.category.nameEn}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-semibold tabular-nums">
+                        {formatPrice(Number(row.priceRetail))}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold tabular-nums ${lowStock ? "text-red-500" : "text-muted-foreground"}`}
+                      >
+                        {th("Stok", "Stock")}: {row.stock}
+                      </span>
+                      {row.isActive ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" aria-hidden />
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2 border-t border-border/50 pt-3">
+                  <Button variant="outline" size="sm" className="flex-1 gap-1" asChild>
+                    <Link
+                      href={shopUrl(`products/${encodeURIComponent(row.sku)}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {th("Shiko", "View")}
+                    </Link>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-1"
+                    onClick={() => setEditRow(row)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    {th("Ndrysho", "Edit")}
+                  </Button>
+                </div>
+              </motion.article>
+            );
+          })
+        )}
+        {loadingMore ? (
+          <p className="py-2 text-center text-xs text-muted-foreground">{th("Duke ngarkuar…", "Loading…")}</p>
+        ) : null}
+        {error ? <p className="text-center text-xs text-destructive">{error}</p> : null}
+        <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />
+      </div>
+
       <AdminCatalogProductEditSheet
         row={editRow}
         open={editRow !== null}

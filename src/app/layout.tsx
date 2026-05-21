@@ -15,7 +15,9 @@ export const metadata: Metadata = {
     "IT Arena — Technology & Service. Zgjidhje IT profesionale për bizneset shqiptare.",
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon", type: "image/png" }],
   },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     images: [{ url: resolveOgImageUrl(null) }],
   },

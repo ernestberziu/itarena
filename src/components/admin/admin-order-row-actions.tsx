@@ -133,8 +133,8 @@ export function AdminOrderRowActions({
             <SheetHeader className="text-left">
               <SheetTitle>{t("Veprime", "Actions")}</SheetTitle>
             </SheetHeader>
-            <div className="mt-4 flex flex-col gap-1 pb-6">
-              <Button variant="secondary" className="h-auto justify-start py-2.5 font-normal" asChild>
+            <div className="mt-4 flex flex-col gap-2 pb-6">
+              <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
                 <Link href={detailHref} onClick={() => setSheetOpen(false)}>
                   <Eye className="mr-2 h-4 w-4 shrink-0" />
                   {t("Shiko porosinë", "View order")}
@@ -143,14 +143,14 @@ export function AdminOrderRowActions({
               <p className="pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 {t("Statusi", "Status")}
               </p>
-              <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
+              <div className="flex max-h-[min(50vh,16rem)] flex-col gap-2 overflow-y-auto overscroll-y-contain">
                 {ORDER_STATUSES.map((s) => (
                   <Button
                     key={s}
                     type="button"
                     variant={s === currentStatus ? "default" : "outline"}
                     size="sm"
-                    className="justify-start font-normal"
+                    className="h-auto w-full justify-start font-normal"
                     disabled={loading || s === currentStatus}
                     onClick={() => void applyStatus(s)}
                   >

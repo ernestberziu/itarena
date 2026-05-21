@@ -179,6 +179,13 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Admin / portal shell: only <main> scrolls; header stays fixed */
+html[data-admin-ui],
+html[data-admin-ui] body {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* Selection */
 ::selection {
   background-color: hsl(var(--primary) / 0.15);

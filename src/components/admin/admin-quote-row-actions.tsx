@@ -192,15 +192,15 @@ export function AdminQuoteRowActions({
             <SheetHeader className="text-left">
               <SheetTitle>{t("Veprime", "Actions")}</SheetTitle>
             </SheetHeader>
-            <div className="mt-4 flex flex-col gap-1 pb-6">
-              <Button variant="secondary" className="h-auto justify-start py-2.5 font-normal" asChild>
+            <div className="mt-4 flex flex-col gap-2 pb-6">
+              <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
                 <Link href={detailHref} onClick={() => setSheetOpen(false)}>
                   <Eye className="mr-2 h-4 w-4 shrink-0" />
                   {t("Shiko ofertën", "View quote")}
                 </Link>
               </Button>
               {pdfUrl ? (
-                <Button variant="secondary" className="h-auto justify-start py-2.5 font-normal" asChild>
+                <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
                   <a href={pdfUrl} target="_blank" rel="noreferrer" onClick={() => setSheetOpen(false)}>
                     <FileDown className="mr-2 h-4 w-4 shrink-0" />
                     {t("Hap PDF", "Open PDF")}
@@ -209,7 +209,7 @@ export function AdminQuoteRowActions({
               ) : null}
               <Button
                 variant="accent"
-                className="h-auto justify-start py-2.5 font-normal"
+                className="h-auto w-full justify-start py-2.5 font-normal"
                 disabled={currentStatus === "ACCEPTED" || loading}
                 onClick={() => {
                   setSheetOpen(false);
@@ -221,7 +221,7 @@ export function AdminQuoteRowActions({
               </Button>
               <Button
                 variant="destructive"
-                className="h-auto justify-start py-2.5 font-normal"
+                className="h-auto w-full justify-start py-2.5 font-normal"
                 disabled={currentStatus === "REJECTED" || loading}
                 onClick={() => {
                   setSheetOpen(false);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   getCoreRowModel,
   getSortedRowModel,
@@ -16,6 +17,7 @@ import { OrderStatusBadge } from "@/components/admin/order-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
+import { useMobileInfiniteSentinel } from "@/hooks/use-mobile-infinite-sentinel";
 
 export { ORDER_STATUSES, STATUS_LABELS } from "@/lib/admin-order-status";
 
@@ -56,9 +58,11 @@ export function AdminOrdersTable({
   filterQuery: string;
 }) {
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const th = (sq: string, enLabel: string) => (locale === "sq" ? sq : enLabel);
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount } =
+  const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount, loadNext } =
     useInfiniteList({
       initialItems: initialOrders,
       totalCount,
@@ -69,8 +73,16 @@ export function AdminOrdersTable({
       locale,
     });
 
+  const mobileSentinelRef = useMobileInfiniteSentinel(loadNext);
+
+  const openOrder = useCallback(
+    (row: AdminOrderListRow) => {
+      router.push(`${lp}/admin/orders/${row.id}`);
+    },
+    [lp, router]
+  );
+
   const columns = useMemo<ColumnDef<AdminOrderListRow>[]>(() => {
-    const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
     return [
       {
         accessorKey: "orderNumber",
@@ -178,26 +190,108 @@ export function AdminOrdersTable({
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const emptyMessage = th("Nuk u gjetën porosi", "No orders found");
+
   return (
-    <AdminInfiniteTable
-      table={table}
-      locale={locale}
-      labels={{
-        entitySq: "porosi",
-        entityEn: "orders",
-        emptySq: "Nuk u gjetën porosi",
-        emptyEn: "No orders found",
-      }}
-      totalCount={totalCount}
-      loadedCount={loadedCount}
-      hasMore={hasMore}
-      loadingMore={loadingMore}
-      error={error}
-      scrollRef={scrollRef}
-      sentinelRef={sentinelRef}
-      onRowClick={(row) => router.push(`${lp}/admin/orders/${row.id}`)}
-      getRowId={(r) => r.id}
-      minTableWidth="920px"
-    />
+    <>
+      <div className="hidden lg:block">
+        <AdminInfiniteTable
+          table={table}
+          locale={locale}
+          labels={{
+            entitySq: "porosi",
+            entityEn: "orders",
+            emptySq: emptyMessage,
+            emptyEn: emptyMessage,
+          }}
+          totalCount={totalCount}
+          loadedCount={loadedCount}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          error={error}
+          scrollRef={scrollRef}
+          sentinelRef={sentinelRef}
+          onRowClick={openOrder}
+          getRowId={(r) => r.id}
+          minTableWidth="920px"
+        />
+      </div>
+
+      <div className="space-y-3 border-t border-border/60 py-3 lg:hidden">
+        <p className="text-xs text-muted-foreground px-1">
+          <span className="font-medium tabular-nums text-foreground">{loadedCount}</span>
+          <span className="text-muted-foreground/70"> / </span>
+          <span className="tabular-nums">{totalCount}</span>
+        </p>
+        {rows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-16 text-center text-sm text-muted-foreground">
+            {emptyMessage}
+          </div>
+        ) : (
+          rows.map((order, i) => (
+            <motion.article
+              key={order.id}
+              layout
+              role="button"
+              tabIndex={0}
+              onClick={() => openOrder(order)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openOrder(order);
+                }
+              }}
+              {...(!reduceMotion
+                ? { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 } }
+                : {})}
+              transition={{ duration: reduceMotion ? 0 : 0.2, delay: reduceMotion ? 0 : i * 0.03 }}
+              className="cursor-pointer rounded-2xl border border-border/60 bg-card p-4 shadow-sm ring-1 ring-black/[0.03] transition-colors hover:bg-muted/20 dark:ring-white/[0.05]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-semibold text-primary">
+                      {order.orderNumber}
+                    </span>
+                    {order.channel === "POS" ? (
+                      <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                        POS
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 font-medium">
+                    {order.user.firstName} {order.user.lastName}
+                  </p>
+                  {order.company?.name ? (
+                    <p className="text-sm text-muted-foreground truncate">{order.company.name}</p>
+                  ) : null}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {formatDate(new Date(order.createdAt))} · {itemCount(order.itemsJson)}{" "}
+                    {th("artikuj", "items")}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-2">
+                  <span className="font-semibold tabular-nums">{formatPrice(Number(order.total))}</span>
+                  <OrderStatusBadge status={order.status} locale={locale} />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <AdminOrderRowActions
+                      orderId={order.id}
+                      detailHref={`${lp}/admin/orders/${order.id}`}
+                      currentStatus={order.status}
+                      locale={locale}
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.article>
+          ))
+        )}
+        {loadingMore ? (
+          <p className="py-2 text-center text-xs text-muted-foreground">{th("Duke ngarkuar…", "Loading…")}</p>
+        ) : null}
+        {error ? <p className="text-center text-xs text-destructive">{error}</p> : null}
+        <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />
+      </div>
+    </>
   );
 }

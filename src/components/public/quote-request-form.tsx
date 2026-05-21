@@ -106,14 +106,14 @@ export function QuoteRequestForm({
 
   return (
     <Card>
-      <CardContent className="p-6">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <CardContent className="p-5 sm:p-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 min-w-0">
           {/* Company info */}
           <div>
             <h3 className="font-semibold mb-4 text-sm uppercase tracking-wide text-muted-foreground">
               {locale === "sq" ? "Informacioni i Kompanisë" : "Company Information"}
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>
                   {locale === "sq" ? "Emri i Kompanisë" : "Company Name"}

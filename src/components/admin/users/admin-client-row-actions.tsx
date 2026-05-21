@@ -328,8 +328,8 @@ export function AdminClientRowActions({
         </Button>
       )}
       <Button
-        variant="secondary"
-        className="h-auto w-full justify-start py-2.5 font-normal text-destructive"
+        variant="destructive"
+        className="h-auto w-full justify-start py-2.5 font-normal"
         onClick={() => {
           setSheetOpen(false);
           setDanger("delete");

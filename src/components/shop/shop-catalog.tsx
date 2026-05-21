@@ -115,8 +115,8 @@ export function ShopCatalog({
     <div className="bg-slate-50 min-h-screen">
     <div className="container mx-auto px-4 py-8">
       {/* Search + mobile filter toggle */}
-      <div className="flex gap-3 mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap items-stretch gap-3 mb-6">
+        <div className="relative min-w-0 flex-1 basis-full sm:basis-0">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="search"
@@ -139,12 +139,16 @@ export function ShopCatalog({
         <button
           type="button"
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="lg:hidden flex items-center gap-2 rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm font-medium cursor-pointer select-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-slate-50 hover:border-primary/50 hover:shadow-sm active:bg-slate-100 motion-safe:active:scale-[0.98]"
+          className="lg:hidden flex shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm font-medium cursor-pointer select-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-slate-50 hover:border-primary/50 hover:shadow-sm active:bg-slate-100 motion-safe:active:scale-[0.98]"
         >
           <SlidersHorizontal className="h-4 w-4" />
           Filtro
         </button>
-        <Button type="button" size="sm" onClick={() => applySearch(search)}>
+        <Button
+          type="button"
+          onClick={() => applySearch(search)}
+          className="shrink-0 rounded-xl border-2 border-primary/80 px-4 py-3 h-auto text-sm font-medium lg:h-9 lg:py-2"
+        >
           Kërko
         </Button>
       </div>

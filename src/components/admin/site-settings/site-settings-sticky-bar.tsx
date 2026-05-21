@@ -25,7 +25,7 @@ export function SiteSettingsStickyBar() {
         : t("status.saved");
 
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 border-t border-border/60 bg-[var(--admin-canvas,hsl(var(--background)))]/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <div className="sticky bottom-0 z-20 -mx-4 border-t border-border/60 bg-[var(--admin-canvas,hsl(var(--background)))]/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SaveStatus statusLabel={statusLabel} lastSavedAt={lastSavedAt} t={t} />
         {sectionKey ? (
