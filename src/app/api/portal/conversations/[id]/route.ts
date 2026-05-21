@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import {
   assertConversationAccess,
@@ -11,9 +12,9 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   if (!PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(_req, "forbidden", 403);
   }
 
   const { id } = await params;
@@ -21,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (accessDenied) return accessDenied;
 
   const conv = await getConversationDetail(id);
-  if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!conv) return apiErr(_req, "notFound", 404);
 
   const locale = session.user.language === "en" ? "en" : "sq";
   return NextResponse.json(toPortalConversationDetail(conv, session.user.id, locale));

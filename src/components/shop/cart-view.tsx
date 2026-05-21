@@ -13,6 +13,7 @@ import { useCart } from "./cart-context";
 import { formatPrice } from "@/lib/utils";
 import { shopPath } from "@/lib/shop-url";
 import { useShopLocale, useShopPath } from "@/hooks/use-shop-locale";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export type ShopCheckoutPrefill = {
@@ -37,6 +38,7 @@ export function CartView({
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart();
   const shopLocale = useShopLocale();
   const shopHome = useShopPath();
+  const t = useTranslations("shop");
   const [form, setForm] = useState({
     name: checkoutPrefill?.name ?? "",
     phone: checkoutPrefill?.phone ?? "",
@@ -93,10 +95,10 @@ export function CartView({
         );
       } else {
         const err = await res.json();
-        toast.error(err.error ?? "Ndodhi një gabim. Provoni përsëri.");
+        toast.error(err.error ?? t("genericError"));
       }
     } catch {
-      toast.error("Ndodhi një gabim. Provoni përsëri.");
+      toast.error(t("genericError"));
     } finally {
       setPlacing(false);
     }

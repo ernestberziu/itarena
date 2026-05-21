@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -82,7 +83,7 @@ function generateTempPassword(): string {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const body = await req.json();
   const parsedBase = baseSchema.safeParse(body);
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
       body.inviteRequester != null ||
       body.assignedToId != null
     ) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiErr(req, "forbidden", 403);
     }
   }
 
@@ -363,7 +364,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
 

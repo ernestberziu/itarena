@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -28,7 +29,7 @@ export function AdminStaffRemoveButton({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -42,21 +43,15 @@ export function AdminStaffRemoveButton({
       if (!res.ok) {
         const msg =
           json.error === "Cannot remove the last active administrator."
-            ? t(
-                "Nuk mund të hiqet administratori i fundit aktiv.",
-                "Cannot remove the last active administrator."
-              )
+            ? tUi("cannot_remove_the_last_active_administrator")
             : json.error === "You cannot remove your own account."
-              ? t("Nuk mund ta hiqni llogarinë tuaj.", "You cannot remove your own account.")
-              : json.error ?? t("Gabim", "Error");
+              ? tUi("you_cannot_remove_your_own_account")
+              : json.error ?? tUi("error");
         throw new Error(msg);
       }
 
       toast.success(
-        t(
-          "Stafi u hoq. Biletat dhe projektet mbeten; caktimet u shlyen.",
-          "Staff member removed. Tickets and projects remain; assignments were cleared."
-        )
+        tUi("staff_member_removed_tickets_and_projects_remain")
       );
       setOpen(false);
       if (redirectAfterRemove) {
@@ -66,7 +61,7 @@ export function AdminStaffRemoveButton({
         router.refresh();
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -82,19 +77,16 @@ export function AdminStaffRemoveButton({
         onClick={() => setOpen(true)}
       >
         <Trash2 className="mr-2 h-4 w-4" strokeWidth={2} />
-        {t("Hiq stafin", "Remove staff")}
+        {tUi("remove_staff")}
       </Button>
 
       <ConfirmDangerDialog
         open={open}
         onOpenChange={setOpen}
-        title={t("Hiq stafin?", "Remove staff member?")}
-        description={t(
-          `${staffName} do të hiqet nga stafi. Biletat, projektet, komentet dhe mesazhet mbeten; vetëm caktimet aktive (bileta, projekte, biseda) do të shlyhen.`,
-          `${staffName} will be removed from staff. Tickets, projects, comments, and messages stay intact; only active assignments (tickets, projects, conversations) will be cleared.`
-        )}
-        confirmLabel={t("Hiq", "Remove")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("remove_staff_member")}
+        description={tUi("remove_staff_desc", { name: staffName })}
+        confirmLabel={tUi("remove")}
+        cancelLabel={tUi("cancel")}
         loading={loading}
         onConfirm={removeStaff}
       />

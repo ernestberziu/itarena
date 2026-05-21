@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -240,7 +241,7 @@ export function AdminTicketDetailView({
     }
   }
 
-  const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const tUi = useUiT();
 
   const statusLabels: Record<TicketStatus, { sq: string; en: string }> = {
     OPEN: { sq: "Hapur", en: "Open" },
@@ -262,7 +263,7 @@ export function AdminTicketDetailView({
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-10">
       <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         <Link href={ticketsListHref} className="hover:text-foreground transition-colors">
-          {t("Biletat", "Tickets")}
+          {tUi("tickets")}
         </Link>
         <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
         <span className="font-mono text-foreground/80">{ticket.number}</span>
@@ -307,7 +308,7 @@ export function AdminTicketDetailView({
             {ticket.project && (
               <div className="flex items-center py-2 sm:px-4 sm:py-0">
                 <span className="leading-none">
-                  <span className="text-muted-foreground">{t("Projekti", "Project")}: </span>
+                  <span className="text-muted-foreground">{tUi("project")}: </span>
                   <Link
                     href={`${lp}/admin/projects/${ticket.project.id}`}
                     className="font-medium text-foreground/90 hover:underline"
@@ -320,7 +321,7 @@ export function AdminTicketDetailView({
             {ticket.assignedTo && !ticket.projectId && (
               <div className="flex items-center py-2 sm:px-4 sm:py-0">
                 <span className="leading-none">
-                  <span className="text-muted-foreground">{t("Inxhinieri", "Engineer")}: </span>
+                  <span className="text-muted-foreground">{tUi("engineer")}: </span>
                   <span className="text-foreground/90">
                     {ticket.assignedTo.firstName} {ticket.assignedTo.lastName}
                   </span>
@@ -340,7 +341,7 @@ export function AdminTicketDetailView({
           <Button variant="outline" size="sm" asChild className="border-border/60 shadow-sm">
             <Link href={ticketsListHref}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("Kthehu", "Back")}
+              {tUi("back")}
             </Link>
           </Button>
           <AdminTicketOpsSheet
@@ -373,7 +374,7 @@ export function AdminTicketDetailView({
             )}
           >
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("Përshkrimi", "Description")}
+              {tUi("description")}
             </h2>
             <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/95">
               {ticket.description}
@@ -384,7 +385,7 @@ export function AdminTicketDetailView({
             <div className="flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
                 <History className="h-4 w-4 text-muted-foreground" />
-                {t("Aktiviteti", "Activity")}
+                {tUi("activity")}
               </h2>
               <span className="text-xs text-muted-foreground">
                 {activity.length}{" "}
@@ -394,7 +395,7 @@ export function AdminTicketDetailView({
 
             {activity.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-6 py-12 text-center text-sm text-muted-foreground">
-                {t("Nuk ka aktivitet ende.", "No activity yet.")}
+                {tUi("no_activity_yet")}
               </div>
             ) : (
               <ul className="relative space-y-2 before:absolute before:left-[13px] before:top-2 before:bottom-2 before:w-px before:bg-border/80">
@@ -431,16 +432,16 @@ export function AdminTicketDetailView({
                               {c.isInternal ? (
                                 <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-900 dark:text-amber-100">
                                   <Lock className="h-3 w-3" />
-                                  {t("Internal", "Internal")}
+                                  {tUi("internal")}
                                 </span>
                               ) : isStaffComment ? (
                                 <span className="inline-flex items-center gap-1 rounded-md border border-sky-600/25 bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sky-900 dark:text-sky-100">
                                   <Users className="h-3 w-3" />
-                                  {t("External", "External")}
+                                  {tUi("external")}
                                 </span>
                               ) : null}
                               <span className="rounded bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                                {t("Koment", "Comment")}
+                                {tUi("comment")}
                               </span>
                             </div>
                             <TimeAgoStamp date={c.createdAt} className="text-xs text-muted-foreground" />
@@ -464,7 +465,7 @@ export function AdminTicketDetailView({
                           {!isClientVisibleTicketHistoryRow(h) ? (
                             <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-900 dark:text-amber-100">
                               <Lock className="h-3 w-3" />
-                              {t("Vetëm stafi", "Staff only")}
+                              {tUi("staff_only_2")}
                             </span>
                           ) : null}
                           <TimeAgoStamp
@@ -495,18 +496,18 @@ export function AdminTicketDetailView({
                 <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                   <MessageSquare className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   {ticket.status === "CLOSED"
-                    ? t("Shënim i brendshëm (biletë e mbyllur)", "Internal note (closed ticket)")
-                    : t("Shto koment", "Add comment")}
+                    ? tUi("internal_note_closed_ticket")
+                    : tUi("add_comment")}
                 </p>
                 {isStaff && ticket.status !== "CLOSED" && (
                   <div
                     role="group"
-                    aria-label={t("Dukshmëria e komentit", "Comment visibility")}
+                    aria-label={tUi("comment_visibility")}
                     className="flex min-w-0 w-full max-w-full flex-wrap items-center gap-x-3 gap-y-1.5 rounded-md border border-border/60 bg-muted px-2 py-1.5 sm:max-w-none sm:gap-x-4 sm:py-1.5"
                   >
                     <div className="flex shrink-0 items-center gap-1">
                       <span className="text-[11px] font-medium tracking-tight text-muted-foreground">
-                        {t("Dukshmëria e komentit", "Comment visibility")}
+                        {tUi("comment_visibility")}
                       </span>
                       <Tooltip>
                         <TooltipTrigger
@@ -514,7 +515,7 @@ export function AdminTicketDetailView({
                             <button
                               type="button"
                               className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-                              aria-label={t("Ndihmë: dukshmëria e komentit", "Help: comment visibility")}
+                              aria-label={tUi("help_comment_visibility")}
                             >
                               <CircleHelp className="size-3.5" strokeWidth={2} />
                             </button>
@@ -530,29 +531,23 @@ export function AdminTicketDetailView({
                           )}
                         >
                           <p className="mb-2.5 border-b border-border/60 pb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            {t("Dukshmëria e komentit", "Comment visibility")}
+                            {tUi("comment_visibility")}
                           </p>
                           <ul className="space-y-2.5">
                             <li className="flex gap-2.5">
                               <span className="mt-0.5 shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                                {t("Internal", "Internal")}
+                                {tUi("internal")}
                               </span>
                               <span className="text-muted-foreground">
-                                {t(
-                                  "Vetëm për stafin; klienti nuk e sheh në portal.",
-                                  "Staff only; the customer does not see it in the portal."
-                                )}
+                                {tUi("staff_only_the_customer_does_not_see_it_in_the_p")}
                               </span>
                             </li>
                             <li className="flex gap-2.5">
                               <span className="mt-0.5 shrink-0 rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
-                                {t("External", "External")}
+                                {tUi("external")}
                               </span>
                               <span className="text-muted-foreground">
-                                {t(
-                                  "Klienti e sheh në portal si përgjigje publike.",
-                                  "The customer sees it in the portal as a public reply."
-                                )}
+                                {tUi("the_customer_sees_it_in_the_portal_as_a_public_r")}
                               </span>
                             </li>
                           </ul>
@@ -570,7 +565,7 @@ export function AdminTicketDetailView({
                           htmlFor="comment-vis-internal-admin"
                           className="cursor-pointer text-xs font-medium text-foreground"
                         >
-                          {t("Internal", "Internal")}
+                          {tUi("internal")}
                         </Label>
                       </div>
                       <div className="flex items-center gap-2">
@@ -583,7 +578,7 @@ export function AdminTicketDetailView({
                           htmlFor="comment-vis-external-admin"
                           className="cursor-pointer text-xs font-medium text-foreground"
                         >
-                          {t("External", "External")}
+                          {tUi("external")}
                         </Label>
                       </div>
                     </div>
@@ -591,7 +586,7 @@ export function AdminTicketDetailView({
                 )}
                 {isStaff && ticket.status === "CLOSED" && (
                   <span className="text-xs text-amber-700 dark:text-amber-200/90">
-                    {t("Vetëm për stafin", "Staff only")}
+                    {tUi("staff_only_3")}
                   </span>
                 )}
               </div>
@@ -613,8 +608,8 @@ export function AdminTicketDetailView({
                   rows={2}
                   placeholder={
                     ticket.status === "CLOSED"
-                      ? t("Shënim i brendshëm për audit…", "Internal audit note…")
-                      : t("Shkruani komentin…", "Write your comment…")
+                      ? tUi("internal_audit_note")
+                      : tUi("write_your_comment")
                   }
                   className={cn(
                     "min-h-[4.25rem] border-0 bg-transparent py-2 text-sm shadow-none focus-visible:ring-2 focus-visible:ring-ring/40 dark:bg-transparent md:min-h-[3.75rem]"
@@ -632,7 +627,7 @@ export function AdminTicketDetailView({
                   disabled={submitting || !comment.trim()}
                 >
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t("Dërgo", "Submit")}
+                  {tUi("submit")}
                 </Button>
               </div>
             </section>
@@ -647,7 +642,7 @@ export function AdminTicketDetailView({
             )}
           >
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("Veprime të shpejta", "Quick actions")}
+              {tUi("quick_actions")}
             </h3>
             <div className="flex flex-col gap-2">
               {isStaff && (ticket.status === "OPEN" || ticket.status === "ASSIGNED") && (
@@ -658,7 +653,7 @@ export function AdminTicketDetailView({
                   onClick={() => updateStatus("IN_PROGRESS")}
                 >
                   <Play className="h-4 w-4" />
-                  {t("Fillo punën", "Start working")}
+                  {tUi("start_working")}
                 </Button>
               )}
               {isStaff && ticket.status === "IN_PROGRESS" && (
@@ -670,7 +665,7 @@ export function AdminTicketDetailView({
                     onClick={() => updateStatus("RESOLVED")}
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    {t("Shëno si zgjidhur", "Mark resolved")}
+                    {tUi("mark_resolved")}
                   </Button>
                   <Button
                     size="sm"
@@ -680,7 +675,7 @@ export function AdminTicketDetailView({
                     onClick={() => updateStatus("PENDING_CLIENT")}
                   >
                     <UserCheck className="h-4 w-4" />
-                    {t("Pret klientin", "Pending client")}
+                    {tUi("pending_client")}
                   </Button>
                   <Button
                     size="sm"
@@ -690,7 +685,7 @@ export function AdminTicketDetailView({
                     onClick={() => updateStatus("PAUSED")}
                   >
                     <Pause className="h-4 w-4" />
-                    {t("Pezullo", "Pause")}
+                    {tUi("pause")}
                   </Button>
                 </>
               )}
@@ -702,7 +697,7 @@ export function AdminTicketDetailView({
                   onClick={() => updateStatus("IN_PROGRESS")}
                 >
                   <Play className="h-4 w-4" />
-                  {t("Vazhdo punën", "Resume work")}
+                  {tUi("resume_work")}
                 </Button>
               )}
               {isStaff && ticket.status === "PENDING_CLIENT" && (
@@ -713,7 +708,7 @@ export function AdminTicketDetailView({
                   onClick={() => updateStatus("IN_PROGRESS")}
                 >
                   <CircleDot className="h-4 w-4" />
-                  {t("Vazhdo punën", "Resume work")}
+                  {tUi("resume_work")}
                 </Button>
               )}
               {ticket.status === "RESOLVED" && (
@@ -726,7 +721,7 @@ export function AdminTicketDetailView({
                     onClick={() => updateStatus("CLOSED")}
                   >
                     <XCircle className="h-4 w-4" />
-                    {t("Mbyll biletën", "Close ticket")}
+                    {tUi("close_ticket")}
                   </Button>
                   <Button
                     size="sm"
@@ -735,7 +730,7 @@ export function AdminTicketDetailView({
                     disabled={statusSaving}
                     onClick={() => updateStatus("IN_PROGRESS")}
                   >
-                    {t("Rihap", "Reopen")}
+                    {tUi("reopen")}
                   </Button>
                 </>
               )}
@@ -747,7 +742,7 @@ export function AdminTicketDetailView({
                   onClick={() => updateStatus("IN_PROGRESS")}
                 >
                   <Play className="h-4 w-4" />
-                  {t("Rihap biletën", "Reopen ticket")}
+                  {tUi("reopen_ticket")}
                 </Button>
               )}
             </div>
@@ -756,7 +751,7 @@ export function AdminTicketDetailView({
               <>
                 <Separator className="my-5" />
                 <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("Statusi", "Status")}
+                  {tUi("status")}
                 </h3>
                 <Select
                   value={ticket.status}
@@ -787,7 +782,7 @@ export function AdminTicketDetailView({
 
           <div className="hidden rounded-2xl border border-border/60 bg-card p-5 shadow-sm lg:block dark:bg-card/80">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("Operacione", "Operations")}
+              {tUi("operations")}
             </h3>
             <AdminTicketOpsForm
               key={`${ticket.id}-${ticket.assignedToId ?? "x"}-${ticket.projectId ?? "np"}-${ticket.priority}-${ticket.estimatedDays ?? "n"}-${ticket.estimatedHours ?? "n"}-${ticket.slaDeadline?.toISOString() ?? ""}`}
@@ -805,32 +800,32 @@ export function AdminTicketDetailView({
 
           <div className="rounded-2xl border border-border/60 bg-card p-5 text-sm shadow-sm dark:bg-card/80">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("Detaje", "Details")}
+              {tUi("details")}
             </h3>
             <dl className="space-y-3">
               <div>
-                <dt className="text-xs text-muted-foreground">{t("Statusi", "Status")}</dt>
+                <dt className="text-xs text-muted-foreground">{tUi("status")}</dt>
                 <dd className="mt-1">
                   <TicketStatusBadge status={ticket.status} locale={locale} />
                 </dd>
               </div>
               <Separator />
               <div>
-                <dt className="text-xs text-muted-foreground">{t("Prioriteti", "Priority")}</dt>
+                <dt className="text-xs text-muted-foreground">{tUi("priority")}</dt>
                 <dd className="mt-1">
                   <PriorityBadge priority={ticket.priority} locale={locale} />
                 </dd>
               </div>
               <Separator />
               <div>
-                <dt className="text-xs text-muted-foreground">{t("Divizioni", "Division")}</dt>
+                <dt className="text-xs text-muted-foreground">{tUi("division")}</dt>
                 <dd className="mt-1 font-medium text-foreground">{divLabel}</dd>
               </div>
               {ticket.project && (
                 <>
                   <Separator />
                   <div>
-                    <dt className="text-xs text-muted-foreground">{t("Projekti", "Project")}</dt>
+                    <dt className="text-xs text-muted-foreground">{tUi("project")}</dt>
                     <dd className="mt-1">
                       <Link
                         href={`${lp}/admin/projects/${ticket.project.id}`}
@@ -863,7 +858,7 @@ export function AdminTicketDetailView({
                 <>
                   <Separator />
                   <div>
-                    <dt className="text-xs text-muted-foreground">{t("Kompania", "Company")}</dt>
+                    <dt className="text-xs text-muted-foreground">{tUi("company")}</dt>
                     <dd className="mt-1 font-medium">{ticket.company.name}</dd>
                   </div>
                 </>
@@ -872,14 +867,14 @@ export function AdminTicketDetailView({
                 <>
                   <Separator />
                   <div>
-                    <dt className="text-xs text-muted-foreground">{t("Vlerësimi", "Estimate")}</dt>
+                    <dt className="text-xs text-muted-foreground">{tUi("estimate")}</dt>
                     <dd className="mt-1 font-medium tabular-nums">{estimateLabel}</dd>
                   </div>
                 </>
               )}
               <Separator />
               <div>
-                <dt className="text-xs text-muted-foreground">{t("Përditësuar", "Updated")}</dt>
+                <dt className="text-xs text-muted-foreground">{tUi("updated")}</dt>
                 <dd className="mt-1 text-xs text-muted-foreground">{formatDateTime(ticket.updatedAt)}</dd>
               </div>
             </dl>
@@ -893,22 +888,19 @@ export function AdminTicketDetailView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("Mbyll biletën?", "Close ticket?")}</AlertDialogTitle>
+            <AlertDialogTitle>{tUi("close_ticket_2")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                "Biljeta do të shënohet si e mbyllur. Klienti nuk do të komentojë më deri në rihapje.",
-                "The ticket will be marked closed. The client cannot comment until it is reopened."
-              )}
+              {tUi("the_ticket_will_be_marked_closed_the_client_cann")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("Anulo", "Cancel")}</AlertDialogCancel>
+            <AlertDialogCancel>{tUi("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 void applyStatus("CLOSED");
               }}
             >
-              {t("Mbyll", "Close")}
+              {tUi("close")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

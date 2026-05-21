@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -41,7 +42,7 @@ export function AdminClientCompanyPanel({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [assignOpen, setAssignOpen] = useState(false);
 
   async function clearCompany() {
@@ -52,10 +53,10 @@ export function AdminClientCompanyPanel({
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      toast.error((body as { error?: string }).error ?? t("Gabim", "Error"));
+      toast.error((body as { error?: string }).error ?? tUi("error"));
       return;
     }
-    toast.success(t("Kompania aktive u hoq", "Active company cleared"));
+    toast.success(tUi("active_company_cleared"));
     router.refresh();
   }
 
@@ -66,15 +67,15 @@ export function AdminClientCompanyPanel({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Building2 className="h-5 w-5 text-primary" />
-          {t("Lidhja me kompaninë", "Company affiliation")}
+          {tUi("company_affiliation")}
         </h2>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => setAssignOpen(true)}>
-            {activeCompany ? t("Ndrysho kompaninë", "Change company") : t("Cakto kompani", "Assign company")}
+            {activeCompany ? tUi("change_company") : tUi("assign_company")}
           </Button>
           {activeCompany && (
             <Button size="sm" variant="outline" onClick={() => void clearCompany()}>
-              {t("Hiq", "Clear")}
+              {tUi("clear")}
             </Button>
           )}
         </div>
@@ -83,7 +84,7 @@ export function AdminClientCompanyPanel({
       <div className="space-y-4">
         <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("Kompania aktive (admin)", "Active company (admin)")}
+            {tUi("active_company_admin")}
           </p>
           {activeCompany ? (
             <div className="mt-2 space-y-1">
@@ -94,11 +95,11 @@ export function AdminClientCompanyPanel({
                 {[activeCompany.vatNumber, activeCompany.city, activeCompany.tier].filter(Boolean).join(" · ")}
               </p>
               <Badge variant="outline" className={activeCompany.isApproved ? "text-emerald-700" : "text-amber-700"}>
-                {activeCompany.isApproved ? t("Miratuar", "Approved") : t("Në pritje", "Pending")}
+                {activeCompany.isApproved ? tUi("approved") : tUi("pending")}
               </Badge>
             </div>
           ) : (
-            <p className="mt-2 text-sm text-muted-foreground">{t("Asnjë kompani e caktuar.", "No company assigned.")}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{tUi("no_company_assigned")}</p>
           )}
         </div>
 
@@ -106,7 +107,7 @@ export function AdminClientCompanyPanel({
           <div className="rounded-xl border border-dashed border-amber-200/80 bg-amber-50/50 p-4">
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-800">
               <History className="h-3.5 w-3.5" />
-              {t("Të dhënat e regjistrimit (e paprekura)", "Registration data (preserved)")}
+              {tUi("registration_data_preserved")}
             </p>
             {registeredCompany && (
               <div className="mt-2 text-sm">

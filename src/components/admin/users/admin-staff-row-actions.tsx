@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -55,7 +56,7 @@ export function AdminStaffRowActions({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,23 +69,17 @@ export function AdminStaffRowActions({
       if (!res.ok) {
         const msg =
           json.error === "Cannot remove the last active administrator."
-            ? t(
-                "Nuk mund të hiqet administratori i fundit aktiv.",
-                "Cannot remove the last active administrator."
-              )
-            : json.error ?? t("Gabim", "Error");
+            ? tUi("cannot_remove_the_last_active_administrator")
+            : json.error ?? tUi("error");
         throw new Error(msg);
       }
       toast.success(
-        t(
-          "Stafi u hoq. Biletat dhe projektet mbeten; caktimet u shlyen.",
-          "Staff member removed. Tickets and projects remain; assignments were cleared."
-        )
+        tUi("staff_member_removed_tickets_and_projects_remain")
       );
       setRemoveOpen(false);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -98,7 +93,7 @@ export function AdminStaffRowActions({
         onClick={() => setRemoveOpen(true)}
       >
         <Trash2 className="mr-2 h-4 w-4" />
-        {t("Hiq stafin", "Remove staff")}
+        {tUi("remove_staff")}
       </DropdownMenuItem>
     </>
   ) : null;
@@ -107,27 +102,27 @@ export function AdminStaffRowActions({
     <>
       <DropdownMenuItem render={<Link href={`${adminHrefPrefix}/staff/${member.id}`} />}>
         <Eye className="mr-2 h-4 w-4" />
-        {t("Shiko", "View")}
+        {tUi("view")}
       </DropdownMenuItem>
       <DropdownMenuItem render={<Link href={`${adminHrefPrefix}/staff/${member.id}`} />}>
         <Pencil className="mr-2 h-4 w-4" />
-        {t("Ndrysho", "Edit")}
+        {tUi("edit")}
       </DropdownMenuItem>
       {member.email ? (
         <DropdownMenuItem
           onClick={() => copyText(member.email!, "Emaili u kopjua", "Email copied", locale)}
         >
           <Copy className="mr-2 h-4 w-4" />
-          {t("Kopjo emailin", "Copy email")}
+          {tUi("copy_email")}
         </DropdownMenuItem>
       ) : null}
       <DropdownMenuItem onClick={() => copyText(member.id, "ID u kopjua", "ID copied", locale)}>
         <Copy className="mr-2 h-4 w-4" />
-        {t("Kopjo ID", "Copy ID")}
+        {tUi("copy_id")}
       </DropdownMenuItem>
       <DropdownMenuItem render={<a href={`mailto:${member.email}`} />}>
         <Mail className="mr-2 h-4 w-4" />
-        {t("Dërgo email", "Send email")}
+        {tUi("send_email")}
       </DropdownMenuItem>
       <StartDirectMessageMenuItem
         participantId={member.id}
@@ -146,13 +141,13 @@ export function AdminStaffRowActions({
       <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
         <Link href={`${adminHrefPrefix}/staff/${member.id}`} onClick={() => setSheetOpen(false)}>
           <Eye className="mr-2 h-4 w-4 shrink-0" />
-          {t("Shiko", "View")}
+          {tUi("view")}
         </Link>
       </Button>
       <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
         <Link href={`${adminHrefPrefix}/staff/${member.id}`} onClick={() => setSheetOpen(false)}>
           <Pencil className="mr-2 h-4 w-4 shrink-0" />
-          {t("Ndrysho", "Edit")}
+          {tUi("edit")}
         </Link>
       </Button>
       {member.email ? (
@@ -165,7 +160,7 @@ export function AdminStaffRowActions({
           }}
         >
           <Copy className="mr-2 h-4 w-4 shrink-0" />
-          {t("Kopjo emailin", "Copy email")}
+          {tUi("copy_email")}
         </Button>
       ) : null}
       <Button
@@ -177,12 +172,12 @@ export function AdminStaffRowActions({
         }}
       >
         <Copy className="mr-2 h-4 w-4 shrink-0" />
-        {t("Kopjo ID", "Copy ID")}
+        {tUi("copy_id")}
       </Button>
       <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
         <a href={`mailto:${member.email}`}>
           <Mail className="mr-2 h-4 w-4 shrink-0" />
-          {t("Dërgo email", "Send email")}
+          {tUi("send_email")}
         </a>
       </Button>
       <StartDirectMessageButton
@@ -204,7 +199,7 @@ export function AdminStaffRowActions({
           }}
         >
           <Trash2 className="mr-2 h-4 w-4 shrink-0" />
-          {t("Hiq stafin", "Remove staff")}
+          {tUi("remove_staff")}
         </Button>
       ) : null}
     </div>
@@ -221,7 +216,7 @@ export function AdminStaffRowActions({
                   variant="outline"
                   size="icon"
                   className="h-9 w-9 shrink-0"
-                  aria-label={t("Veprime", "Actions")}
+                  aria-label={tUi("actions")}
                 />
               }
             >
@@ -240,7 +235,7 @@ export function AdminStaffRowActions({
                   variant="outline"
                   size="icon"
                   className="h-9 w-9"
-                  aria-label={t("Veprime", "Actions")}
+                  aria-label={tUi("actions")}
                 />
               }
             >
@@ -261,13 +256,12 @@ export function AdminStaffRowActions({
       <ConfirmDangerDialog
         open={removeOpen}
         onOpenChange={setRemoveOpen}
-        title={t("Hiq stafin?", "Remove staff member?")}
-        description={t(
-          `${member.firstName} ${member.lastName} do të hiqet nga stafi. Biletat, projektet, komentet dhe mesazhet mbeten; vetëm caktimet aktive shlyhen.`,
-          `${member.firstName} ${member.lastName} will be removed from staff. Tickets, projects, comments, and messages stay intact; only active assignments are cleared.`
-        )}
-        confirmLabel={t("Hiq", "Remove")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("remove_staff_member")}
+        description={tUi("remove_staff_member_desc", {
+          name: `${member.firstName} ${member.lastName}`,
+        })}
+        confirmLabel={tUi("remove")}
+        cancelLabel={tUi("cancel")}
         loading={loading}
         onConfirm={removeStaff}
       />

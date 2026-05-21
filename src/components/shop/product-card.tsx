@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "./cart-context";
 import { formatPrice } from "@/lib/utils";
 import { useShopLocale, useShopPath } from "@/hooks/use-shop-locale";
+import { useTranslations } from "next-intl";
 
 interface ProductCardProps {
   product: {
@@ -27,32 +28,21 @@ interface ProductCardProps {
     category: { nameSq: string; nameEn: string };
   };
   isB2b: boolean;
-  lang?: "sq" | "en";
 }
 // Note: barcode and erpKod are optional fields coming from the ERP.
 // They are accepted here for forward-compatibility but not displayed on the card.
 // The detail page (product-detail-view.tsx) shows the barcode below the SKU.
 
-export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps) {
+export function ProductCard({ product, isB2b }: ProductCardProps) {
   const { addItem } = useCart();
   const locale = useShopLocale();
-  const lang = langProp ?? locale;
+  const t = useTranslations("shop");
   const productHref = useShopPath(`products/${product.id}`);
 
-  const name = lang === "sq" ? product.nameSq : product.nameEn;
+  const name = locale === "en" ? product.nameEn : product.nameSq;
   const price = isB2b ? product.priceB2b : product.priceRetail;
   const image = product.images[0] ?? null;
   const inStock = product.stock > 0;
-
-  const t = {
-    add_cart: lang === "sq" ? "Shto në Shportë" : "Add to Cart",
-    b2b_quote: lang === "sq" ? "Ofertë B2B" : "B2B Quote",
-    out_of_stock: lang === "sq" ? "Jashtë stoku" : "Out of stock",
-    in_stock: lang === "sq" ? "Në stok" : "In stock",
-    b2b_price: lang === "sq" ? "Çmimi B2B" : "B2B price",
-    retail_price: lang === "sq" ? "Çmimi" : "Price",
-    featured: lang === "sq" ? "I Rekomandueshëm" : "Featured",
-  };
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -67,7 +57,7 @@ export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps
       stock: product.stock,
       images: product.images,
     });
-    toast.success(lang === "sq" ? `${name} u shtua në shportë!` : `${name} added to cart!`);
+    toast.success(t("addedToCartNamed", { name }));
   }
 
   return (
@@ -94,12 +84,12 @@ export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps
           <div className="absolute top-3 left-3 flex flex-col gap-1.5">
             {product.isFeatured && (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-bold text-primary-foreground shadow-md">
-                ⭐ {t.featured}
+                ⭐ {t("featured")}
               </span>
             )}
             {!inStock && (
               <span className="rounded-full bg-red-500/90 px-2.5 py-1 text-[10px] font-bold text-white">
-                {t.out_of_stock}
+                {t("out_of_stock")}
               </span>
             )}
             {isB2b && (
@@ -113,7 +103,7 @@ export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps
           {inStock && (
             <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span className="text-[10px] font-semibold text-emerald-700">{t.in_stock}</span>
+              <span className="text-[10px] font-semibold text-emerald-700">{t("in_stock")}</span>
             </div>
           )}
         </div>
@@ -123,7 +113,7 @@ export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps
           {/* Category + brand */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="rounded-full bg-primary/8 px-2.5 py-0.5 text-[10px] font-bold text-primary uppercase tracking-wide">
-              {lang === "sq" ? product.category.nameSq : product.category.nameEn}
+              {locale === "en" ? product.category.nameEn : product.category.nameSq}
             </span>
             {product.brand && (
               <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-semibold">
@@ -150,7 +140,7 @@ export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps
               </div>
             ) : (
               <div>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{t.retail_price}</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{t(isB2b ? "b2b_price" : "retail_price")}</span>
                 <div className="text-xl font-extrabold text-primary">{formatPrice(price)}</div>
               </div>
             )}
@@ -165,7 +155,7 @@ export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps
               onClick={handleAddToCart}
             >
               <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
-              {t.add_cart}
+              {t("add_to_cart")}
             </Button>
             {(isB2b || !isB2b) && (
               <Button

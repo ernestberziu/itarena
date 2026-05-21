@@ -1,31 +1,29 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function AdminSettingsTabs({ locale }: { locale: string }) {
-  const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const tUi = useUiT();
 
   return (
     <Tabs defaultValue="general" className="gap-6">
       <TabsList variant="line" className="w-full justify-start overflow-x-auto rounded-none border-b border-border/60 bg-transparent p-0">
         <TabsTrigger value="general" className="rounded-none border-b-2 border-transparent px-4 py-3 data-active:border-primary data-active:bg-transparent">
-          {t("Të përgjithshme", "General")}
+          {tUi("general")}
         </TabsTrigger>
         <TabsTrigger value="email" className="rounded-none border-b-2 border-transparent px-4 py-3 data-active:border-primary data-active:bg-transparent">
-          {t("Email & njoftime", "Email & alerts")}
+          {tUi("email_alerts")}
         </TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="mt-0 outline-none">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t("Organizata", "Organization")}</CardTitle>
+            <CardTitle className="text-base">{tUi("organization")}</CardTitle>
             <CardDescription>
-              {t(
-                "Emri i shfaqur në portale dhe komunikime.",
-                "Name shown across the portal and communications."
-              )}
+              {tUi("name_shown_across_the_portal_and_communications")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
@@ -33,10 +31,7 @@ export function AdminSettingsTabs({ locale }: { locale: string }) {
               <span className="font-medium text-foreground">IT Arena</span>
             </p>
             <p>
-              {t(
-                "Për ndryshime të thella të markës kontaktoni administratorin e sistemit.",
-                "Contact your system administrator for branding changes."
-              )}
+              {tUi("contact_your_system_administrator_for_branding_c")}
             </p>
           </CardContent>
         </Card>
@@ -45,19 +40,13 @@ export function AdminSettingsTabs({ locale }: { locale: string }) {
       <TabsContent value="email" className="mt-0 outline-none">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t("Email & njoftime", "Email & notifications")}</CardTitle>
+            <CardTitle className="text-base">{tUi("email_notifications")}</CardTitle>
             <CardDescription>
-              {t(
-                "Konfigurimi i SMTP dhe shablloneve vjen së shpejti.",
-                "SMTP and template configuration is coming soon."
-              )}
+              {tUi("smtp_and_template_configuration_is_coming_soon")}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            {t(
-              "Aktualisht njoftimet përdorin SMTP (mjedisi) kur është aktiv.",
-              "Notifications currently use SMTP from environment variables when enabled."
-            )}
+            {tUi("notifications_currently_use_smtp_from_environmen")}
           </CardContent>
         </Card>
       </TabsContent>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ShoppingCart,
   Globe,
@@ -25,7 +26,6 @@ import {
 import { useShopPath } from "@/hooks/use-shop-locale";
 
 interface ShopNavbarProps {
-  lang: "sq" | "en";
   isLoggedIn: boolean;
   isB2b: boolean;
   mainDashboardPath?: string;
@@ -33,12 +33,13 @@ interface ShopNavbarProps {
 }
 
 export function ShopNavbar({
-  lang,
   isLoggedIn,
   isB2b,
   mainDashboardPath = "portal/dashboard",
   userDisplayName,
 }: ShopNavbarProps) {
+  const t = useTranslations("shop.nav");
+  const lang = useLocale() as "sq" | "en";
   const { totalItems } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname() ?? "";
@@ -46,38 +47,9 @@ export function ShopNavbar({
   const shopHome = useShopPath();
   const shopCart = useShopPath("cart");
 
-  const t = {
-    sq: {
-      home: "Kryefaqja",
-      login: "Hyr",
-      cart: "Shporta",
-      search: "Kërko produkte...",
-      b2b: "Çmimet B2B",
-      dashboard: "Portali Im",
-      dashboardStaff: "Administratori",
-      account: "Llogaria",
-      mainSite: "Faqja kryesore",
-      language: "Gjuha",
-      delivery: "Dorëzim 24–48 orë",
-    },
-    en: {
-      home: "Home",
-      login: "Login",
-      cart: "Cart",
-      search: "Search products...",
-      b2b: "B2B Prices",
-      dashboard: "My Portal",
-      dashboardStaff: "Admin",
-      account: "Account",
-      mainSite: "Main website",
-      language: "Language",
-      delivery: "Delivery 24–48h",
-    },
-  }[lang];
-
   const dashboardHref = mainSiteUrl(mainDashboardPath, lang);
   const dashboardFallback =
-    mainDashboardPath.startsWith("admin") ? t.dashboardStaff : t.dashboard;
+    mainDashboardPath.startsWith("admin") ? t("dashboardStaff") : t("dashboard");
   const dashboardLabel = userDisplayName ?? dashboardFallback;
 
   const closeMobile = () => setMobileOpen(false);
@@ -96,7 +68,7 @@ export function ShopNavbar({
               +355 69 63 14 319
             </a>
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-400 font-medium">{t.delivery}</span>
+            <span className="text-emerald-400 font-medium">{t("delivery")}</span>
           </div>
           <Link href={mainSiteUrl("", lang)} className="hover:text-white transition-colors">
             {mainSiteHostname()}
@@ -109,7 +81,7 @@ export function ShopNavbar({
         <Link href={shopHome} className="flex min-w-0 shrink-0 items-center gap-1.5 group">
           <ItArenaLogo variant="dark" size="sm" />
           <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 border border-amber-400/40 rounded px-1.5 py-0.5">
-            SHOP
+            {t("shopBadge")}
           </span>
         </Link>
 
@@ -118,7 +90,7 @@ export function ShopNavbar({
             <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
             <input
               type="search"
-              placeholder={t.search}
+              placeholder={t("search")}
               className="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-amber-500/50 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             />
           </div>
@@ -150,14 +122,14 @@ export function ShopNavbar({
             </Link>
           ) : (
             <Button variant="accent" size="sm" asChild>
-              <Link href={mainSiteUrl("hyr", lang)}>{t.login}</Link>
+              <Link href={mainSiteUrl("hyr", lang)}>{t("login")}</Link>
             </Button>
           )}
 
           <Button asChild className="px-4 text-sm font-bold">
             <Link href={shopCart}>
               <ShoppingCart className="h-4 w-4" />
-              {t.cart}
+              {t("cart")}
               {totalItems > 0 && (
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-xs font-extrabold text-slate-950">
                   {totalItems > 9 ? "9+" : totalItems}
@@ -172,7 +144,7 @@ export function ShopNavbar({
           <Link
             href={shopCart}
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/15 active:scale-[0.98]"
-            aria-label={`${t.cart}${totalItems > 0 ? ` (${totalItems})` : ""}`}
+            aria-label={`${t("cart")}${totalItems > 0 ? ` (${totalItems})` : ""}`}
           >
             <ShoppingCart className="h-5 w-5" />
             {totalItems > 0 && (
@@ -205,7 +177,7 @@ export function ShopNavbar({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-medium uppercase tracking-wide text-white/45">
-                    {t.account}
+                    {t("account")}
                   </p>
                   <p className="truncate text-sm font-semibold text-white">{dashboardLabel}</p>
                 </div>
@@ -219,13 +191,13 @@ export function ShopNavbar({
               <Button variant="accent" className="w-full" asChild>
                 <Link href={mainSiteUrl("hyr", lang)} onClick={closeMobile}>
                   <LogIn className="mr-2 h-4 w-4" />
-                  {t.login}
+                  {t("login")}
                 </Link>
               </Button>
             )}
 
             {isB2b && (
-              <p className="text-center text-xs font-bold text-amber-400">{t.b2b}</p>
+              <p className="text-center text-xs font-bold text-amber-400">{t("b2b")}</p>
             )}
 
             {/* Search */}
@@ -233,7 +205,7 @@ export function ShopNavbar({
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30" />
               <input
                 type="search"
-                placeholder={t.search}
+                placeholder={t("search")}
                 className="w-full rounded-xl border border-white/15 bg-white/10 py-3 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
             </div>
@@ -246,7 +218,7 @@ export function ShopNavbar({
                 className="flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center transition-colors hover:bg-white/10"
               >
                 <Globe className="h-5 w-5 text-white/70" />
-                <span className="text-[11px] font-semibold text-white/80">{t.language}</span>
+                <span className="text-[11px] font-semibold text-white/80">{t("language")}</span>
                 <span className="text-xs font-bold text-amber-400">
                   {otherLang === "en" ? "English" : "Shqip"}
                 </span>
@@ -264,7 +236,7 @@ export function ShopNavbar({
                     </span>
                   )}
                 </span>
-                <span className="text-[11px] font-semibold text-white/80">{t.cart}</span>
+                <span className="text-[11px] font-semibold text-white/80">{t("cart")}</span>
               </Link>
               <Link
                 href={mainSiteUrl("", lang)}
@@ -273,7 +245,7 @@ export function ShopNavbar({
               >
                 <ExternalLink className="h-5 w-5 text-white/70" />
                 <span className="text-[11px] font-semibold leading-tight text-white/80">
-                  {t.mainSite}
+                  {t("mainSite")}
                 </span>
                 <span className="text-[10px] text-white/45">{mainSiteHostname()}</span>
               </Link>
@@ -283,7 +255,7 @@ export function ShopNavbar({
                 className="flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center transition-colors hover:bg-white/10"
               >
                 <span className="text-lg font-extrabold text-amber-400">IT</span>
-                <span className="text-[11px] font-semibold text-white/80">{t.home}</span>
+                <span className="text-[11px] font-semibold text-white/80">{t("home")}</span>
               </Link>
             </div>
 
@@ -297,7 +269,7 @@ export function ShopNavbar({
                 +355 69 63 14 319
               </a>
               <span className="text-emerald-400/80">·</span>
-              <span className="text-emerald-300">{t.delivery}</span>
+              <span className="text-emerald-300">{t("delivery")}</span>
             </div>
           </div>
         </div>

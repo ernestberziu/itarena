@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useMemo, useRef, useState } from "react";
 import {
@@ -37,19 +38,19 @@ export function PortalQuotesTable({
   companyScope: boolean;
   labels: { accept: string; reject: string; download_pdf: string };
 }) {
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const thUi = useUiT();
   const reduceMotion = useReducedMotion();
   const [sorting, setSorting] = useState<SortingState>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const totalCount = rows.length;
-  const emptyMessage = th("Nuk u gjetën oferta.", "No quotes found.");
+  const emptyMessage = thUi("no_quotes_found");
 
   const columns = useMemo<ColumnDef<PortalQuoteRow>[]>(() => {
     const cols: ColumnDef<PortalQuoteRow>[] = [
       {
         accessorKey: "quoteNumber",
-        header: th("Nr.", "#"),
+        header: thUi("text"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="font-mono text-xs font-medium text-foreground">{row.original.quoteNumber}</span>
@@ -57,7 +58,7 @@ export function PortalQuotesTable({
       },
       {
         accessorKey: "title",
-        header: th("Kërkesa", "Request"),
+        header: thUi("request"),
         enableSorting: true,
         cell: ({ row }) => (
           <div className="min-w-0 max-w-xs">
@@ -73,7 +74,7 @@ export function PortalQuotesTable({
       {
         id: "amount",
         accessorFn: (row) => row.amount ?? 0,
-        header: th("Shuma", "Amount"),
+        header: thUi("amount"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="font-semibold tabular-nums">
@@ -83,7 +84,7 @@ export function PortalQuotesTable({
       },
       {
         accessorKey: "status",
-        header: th("Statusi", "Status"),
+        header: thUi("status"),
         enableSorting: true,
         cell: ({ row }) => (
           <QuoteStatusBadge
@@ -95,7 +96,7 @@ export function PortalQuotesTable({
       },
       {
         accessorKey: "createdAt",
-        header: th("Krijuar", "Created"),
+        header: thUi("created"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="whitespace-nowrap text-xs text-muted-foreground">
@@ -106,7 +107,7 @@ export function PortalQuotesTable({
       {
         id: "validUntil",
         accessorKey: "validUntil",
-        header: th("Skadon", "Expires"),
+        header: thUi("expires"),
         enableSorting: true,
         cell: ({ row }) =>
           row.original.validUntil ? (
@@ -171,7 +172,7 @@ export function PortalQuotesTable({
       <div className="space-y-3 border-t border-border/60 px-4 py-3 lg:hidden">
         <p className="text-xs text-muted-foreground">
           <span className="font-medium tabular-nums text-foreground">{totalCount}</span>
-          <span className="ml-1">{th("oferta", "quotes")}</span>
+          <span className="ml-1">{thUi("quotes")}</span>
         </p>
         {rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-16 text-center text-sm text-muted-foreground">
@@ -209,17 +210,17 @@ export function PortalQuotesTable({
               </div>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span>
-                  {th("Shuma", "Amount")}:{" "}
+                  {thUi("amount")}:{" "}
                   <span className="font-semibold text-foreground">
                     {q.amount != null ? formatPrice(q.amount) : "—"}
                   </span>
                 </span>
                 <span>
-                  {th("Krijuar", "Created")}: {formatDate(new Date(q.createdAt))}
+                  {thUi("created")}: {formatDate(new Date(q.createdAt))}
                 </span>
                 {q.validUntil ? (
                   <span>
-                    {th("Skadon", "Expires")}: {formatDate(new Date(q.validUntil))}
+                    {thUi("expires")}: {formatDate(new Date(q.validUntil))}
                   </span>
                 ) : null}
               </div>

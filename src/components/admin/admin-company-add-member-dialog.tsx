@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -28,7 +29,7 @@ export function AdminCompanyAddMemberDialog({
   onAssigned: () => void;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [q, setQ] = useState("");
   const [clients, setClients] = useState<
     { id: string; firstName: string; lastName: string; email: string | null; company: { name: string } | null }[]
@@ -63,11 +64,11 @@ export function AdminCompanyAddMemberDialog({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error((json as { error?: string }).error ?? "Request failed");
-      toast.success(t("Klienti u lidh", "Client linked"));
+      toast.success(tUi("client_linked"));
       onOpenChange(false);
       onAssigned();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setAssigning(null);
     }
@@ -77,21 +78,21 @@ export function AdminCompanyAddMemberDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`sm:max-w-md ${adminWhiteDialogClassName}`}>
         <DialogHeader>
-          <DialogTitle>{t("Shto klient në kompani", "Add client to company")}</DialogTitle>
+          <DialogTitle>{tUi("add_client_to_company")}</DialogTitle>
         </DialogHeader>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className={`pl-9 ${adminWhiteInputClassName}`}
-            placeholder={t("Kërko klient...", "Search client...")}
+            placeholder={tUi("search_client")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
         <div className="max-h-64 space-y-2 overflow-y-auto">
-          {loading && <p className="text-sm text-muted-foreground">{t("Duke kërkuar...", "Searching...")}</p>}
+          {loading && <p className="text-sm text-muted-foreground">{tUi("searching")}</p>}
           {!loading && clients.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t("Asnjë klient", "No clients")}</p>
+            <p className="text-sm text-muted-foreground">{tUi("no_clients")}</p>
           )}
           {clients.map((c) => (
             <div
@@ -105,12 +106,12 @@ export function AdminCompanyAddMemberDialog({
                 <p className="truncate text-xs text-muted-foreground">{c.email}</p>
                 {c.company && (
                   <p className="truncate text-[10px] text-amber-700">
-                    {t("Aktualisht:", "Currently:")} {c.company.name}
+                    {tUi("currently")} {c.company.name}
                   </p>
                 )}
               </div>
               <Button size="sm" disabled={assigning === c.id} onClick={() => void assign(c.id)}>
-                {t("Lidh", "Link")}
+                {tUi("link")}
               </Button>
             </div>
           ))}

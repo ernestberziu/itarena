@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -29,7 +30,7 @@ export function PortalSettingsForm({
   locale: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
@@ -52,10 +53,10 @@ export function PortalSettingsForm({
         body: JSON.stringify({ firstName, lastName, phone, language }),
       });
       if (!res.ok) throw new Error();
-      toast.success(t("Cilësimet u ruajtën!", "Settings saved!"));
+      toast.success(tUi("settings_saved"));
       router.refresh();
     } catch {
-      toast.error(t("Gabim gjatë ruajtjes", "Failed to save settings"));
+      toast.error(tUi("failed_to_save_settings"));
     } finally {
       setLoadingProfile(false);
     }
@@ -63,11 +64,11 @@ export function PortalSettingsForm({
 
   async function savePassword() {
     if (newPassword.trim().length < 8) {
-      toast.error(t("Fjalëkalimi duhet të jetë të paktën 8 karaktere", "Password must be at least 8 characters"));
+      toast.error(tUi("password_must_be_at_least_8_characters"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
+      toast.error(tUi("passwords_do_not_match"));
       return;
     }
 
@@ -86,11 +87,11 @@ export function PortalSettingsForm({
       if (!res.ok) {
         throw new Error(
           json.error === "Current password is incorrect"
-            ? t("Fjalëkalimi aktual është i gabuar", "Current password is incorrect")
+            ? tUi("current_password_is_incorrect")
             : json.error ?? "Error"
         );
       }
-      toast.success(t("Fjalëkalimi u ndryshua. Hyni përsëri.", "Password updated. Please sign in again."));
+      toast.success(tUi("password_updated_please_sign_in_again"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -98,7 +99,7 @@ export function PortalSettingsForm({
         await signOut({ callbackUrl: en ? "/en/hyr" : "/hyr" });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoadingPassword(false);
     }
@@ -114,7 +115,7 @@ export function PortalSettingsForm({
       <Card className="admin-card-elevated">
         <CardHeader className="border-b pb-3">
           <CardTitle className="text-sm font-semibold">
-            {t("Informacioni Personal", "Personal Information")}
+            {tUi("personal_information")}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
@@ -122,13 +123,13 @@ export function PortalSettingsForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="firstName" className="text-xs font-medium text-muted-foreground">
-                  {t("Emri", "First Name")}
+                  {tUi("first_name")}
                 </Label>
                 <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="lastName" className="text-xs font-medium text-muted-foreground">
-                  {t("Mbiemri", "Last Name")}
+                  {tUi("last_name")}
                 </Label>
                 <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
               </div>
@@ -140,20 +141,20 @@ export function PortalSettingsForm({
               </Label>
               <Input id="email" value={user.email ?? ""} disabled className="bg-muted/40" />
               <p className="text-xs text-muted-foreground">
-                {t("Emaili nuk mund të ndryshohet.", "Email cannot be changed.")}
+                {tUi("email_cannot_be_changed")}
               </p>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="phone" className="text-xs font-medium text-muted-foreground">
-                {t("Telefon", "Phone")}
+                {tUi("phone")}
               </Label>
               <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+355..." />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">
-                {t("Gjuha e Preferuar", "Preferred Language")}
+                {tUi("preferred_language")}
               </Label>
               <Select value={language} onValueChange={(v) => v && setLanguage(v)}>
                 <SelectTrigger>
@@ -174,7 +175,7 @@ export function PortalSettingsForm({
               ) : (
                 <Save className="h-3.5 w-3.5" strokeWidth={2} />
               )}
-              {t("Ruaj Ndryshimet", "Save Changes")}
+              {tUi("save_changes")}
             </Button>
           </form>
         </CardContent>
@@ -184,18 +185,15 @@ export function PortalSettingsForm({
         <CardHeader className="border-b pb-3">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <KeyRound className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-            {t("Fjalëkalimi", "Password")}
+            {tUi("password")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-4">
           <p className="text-xs text-muted-foreground">
-            {t(
-              "Vendosni fjalëkalimin aktual dhe një të ri.",
-              "Enter your current password and a new one."
-            )}
+            {tUi("enter_your_current_password_and_a_new_one")}
           </p>
           <div className="space-y-2">
-            <Label htmlFor="current-password">{t("Fjalëkalimi aktual", "Current password")}</Label>
+            <Label htmlFor="current-password">{tUi("current_password")}</Label>
             <Input
               id="current-password"
               type="password"
@@ -206,7 +204,7 @@ export function PortalSettingsForm({
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="new-password">{t("Fjalëkalim i ri", "New password")}</Label>
+              <Label htmlFor="new-password">{tUi("new_password")}</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -216,7 +214,7 @@ export function PortalSettingsForm({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">{t("Konfirmo", "Confirm")}</Label>
+              <Label htmlFor="confirm-password">{tUi("confirm")}</Label>
               <Input
                 id="confirm-password"
                 type="password"
@@ -238,7 +236,7 @@ export function PortalSettingsForm({
             ) : (
               <KeyRound className="h-3.5 w-3.5" strokeWidth={2} />
             )}
-            {t("Ruaj fjalëkalimin", "Save password")}
+            {tUi("save_password")}
           </Button>
         </CardContent>
       </Card>

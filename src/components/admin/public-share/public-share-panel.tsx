@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useCallback, useEffect, useState } from "react";
 import { Copy, Link2, Loader2, Mail, RefreshCw, Trash2 } from "lucide-react";
@@ -50,7 +51,7 @@ export function PublicSharePanel({
   canWrite: boolean;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const apiBase =
     resourceType === "TICKET"
       ? `/api/admin/tickets/${resourceId}/public-share`
@@ -73,7 +74,7 @@ export function PublicSharePanel({
       const data = (await res.json()) as ShareRow[];
       setShares(data);
     } catch {
-      toast.error(t("Nuk u ngarkuan lidhjet", "Could not load links"));
+      toast.error(tUi("could_not_load_links"));
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ export function PublicSharePanel({
   async function createShare() {
     const name = clientName.trim();
     if (!name) {
-      toast.error(t("Vendos emrin e klientit", "Enter the client name"));
+      toast.error(tUi("enter_the_client_name"));
       return;
     }
     setCreating(true);
@@ -119,13 +120,13 @@ export function PublicSharePanel({
         clientName: json.clientName,
       });
       if (recipientEmail.trim() && json.emailSent) {
-        toast.success(t("Email u dërgua", "Email sent"));
+        toast.success(tUi("email_sent"));
       } else if (recipientEmail.trim() && json.emailSent === false) {
-        toast.warning(t("SMTP jo i konfiguruar", "SMTP not configured"));
+        toast.warning(tUi("smtp_not_configured"));
       }
       await loadShares();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setCreating(false);
     }
@@ -135,10 +136,10 @@ export function PublicSharePanel({
     try {
       const res = await fetch(`${apiBase}/${shareId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed");
-      toast.success(t("Lidhja u çaktivizua", "Link revoked"));
+      toast.success(tUi("link_revoked"));
       await loadShares();
     } catch {
-      toast.error(t("Gabim", "Error"));
+      toast.error(tUi("error"));
     }
   }
 
@@ -151,10 +152,10 @@ export function PublicSharePanel({
       });
       const json = (await res.json()) as { passcode?: string };
       if (!res.ok || !json.passcode) throw new Error("Failed");
-      toast.success(t("Kodi u përditësua", "Passcode updated"));
+      toast.success(tUi("passcode_updated"));
       await loadShares();
     } catch {
-      toast.error(t("Gabim", "Error"));
+      toast.error(tUi("error"));
     }
   }
 
@@ -164,10 +165,10 @@ export function PublicSharePanel({
       const res = await fetch(`${apiBase}/${shareId}/send-email`, { method: "POST" });
       const json = (await res.json().catch(() => ({}))) as { error?: string; emailSent?: boolean };
       if (!res.ok) throw new Error(json.error ?? "Failed");
-      if (json.emailSent) toast.success(t("Email u dërgua", "Email sent"));
-      else toast.warning(t("SMTP jo i konfiguruar", "SMTP not configured"));
+      if (json.emailSent) toast.success(tUi("email_sent"));
+      else toast.warning(tUi("smtp_not_configured"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setSendingEmailId(null);
     }
@@ -175,7 +176,7 @@ export function PublicSharePanel({
 
   function copyText(text: string, label: string) {
     void navigator.clipboard.writeText(text);
-    toast.success(t(`${label} u kopjua`, `${label} copied`));
+    toast.success(tUi("label_copied", { label }));
   }
 
   if (!canWrite && shares.length === 0 && !loading) return null;
@@ -186,13 +187,10 @@ export function PublicSharePanel({
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-2">
             <Link2 className="h-4 w-4 text-muted-foreground" />
-            {t("Lidhje publike", "Public links")}
+            {tUi("public_links")}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {t(
-              "Klienti pa llogari hap lidhjen dhe fut kodin.",
-              "Clients without an account open the link and enter the passcode."
-            )}
+            {tUi("clients_without_an_account_open_the_link_and_ent")}
           </p>
         </div>
         {canWrite && (
@@ -200,28 +198,25 @@ export function PublicSharePanel({
             <DialogTrigger
               render={
                 <Button type="button" size="sm" variant="outline">
-                  {t("Krijo lidhje", "Create link")}
+                  {tUi("create_link")}
                 </Button>
               }
             />
             <DialogContent className={adminWhiteDialogClassName}>
               <DialogHeader>
-                <DialogTitle>{t("Lidhje publike", "Public link")}</DialogTitle>
+                <DialogTitle>{tUi("public_link")}</DialogTitle>
               </DialogHeader>
               {created ? (
                 <div className="space-y-3 text-sm">
                   <p className="text-muted-foreground">
-                    {t(
-                      "Kopjoni URL-në dhe kodin. Kodi mbetet i dukshëm te lista e lidhjeve.",
-                      "Copy the URL and passcode. The code stays visible in the links list."
-                    )}
+                    {tUi("copy_the_url_and_passcode_the_code_stays_visible")}
                   </p>
                   <div>
-                    <Label>{t("Klienti", "Client")}</Label>
+                    <Label>{tUi("client_2")}</Label>
                     <p className="font-medium">{created.clientName}</p>
                   </div>
                   <div>
-                    <Label>{t("URL", "URL")}</Label>
+                    <Label>{tUi("url")}</Label>
                     <div className="flex gap-2 mt-1">
                       <Input readOnly value={created.url} className={adminWhiteInputClassName} />
                       <Button
@@ -235,7 +230,7 @@ export function PublicSharePanel({
                     </div>
                   </div>
                   <div>
-                    <Label>{t("Kodi", "Passcode")}</Label>
+                    <Label>{tUi("passcode")}</Label>
                     <div className="flex gap-2 mt-1">
                       <Input
                         readOnly
@@ -246,31 +241,31 @@ export function PublicSharePanel({
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => copyText(created.passcode, t("Kodi", "Passcode"))}
+                        onClick={() => copyText(created.passcode, tUi("passcode"))}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                   <Button type="button" className="w-full" onClick={() => setDialogOpen(false)}>
-                    {t("Mbyll", "Close")}
+                    {tUi("close")}
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="share-client-name">{t("Emri i klientit", "Client name")}</Label>
+                    <Label htmlFor="share-client-name">{tUi("client_name")}</Label>
                     <Input
                       id="share-client-name"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      placeholder={t("p.sh. Agim Hoxha", "e.g. Agim Hoxha")}
+                      placeholder={tUi("e_g_agim_hoxha")}
                       className={`mt-1 ${adminWhiteInputClassName}`}
                     />
                   </div>
                   <div>
                     <Label htmlFor="share-recipient-email">
-                      {t("Email i klientit (opsional)", "Client email (optional)")}
+                      {tUi("client_email_optional")}
                     </Label>
                     <Input
                       id="share-recipient-email"
@@ -288,7 +283,7 @@ export function PublicSharePanel({
                     onClick={() => void createShare()}
                   >
                     {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                    {t("Gjenero lidhje dhe kod", "Generate link and passcode")}
+                    {tUi("generate_link_and_passcode")}
                   </Button>
                 </div>
               )}
@@ -300,11 +295,11 @@ export function PublicSharePanel({
       {loading ? (
         <p className="text-xs text-muted-foreground flex items-center gap-2">
           <Loader2 className="h-3 w-3 animate-spin" />
-          {t("Duke ngarkuar…", "Loading…")}
+          {tUi("loading")}
         </p>
       ) : shares.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {t("Asnjë lidhje publike.", "No public links yet.")}
+          {tUi("no_public_links_yet")}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -317,34 +312,31 @@ export function PublicSharePanel({
                 <p className="font-medium truncate">{s.clientName}</p>
                 {s.isActive && s.passcode ? (
                   <p className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">{t("Kodi", "Passcode")}:</span>
+                    <span className="text-muted-foreground">{tUi("passcode")}:</span>
                     <span className="font-mono font-semibold tracking-widest text-foreground">
                       {s.passcode}
                     </span>
                     <button
                       type="button"
                       className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-                      onClick={() => copyText(s.passcode!, t("Kodi", "Passcode"))}
+                      onClick={() => copyText(s.passcode!, tUi("passcode"))}
                     >
-                      {t("Kopjo", "Copy")}
+                      {tUi("copy")}
                     </button>
                   </p>
                 ) : s.isActive && !s.passcode ? (
                   <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
-                    {t(
-                      "Kodi i panjohur — gjeneroni kod të ri.",
-                      "Passcode unknown — regenerate to set a new one."
-                    )}
+                    {tUi("passcode_unknown_regenerate_to_set_a_new_one")}
                   </p>
                 ) : null}
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {s.isActive
-                    ? t("Aktive", "Active")
+                    ? tUi("active")
                     : s.revokedAt
-                      ? t("Çaktivizuar", "Revoked")
-                      : t("Skaduar", "Expired")}
+                      ? tUi("revoked")
+                      : tUi("expired")}
                   {s.lastAccessAt &&
-                    ` · ${t("Hyrja e fundit", "Last access")}: ${new Date(s.lastAccessAt).toLocaleDateString(en ? "en-GB" : "sq-AL")}`}
+                    ` · ${tUi("last_access")}: ${new Date(s.lastAccessAt).toLocaleDateString(en ? "en-GB" : "sq-AL")}`}
                 </p>
               </div>
               {canWrite && s.isActive && (
@@ -353,7 +345,7 @@ export function PublicSharePanel({
                     type="button"
                     variant="outline"
                     size="icon"
-                    title={t("Kopjo URL", "Copy URL")}
+                    title={tUi("copy_url")}
                     onClick={() => copyText(s.url, "URL")}
                   >
                     <Copy className="h-4 w-4" />
@@ -363,8 +355,8 @@ export function PublicSharePanel({
                       type="button"
                       variant="outline"
                       size="icon"
-                      title={t("Kopjo kodin", "Copy passcode")}
-                      onClick={() => copyText(s.passcode!, t("Kodi", "Passcode"))}
+                      title={tUi("copy_passcode")}
+                      onClick={() => copyText(s.passcode!, tUi("passcode"))}
                     >
                       <span className="text-[10px] font-bold font-mono">#</span>
                     </Button>
@@ -373,7 +365,7 @@ export function PublicSharePanel({
                     type="button"
                     variant="outline"
                     size="icon"
-                    title={t("Kod i ri", "New passcode")}
+                    title={tUi("new_passcode")}
                     onClick={() => void regeneratePasscode(s.id)}
                   >
                     <RefreshCw className="h-4 w-4" />
@@ -383,7 +375,7 @@ export function PublicSharePanel({
                       type="button"
                       variant="outline"
                       size="icon"
-                      title={t("Dërgo email", "Send email")}
+                      title={tUi("send_email")}
                       disabled={sendingEmailId === s.id}
                       onClick={() => void sendShareEmail(s.id)}
                     >
@@ -398,7 +390,7 @@ export function PublicSharePanel({
                     type="button"
                     variant="outline"
                     size="icon"
-                    title={t("Çaktivizo", "Revoke")}
+                    title={tUi("revoke")}
                     onClick={() => void revokeShare(s.id)}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />

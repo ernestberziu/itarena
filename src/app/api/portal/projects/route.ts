@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import {  NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { portalUser, PORTAL_ROLES } from "@/lib/portal/access";
@@ -6,9 +7,9 @@ import { portalProjectClientWhere } from "@/lib/portal/scope";
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr("sq", "unauthorized", 401);
   if (!PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
 
   const user = portalUser(session);

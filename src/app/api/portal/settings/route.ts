@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -48,16 +49,16 @@ const patchSchema = z
 
 export async function PATCH(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   if (!PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = patchSchema.safeParse(body);
@@ -72,7 +73,7 @@ export async function PATCH(req: NextRequest) {
     where: { id: session.user.id },
     select: { id: true, passwordHash: true },
   });
-  if (!user?.passwordHash) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!user?.passwordHash) return apiErr(req, "notFound", 404);
 
   const updateData: {
     firstName?: string;
@@ -105,7 +106,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (Object.keys(updateData).length === 0) {
-    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    return apiErr(req, "noFieldsToUpdate", 400);
   }
 
   await db.$transaction(async (tx) => {

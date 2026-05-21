@@ -18,7 +18,8 @@
     "lint": "eslint",
     "test:acl": "tsx scripts/test-admin-acl-resolve.ts",
     "test:notifications": "tsx scripts/test-notification-recipients.ts",
-    "test:reports-range": "tsx scripts/test-reports-date-range.ts"
+    "test:reports-range": "tsx scripts/test-reports-date-range.ts",
+    "i18n:audit": "tsx scripts/i18n-audit.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -21,7 +22,7 @@ export function PortalOrdersTable({
   companyScope: boolean;
   codNotice: string;
 }) {
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const thUi = useUiT();
   const reduceMotion = useReducedMotion();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -36,7 +37,7 @@ export function PortalOrdersTable({
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-muted/20 px-4 py-2.5">
           <p className="text-xs text-muted-foreground">
             <span className="font-medium tabular-nums text-foreground">{rows.length}</span>
-            <span className="ml-1">{th("porosi", "orders")}</span>
+            <span className="ml-1">{thUi("orders")}</span>
           </p>
         </div>
         <div className="max-h-[min(70vh,900px)] overflow-auto">
@@ -45,23 +46,23 @@ export function PortalOrdersTable({
               <tr className="border-b border-border/60">
                 <th className="sticky top-0 z-10 w-10 bg-muted/95 px-3 py-2.5 backdrop-blur-sm" scope="col" />
                 <th className="sticky top-0 z-10 bg-muted/95 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm" scope="col">
-                  {th("Nr. Porosisë", "Order #")}
+                  {thUi("order")}
                 </th>
                 <th className="sticky top-0 z-10 bg-muted/95 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm" scope="col">
-                  {th("Statusi", "Status")}
+                  {thUi("status")}
                 </th>
                 <th className="sticky top-0 z-10 bg-muted/95 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm" scope="col">
-                  {th("Artikuj", "Items")}
+                  {thUi("items")}
                 </th>
                 <th className="sticky top-0 z-10 bg-muted/95 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm" scope="col">
-                  {th("Total", "Total")}
+                  {thUi("total")}
                 </th>
                 <th className="sticky top-0 z-10 bg-muted/95 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm" scope="col">
-                  {th("Datë", "Date")}
+                  {thUi("date")}
                 </th>
                 {companyScope ? (
                   <th className="sticky top-0 z-10 bg-muted/95 px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm" scope="col">
-                    {th("Hapur nga", "Opened by")}
+                    {thUi("opened_by")}
                   </th>
                 ) : null}
               </tr>
@@ -70,7 +71,7 @@ export function PortalOrdersTable({
               {sortedRows.length === 0 ? (
                 <tr>
                   <td colSpan={companyScope ? 7 : 6} className="px-4 py-16 text-center text-sm text-muted-foreground">
-                    {th("Nuk u gjetën porosi", "No orders found")}
+                    {thUi("no_orders_found")}
                   </td>
                 </tr>
               ) : (
@@ -129,11 +130,11 @@ export function PortalOrdersTable({
       <div className="space-y-3 border-t border-border/60 px-4 py-3 lg:hidden">
         <p className="text-xs text-muted-foreground">
           <span className="font-medium tabular-nums text-foreground">{rows.length}</span>
-          <span className="ml-1">{th("porosi", "orders")}</span>
+          <span className="ml-1">{thUi("orders")}</span>
         </p>
         {sortedRows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-16 text-center text-sm text-muted-foreground">
-            {th("Nuk u gjetën porosi", "No orders found")}
+            {thUi("no_orders_found")}
           </div>
         ) : (
           sortedRows.map((order, i) => {
@@ -159,14 +160,14 @@ export function PortalOrdersTable({
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span>
-                        {order.items.length} {th("artikuj", "items")}
+                        {order.items.length} {thUi("items_2")}
                       </span>
                       <span className="font-semibold tabular-nums text-foreground">{formatPrice(order.total)}</span>
                       <span>{formatDate(new Date(order.createdAt))}</span>
                     </div>
                     {companyScope ? (
                       <p className="text-xs text-muted-foreground">
-                        {th("Hapur nga", "Opened by")}: {order.user.firstName} {order.user.lastName}
+                        {thUi("opened_by")}: {order.user.firstName} {order.user.lastName}
                       </p>
                     ) : null}
                   </div>

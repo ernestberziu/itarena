@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { isCalendarAdmin } from "@/lib/calendar/access";
@@ -8,7 +9,7 @@ import { getCalendarDay } from "@/lib/calendar/queries";
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiErr(req, "unauthorized", 401);
   }
 
   const denied = await assertAdminApiAcl(session.user.id, "calendar", "read");

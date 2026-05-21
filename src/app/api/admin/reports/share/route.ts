@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -8,7 +9,7 @@ import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "reports", "read");
   if (denied) return denied;
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
   if (!token) return NextResponse.json({ error: "Missing token" }, { status: 400 });
 
   const link = await db.reportShareLink.findUnique({ where: { token } });
-  if (!link) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!link) return apiErr(req, "notFound", 404);
   if (link.expiresAt && link.expiresAt < new Date()) {
     return NextResponse.json({ error: "Expired" }, { status: 410 });
   }
@@ -36,7 +37,7 @@ const postSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   if (session.user.role !== "ADMIN") {
     const denied = await assertAdminApiAcl(session.user.id, "reports", "write");
     if (denied) return denied;

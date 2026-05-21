@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +24,7 @@ export function ReportsScheduleDialog({
   triggerLabel: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [open, setOpen] = useState(false);
   const [presets, setPresets] = useState<PresetRow[]>([]);
   const [presetId, setPresetId] = useState("");
@@ -47,7 +48,7 @@ export function ReportsScheduleDialog({
       .map((e) => e.trim())
       .filter(Boolean);
     if (!presetId || emails.length === 0) {
-      toast.error(t("Zgjidh preset dhe email", "Choose preset and emails"));
+      toast.error(tUi("choose_preset_and_emails"));
       return;
     }
     try {
@@ -57,10 +58,10 @@ export function ReportsScheduleDialog({
         body: JSON.stringify({ presetId, cron, recipients: emails }),
       });
       if (!res.ok) throw new Error("Failed");
-      toast.success(t("Planifikimi u krijua", "Schedule created"));
+      toast.success(tUi("schedule_created"));
       setOpen(false);
     } catch {
-      toast.error(t("Gabim", "Error"));
+      toast.error(tUi("error"));
     }
   }
 
@@ -71,11 +72,11 @@ export function ReportsScheduleDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("Planifiko raportin", "Schedule report")}</DialogTitle>
+          <DialogTitle>{tUi("schedule_report")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>{t("Preset", "Preset")}</Label>
+            <Label>{tUi("preset")}</Label>
             <select
               className="h-9 w-full rounded-lg border bg-background px-2 text-sm"
               value={presetId}
@@ -93,7 +94,7 @@ export function ReportsScheduleDialog({
             <Input value={cron} onChange={(e) => setCron(e.target.value)} placeholder="0 8 * * 1" />
           </div>
           <div className="space-y-2">
-            <Label>{t("Marrësit (email)", "Recipients")}</Label>
+            <Label>{tUi("recipients")}</Label>
             <Input
               value={recipients}
               onChange={(e) => setRecipients(e.target.value)}
@@ -101,7 +102,7 @@ export function ReportsScheduleDialog({
             />
           </div>
           <Button type="button" className="w-full" onClick={() => void submit()}>
-            {t("Krijo", "Create")}
+            {tUi("create")}
           </Button>
         </div>
       </DialogContent>

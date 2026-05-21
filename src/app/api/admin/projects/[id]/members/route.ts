@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -16,7 +17,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "projects", "read");
   if (denied) return denied;
 
@@ -37,21 +38,21 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "projects", "write");
   if (denied) return denied;
 
   const { id: projectId } = await params;
   const canManage = await canManageProjectMembers(session.user.id, projectId);
   if (!canManage && !(await isAdminUser(session.user.id))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = projectMemberSchema.safeParse(body);
@@ -90,14 +91,14 @@ export async function POST(req: NextRequest, { params }: Params) {
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "projects", "write");
   if (denied) return denied;
 
   const { id: projectId } = await params;
   const canManage = await canManageProjectMembers(session.user.id, projectId);
   if (!canManage && !(await isAdminUser(session.user.id))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   const { searchParams } = new URL(req.url);
@@ -108,7 +109,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = updateProjectMemberSchema.safeParse(body);
@@ -130,14 +131,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 export async function DELETE(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "projects", "write");
   if (denied) return denied;
 
   const { id: projectId } = await params;
   const canManage = await canManageProjectMembers(session.user.id, projectId);
   if (!canManage && !(await isAdminUser(session.user.id))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   const { searchParams } = new URL(req.url);

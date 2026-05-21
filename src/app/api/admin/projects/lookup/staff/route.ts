@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -8,7 +9,7 @@ import { activeStaffMemberWhere } from "@/lib/staff/active-staff-where";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "projects", "read");
   if (denied) return denied;
 

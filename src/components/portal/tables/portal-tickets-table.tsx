@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -120,7 +121,7 @@ export function PortalTicketsTable({
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const thUi = useUiT();
   const [sorting, setSorting] = useState<SortingState>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -132,7 +133,7 @@ export function PortalTicketsTable({
       {
         id: "number",
         accessorKey: "number",
-        header: th("Nr.", "#"),
+        header: thUi("text"),
         enableSorting: true,
         ...meta({
           headerClassName: "w-[6.5rem] shrink-0",
@@ -155,7 +156,7 @@ export function PortalTicketsTable({
       {
         id: "subject",
         accessorKey: "title",
-        header: th("Bileta", "Ticket"),
+        header: thUi("ticket"),
         enableSorting: true,
         ...meta({
           headerClassName: "min-w-[14rem] w-[36%]",
@@ -187,7 +188,7 @@ export function PortalTicketsTable({
     if (companyScope) {
       cols.push({
         id: "requester",
-        header: th("Hapur nga", "Opened by"),
+        header: thUi("opened_by"),
         enableSorting: false,
         ...meta({
           headerClassName: "hidden md:table-cell min-w-[8rem] w-[14%]",
@@ -204,7 +205,7 @@ export function PortalTicketsTable({
     cols.push(
       {
         id: "state",
-        header: th("Gjendja", "State"),
+        header: thUi("state"),
         enableSorting: false,
         ...meta({
           headerClassName: "w-[8.5rem] shrink-0",
@@ -224,7 +225,7 @@ export function PortalTicketsTable({
       {
         id: "activity",
         accessorKey: "updatedAt",
-        header: th("Përditësuar", "Updated"),
+        header: thUi("updated"),
         enableSorting: true,
         ...meta({
           headerClassName: "hidden sm:table-cell w-[6.5rem] shrink-0",
@@ -262,7 +263,7 @@ export function PortalTicketsTable({
     [lp, router]
   );
 
-  const emptyMessage = th("Nuk u gjetën bileta.", "No tickets found.");
+  const emptyMessage = thUi("no_tickets_found");
 
   return (
     <>
@@ -294,7 +295,7 @@ export function PortalTicketsTable({
       <div className="space-y-3 border-t border-border/60 px-4 py-3 lg:hidden">
         <p className="text-xs text-muted-foreground">
           <span className="font-medium tabular-nums text-foreground">{totalCount}</span>
-          <span className="ml-1">{th("bileta", "tickets")}</span>
+          <span className="ml-1">{thUi("tickets")}</span>
         </p>
         {rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-16 text-center text-sm text-muted-foreground">

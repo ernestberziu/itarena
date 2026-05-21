@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { KeyRound } from "lucide-react";
@@ -38,7 +39,7 @@ export function AdminClientResetPasswordDialog({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
@@ -61,11 +62,11 @@ export function AdminClientResetPasswordDialog({
 
   async function submit() {
     if (newPassword.trim().length > 0 && newPassword.trim().length < 8) {
-      toast.error(t("Fjalëkalimi duhet të jetë ≥8 karaktere", "Password must be ≥8 characters"));
+      toast.error(tUi("password_must_be_8_characters"));
       return;
     }
     if (newPassword.trim().length > 0 && newPassword !== confirmPassword) {
-      toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
+      toast.error(tUi("passwords_do_not_match"));
       return;
     }
 
@@ -90,18 +91,18 @@ export function AdminClientResetPasswordDialog({
       if (!res.ok) throw new Error(json.error ?? "Request failed");
 
       if (json.notifyEmailAttempted && json.credentialsEmailSent) {
-        toast.success(t("Fjalëkalimi u ndryshua dhe u dërgua me email", "Password updated and emailed"));
+        toast.success(tUi("password_updated_and_emailed"));
         setOpen(false);
       } else if (json.temporaryPassword) {
         setShownTemp(json.temporaryPassword);
-        toast.success(t("Fjalëkalimi u gjenerua", "Password generated"));
+        toast.success(tUi("password_generated"));
       } else {
-        toast.success(t("Fjalëkalimi u ndryshua", "Password updated"));
+        toast.success(tUi("password_updated"));
         setOpen(false);
       }
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -112,7 +113,7 @@ export function AdminClientResetPasswordDialog({
       {!hideTrigger && (
         <DialogTrigger
           render={
-            <Button variant={triggerVariant} size="icon" className="h-8 w-8" aria-label={t("Rivendos fjalëkalimin", "Reset password")} />
+            <Button variant={triggerVariant} size="icon" className="h-8 w-8" aria-label={tUi("reset_password")} />
           }
         >
           <KeyRound className="h-4 w-4" />
@@ -120,7 +121,7 @@ export function AdminClientResetPasswordDialog({
       )}
       <DialogContent className={`sm:max-w-md ${adminWhiteDialogClassName}`}>
         <DialogHeader>
-          <DialogTitle>{t("Rivendos fjalëkalimin", "Reset password")}</DialogTitle>
+          <DialogTitle>{tUi("reset_password")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
           {userName} · {userEmail}
@@ -128,16 +129,16 @@ export function AdminClientResetPasswordDialog({
 
         {shownTemp ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm">
-            <p className="font-medium text-amber-900">{t("Fjalëkalimi i përkohshëm", "Temporary password")}</p>
+            <p className="font-medium text-amber-900">{tUi("temporary_password")}</p>
             <p className="mt-2 font-mono text-base">{shownTemp}</p>
             <Button className="mt-3" size="sm" onClick={() => setOpen(false)}>
-              {t("Mbyll", "Close")}
+              {tUi("close")}
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label>{t("Fjalëkalim i ri (opsional)", "New password (optional)")}</Label>
+              <Label>{tUi("new_password_optional")}</Label>
               <Input
                 type="password"
                 className={adminWhiteInputClassName}
@@ -146,7 +147,7 @@ export function AdminClientResetPasswordDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("Konfirmo", "Confirm")}</Label>
+              <Label>{tUi("confirm")}</Label>
               <Input
                 type="password"
                 className={adminWhiteInputClassName}
@@ -156,14 +157,14 @@ export function AdminClientResetPasswordDialog({
             </div>
             <div className="flex items-center gap-2">
               <Checkbox id="gen-temp" checked={generateTemp} onCheckedChange={(v) => setGenerateTemp(v === true)} />
-              <Label htmlFor="gen-temp">{t("Gjenero fjalëkalim të përkohshëm", "Generate temporary password")}</Label>
+              <Label htmlFor="gen-temp">{tUi("generate_temporary_password")}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox id="notify" checked={notifyCustomer} onCheckedChange={(v) => setNotifyCustomer(v === true)} />
-              <Label htmlFor="notify">{t("Njofto klientin me email", "Notify customer by email")}</Label>
+              <Label htmlFor="notify">{tUi("notify_customer_by_email")}</Label>
             </div>
             <Button className="w-full" disabled={loading} onClick={() => void submit()}>
-              {t("Ruaj fjalëkalimin", "Save password")}
+              {tUi("save_password")}
             </Button>
           </div>
         )}

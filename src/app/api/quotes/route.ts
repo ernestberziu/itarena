@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    return apiErr(req, "invalidData", 400);
   }
 
   const data = parsed.data;
@@ -101,7 +102,7 @@ async function getOrCreateGuestUserId(email: string, name: string): Promise<stri
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr("sq", "unauthorized", 401);
 
   const isStaff = ["ADMIN", "SALES"].includes(session.user.role);
 

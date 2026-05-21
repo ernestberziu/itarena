@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { portalUser, PORTAL_ROLES } from "@/lib/portal/access";
@@ -12,15 +13,15 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   if (!PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(_req, "forbidden", 403);
   }
 
   const { id: projectId } = await params;
   const user = portalUser(session);
   const allowed = await assertPortalProjectAccess(user, projectId);
-  if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!allowed) return apiErr(_req, "notFound", 404);
 
   const conv = await ensureProjectConversation(projectId, session.user.id);
   if (!conv) return NextResponse.json([]);
@@ -50,21 +51,21 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   if (!PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   const { id: projectId } = await params;
   const user = portalUser(session);
   const allowed = await assertPortalProjectAccess(user, projectId);
-  if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!allowed) return apiErr(req, "notFound", 404);
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = projectMessageSchema.safeParse(
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const conv = await ensureProjectConversation(projectId, session.user.id);
-  if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!conv) return apiErr(req, "notFound", 404);
 
   const message = await db.conversationMessage.create({
     data: {

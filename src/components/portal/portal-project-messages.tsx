@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -31,7 +32,7 @@ export function PortalProjectMessages({
 }) {
   const router = useRouter();
   const lang = locale === "en" ? "en" : "sq";
-  const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const tUi = useUiT();
   const [messages, setMessages] = useState(initialMessages);
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -58,11 +59,11 @@ export function PortalProjectMessages({
       });
       if (!res.ok) throw new Error();
       setBody("");
-      toast.success(t("Mesazhi u dërgua", "Message sent"));
+      toast.success(tUi("message_sent"));
       await refresh();
       router.refresh();
     } catch {
-      toast.error(t("Gabim gjatë dërgimit", "Failed to send message"));
+      toast.error(tUi("failed_to_send_message"));
     } finally {
       setSending(false);
     }
@@ -73,7 +74,7 @@ export function PortalProjectMessages({
       <div className="max-h-[min(420px,50vh)] divide-y divide-border/60 overflow-y-auto">
         {messages.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-            {t("Nuk ka mesazhe ende. Shkruani ekipit tonë.", "No messages yet. Write to our team.")}
+            {tUi("no_messages_yet_write_to_our_team")}
           </p>
         ) : (
           messages.map((msg) => {
@@ -95,17 +96,17 @@ export function PortalProjectMessages({
       <div className="space-y-3 border-t border-border/60 bg-muted/15 p-4">
         <div className="flex items-center gap-2 text-sm font-medium">
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          {t("Shkruani mesazh", "Write a message")}
+          {tUi("write_a_message")}
         </div>
         <Textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={3}
-          placeholder={t("Mesazhi juaj për IT Arena…", "Your message to IT Arena…")}
+          placeholder={tUi("your_message_to_it_arena")}
         />
         <Button size="sm" disabled={sending || !body.trim()} onClick={() => void sendMessage()}>
           {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {t("Dërgo", "Send")}
+          {tUi("send")}
         </Button>
       </div>
     </div>

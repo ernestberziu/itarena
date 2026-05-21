@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -77,7 +78,7 @@ export function AdminClientRowActions({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [danger, setDanger] = useState<null | "delete" | "suspend" | "activate">(null);
@@ -106,11 +107,11 @@ export function AdminClientRowActions({
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: string }).error ?? "Request failed");
       }
-      toast.success(t("Klienti u fshi", "Client removed"));
+      toast.success(tUi("client_removed"));
       setDanger(null);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -122,13 +123,13 @@ export function AdminClientRowActions({
       await patchBody({ isActive: next });
       toast.success(
         next
-          ? t("Llogaria u aktivizua", "Account activated")
-          : t("Llogaria u pezullua", "Account suspended")
+          ? tUi("account_activated")
+          : tUi("account_suspended")
       );
       setDanger(null);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -138,35 +139,35 @@ export function AdminClientRowActions({
     <>
       <DropdownMenuItem render={<Link href={detailHref} />}>
         <Eye className="mr-2 h-4 w-4" />
-        {t("Shiko klientin", "View customer")}
+        {tUi("view_customer")}
       </DropdownMenuItem>
       <DropdownMenuItem render={<Link href={`${detailHref}#account`} />}>
         <Pencil className="mr-2 h-4 w-4" />
-        {t("Ndrysho", "Edit")}
+        {tUi("edit")}
       </DropdownMenuItem>
       <DropdownMenuItem onClick={() => setAssignOpen(true)}>
         <Building2 className="mr-2 h-4 w-4" />
-        {t("Cakto kompani", "Assign company")}
+        {tUi("assign_company")}
       </DropdownMenuItem>
       {user.hasPortalAccess ? (
         <DropdownMenuItem onClick={() => setResetOpen(true)}>
           <KeyRound className="mr-2 h-4 w-4" />
-          {t("Rivendos fjalëkalimin", "Reset password")}
+          {tUi("reset_password")}
         </DropdownMenuItem>
       ) : (
         <DropdownMenuItem onClick={() => setInviteOpen(true)}>
           <Mail className="mr-2 h-4 w-4" />
-          {t("Fto në portal", "Invite to portal")}
+          {tUi("invite_to_portal")}
         </DropdownMenuItem>
       )}
       <DropdownMenuSeparator />
       <DropdownMenuItem render={<Link href={ticketsHref} />}>
         <Ticket className="mr-2 h-4 w-4" />
-        {t("Biletat", "Tickets")}
+        {tUi("tickets")}
       </DropdownMenuItem>
       <DropdownMenuItem render={<Link href={ordersHref} />}>
         <Package className="mr-2 h-4 w-4" />
-        {t("Porositë", "Orders")}
+        {tUi("orders")}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       {user.email ? (
@@ -175,17 +176,17 @@ export function AdminClientRowActions({
             onClick={() => copyText(user.email!, "Emaili u kopjua", "Email copied", locale)}
           >
             <Copy className="mr-2 h-4 w-4" />
-            {t("Kopjo emailin", "Copy email")}
+            {tUi("copy_email")}
           </DropdownMenuItem>
           <DropdownMenuItem render={<a href={`mailto:${user.email}`} />}>
             <Mail className="mr-2 h-4 w-4" />
-            {t("Dërgo email", "Send email")}
+            {tUi("send_email")}
           </DropdownMenuItem>
         </>
       ) : null}
       <DropdownMenuItem onClick={() => copyText(user.id, "ID u kopjua", "ID copied", locale)}>
         <Copy className="mr-2 h-4 w-4" />
-        {t("Kopjo ID", "Copy ID")}
+        {tUi("copy_id")}
       </DropdownMenuItem>
       <StartDirectMessageMenuItem
         participantId={user.id}
@@ -202,7 +203,7 @@ export function AdminClientRowActions({
           onClick={() => setDanger("suspend")}
         >
           <UserX className="mr-2 h-4 w-4" />
-          {t("Pezullo", "Suspend")}
+          {tUi("suspend")}
         </DropdownMenuItem>
       ) : (
         <DropdownMenuItem
@@ -210,7 +211,7 @@ export function AdminClientRowActions({
           onClick={() => setDanger("activate")}
         >
           <UserCheck className="mr-2 h-4 w-4" />
-          {t("Aktivizo", "Activate")}
+          {tUi("activate")}
         </DropdownMenuItem>
       )}
       <DropdownMenuItem
@@ -218,7 +219,7 @@ export function AdminClientRowActions({
         onClick={() => setDanger("delete")}
       >
         <Trash2 className="mr-2 h-4 w-4" />
-        {t("Fshi", "Delete")}
+        {tUi("delete")}
       </DropdownMenuItem>
     </>
   );
@@ -228,25 +229,25 @@ export function AdminClientRowActions({
       <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
         <Link href={detailHref} onClick={() => setSheetOpen(false)}>
           <Eye className="mr-2 h-4 w-4 shrink-0" />
-          {t("Shiko klientin", "View customer")}
+          {tUi("view_customer")}
         </Link>
       </Button>
       <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
         <Link href={`${detailHref}#account`} onClick={() => setSheetOpen(false)}>
           <Pencil className="mr-2 h-4 w-4 shrink-0" />
-          {t("Ndrysho", "Edit")}
+          {tUi("edit")}
         </Link>
       </Button>
       <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
         <Link href={ticketsHref} onClick={() => setSheetOpen(false)}>
           <Ticket className="mr-2 h-4 w-4 shrink-0" />
-          {t("Biletat", "Tickets")}
+          {tUi("tickets")}
         </Link>
       </Button>
       <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
         <Link href={ordersHref} onClick={() => setSheetOpen(false)}>
           <Package className="mr-2 h-4 w-4 shrink-0" />
-          {t("Porositë", "Orders")}
+          {tUi("orders")}
         </Link>
       </Button>
       <Button
@@ -258,7 +259,7 @@ export function AdminClientRowActions({
         }}
       >
         <Copy className="mr-2 h-4 w-4 shrink-0" />
-        {t("Kopjo ID", "Copy ID")}
+        {tUi("copy_id")}
       </Button>
       {user.email ? (
         <>
@@ -271,12 +272,12 @@ export function AdminClientRowActions({
             }}
           >
             <Copy className="mr-2 h-4 w-4 shrink-0" />
-            {t("Kopjo emailin", "Copy email")}
+            {tUi("copy_email")}
           </Button>
           <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
             <a href={`mailto:${user.email}`}>
               <Mail className="mr-2 h-4 w-4 shrink-0" />
-              {t("Dërgo email", "Send email")}
+              {tUi("send_email")}
             </a>
           </Button>
         </>
@@ -290,7 +291,7 @@ export function AdminClientRowActions({
           }}
         >
           <Mail className="mr-2 h-4 w-4 shrink-0" />
-          {t("Fto në portal", "Invite to portal")}
+          {tUi("invite_to_portal")}
         </Button>
       )}
       <StartDirectMessageButton
@@ -312,7 +313,7 @@ export function AdminClientRowActions({
           }}
         >
           <UserX className="mr-2 h-4 w-4 shrink-0" />
-          {t("Pezullo", "Suspend")}
+          {tUi("suspend")}
         </Button>
       ) : (
         <Button
@@ -324,7 +325,7 @@ export function AdminClientRowActions({
           }}
         >
           <UserCheck className="mr-2 h-4 w-4 shrink-0" />
-          {t("Aktivizo", "Activate")}
+          {tUi("activate")}
         </Button>
       )}
       <Button
@@ -336,7 +337,7 @@ export function AdminClientRowActions({
         }}
       >
         <Trash2 className="mr-2 h-4 w-4 shrink-0" />
-        {t("Fshi", "Delete")}
+        {tUi("delete")}
       </Button>
     </div>
   );
@@ -352,7 +353,7 @@ export function AdminClientRowActions({
                   variant="outline"
                   size="icon"
                   className="h-8 w-8 shrink-0"
-                  aria-label={t("Veprime", "Actions")}
+                  aria-label={tUi("actions")}
                 />
               }
             >
@@ -371,7 +372,7 @@ export function AdminClientRowActions({
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
-                  aria-label={t("Veprime", "Actions")}
+                  aria-label={tUi("actions")}
                 />
               }
             >
@@ -392,13 +393,10 @@ export function AdminClientRowActions({
       <ConfirmDangerDialog
         open={danger === "delete"}
         onOpenChange={(o) => !o && setDanger(null)}
-        title={t("Fshi klientin?", "Delete client?")}
-        description={t(
-          "Ky veprim është i përhershëm. Përdoruesi dhe të dhënat e lidhura mund të preken sipas politikës së sistemit.",
-          "This action is permanent. Related data may be affected per system policy."
-        )}
-        confirmLabel={t("Fshi", "Delete")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("delete_client")}
+        description={tUi("this_action_is_permanent_related_data_may_be_aff")}
+        confirmLabel={tUi("delete")}
+        cancelLabel={tUi("cancel")}
         loading={loading}
         onConfirm={deleteUser}
       />
@@ -406,13 +404,10 @@ export function AdminClientRowActions({
       <ConfirmDangerDialog
         open={danger === "suspend"}
         onOpenChange={(o) => !o && setDanger(null)}
-        title={t("Pezullo llogarinë?", "Suspend account?")}
-        description={t(
-          "Klienti nuk do të mund të hyjë në portal derisa ta riaktivizoni.",
-          "The client will not be able to sign in until you reactivate."
-        )}
-        confirmLabel={t("Pezullo", "Suspend")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("suspend_account")}
+        description={tUi("the_client_will_not_be_able_to_sign_in_until_you")}
+        confirmLabel={tUi("suspend")}
+        cancelLabel={tUi("cancel")}
         loading={loading}
         onConfirm={() => setActive(false)}
       />
@@ -420,13 +415,10 @@ export function AdminClientRowActions({
       <ConfirmDangerDialog
         open={danger === "activate"}
         onOpenChange={(o) => !o && setDanger(null)}
-        title={t("Aktivizo llogarinë?", "Activate account?")}
-        description={t(
-          "Klienti do të mund të përdorë përsëri portalin.",
-          "The client will be able to use the portal again."
-        )}
-        confirmLabel={t("Aktivizo", "Activate")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("activate_account")}
+        description={tUi("the_client_will_be_able_to_use_the_portal_again")}
+        confirmLabel={tUi("activate")}
+        cancelLabel={tUi("cancel")}
         loading={loading}
         confirmVariant="default"
         onConfirm={() => setActive(true)}

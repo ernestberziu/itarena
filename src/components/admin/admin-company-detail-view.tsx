@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,7 +36,7 @@ export function AdminCompanyDetailView({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [addMemberOpen, setAddMemberOpen] = useState(false);
 
   async function unassignMember(userId: string) {
@@ -44,10 +45,10 @@ export function AdminCompanyDetailView({
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      toast.error((body as { error?: string }).error ?? t("Gabim", "Error"));
+      toast.error((body as { error?: string }).error ?? tUi("error"));
       return;
     }
-    toast.success(t("Klienti u shkëput", "Client unassigned"));
+    toast.success(tUi("client_unassigned"));
     router.refresh();
   }
 
@@ -63,18 +64,18 @@ export function AdminCompanyDetailView({
               <h1 className="text-2xl font-bold tracking-tight">{company.name}</h1>
               <p className="text-sm text-muted-foreground">
                 {[company.vatNumber, company.city, company.country].filter(Boolean).join(" · ") ||
-                  t("Pa NIPT", "No VAT")}
+                  tUi("no_vat")}
               </p>
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
-            {t("Krijuar", "Created")} {formatDate(company.createdAt)}
+            {tUi("created")} {formatDate(company.createdAt)}
           </div>
         </div>
 
         {company.members.length > 0 && (
           <div className="mt-4 flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">{t("Anëtarët", "Members")}:</span>
+            <span className="text-xs font-medium text-muted-foreground">{tUi("members")}:</span>
             <div className="flex -space-x-2">
               {company.members.slice(0, 5).map((m) => (
                 <div
@@ -97,14 +98,14 @@ export function AdminCompanyDetailView({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <AdminStatCard label={t("Anëtarë", "Members")} value={String(company._count.users)} icon={Users} />
-        <AdminStatCard label={t("Bileta", "Tickets")} value={String(company._count.tickets)} icon={Ticket} />
-        <AdminStatCard label={t("Porosi", "Orders")} value={String(company._count.orders)} icon={ShoppingBag} />
-        <AdminStatCard label={t("Oferta", "Quotes")} value={String(company._count.quotes)} icon={Building2} />
+        <AdminStatCard label={tUi("members_2")} value={String(company._count.users)} icon={Users} />
+        <AdminStatCard label={tUi("tickets_2")} value={String(company._count.tickets)} icon={Ticket} />
+        <AdminStatCard label={tUi("orders_2")} value={String(company._count.orders)} icon={ShoppingBag} />
+        <AdminStatCard label={tUi("quotes_2")} value={String(company._count.quotes)} icon={Building2} />
       </div>
 
       <div id="edit" className="scroll-mt-24">
-        <h2 className="mb-4 text-lg font-semibold">{t("Detajet e kompanisë", "Company details")}</h2>
+        <h2 className="mb-4 text-lg font-semibold">{tUi("company_details")}</h2>
         <AdminCompanyForm
           locale={locale}
           lp={lp}
@@ -123,26 +124,26 @@ export function AdminCompanyDetailView({
 
       <div id="members" className="scroll-mt-24 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">{t("Klientët e lidhur", "Linked clients")}</h2>
+          <h2 className="text-lg font-semibold">{tUi("linked_clients")}</h2>
           <Button onClick={() => setAddMemberOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
-            {t("Shto klient", "Add client")}
+            {tUi("add_client")}
           </Button>
         </div>
 
         {company.members.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 px-6 py-10 text-center text-sm text-muted-foreground">
-            {t("Asnjë klient i lidhur ende.", "No linked clients yet.")}
+            {tUi("no_linked_clients_yet")}
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border/60">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3">{t("Klienti", "Client")}</th>
+                  <th className="px-4 py-3">{tUi("client_2")}</th>
                   <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">{t("Hyrja e fundit", "Last login")}</th>
-                  <th className="px-4 py-3 text-right">{t("Veprime", "Actions")}</th>
+                  <th className="px-4 py-3">{tUi("last_login")}</th>
+                  <th className="px-4 py-3 text-right">{tUi("actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,9 +181,9 @@ export function AdminCompanyDetailView({
           {company.recentTickets.length > 0 && (
             <div className="rounded-xl border border-border/60 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-semibold">{t("Biletat e fundit", "Recent tickets")}</h3>
+                <h3 className="font-semibold">{tUi("recent_tickets")}</h3>
                 <Link href={`${lp}/admin/tickets?companyId=${company.id}`} className="text-xs text-primary">
-                  {t("Shiko të gjitha", "View all")} <ExternalLink className="inline h-3 w-3" />
+                  {tUi("view_all")} <ExternalLink className="inline h-3 w-3" />
                 </Link>
               </div>
               <ul className="space-y-2 text-sm">
@@ -199,9 +200,9 @@ export function AdminCompanyDetailView({
           {company.recentOrders.length > 0 && (
             <div className="rounded-xl border border-border/60 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-semibold">{t("Porositë e fundit", "Recent orders")}</h3>
+                <h3 className="font-semibold">{tUi("recent_orders")}</h3>
                 <Link href={`${lp}/admin/orders?companyId=${company.id}`} className="text-xs text-primary">
-                  {t("Shiko të gjitha", "View all")} <ExternalLink className="inline h-3 w-3" />
+                  {tUi("view_all")} <ExternalLink className="inline h-3 w-3" />
                 </Link>
               </div>
               <ul className="space-y-2 text-sm">

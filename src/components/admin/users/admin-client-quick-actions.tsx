@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Link from "next/link";
 import { Copy, Hash, Mail, Package, Ticket } from "lucide-react";
@@ -34,21 +35,21 @@ export function AdminClientQuickActions({
   ordersHref: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   return (
     <div className="flex flex-col gap-1.5">
       <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90">
-        {t("Shfleto", "Browse")}
+        {tUi("browse")}
       </p>
       <Link href={ticketsHref} className={cn(rowBase)}>
         <span className={iconWrap} aria-hidden>
           <Ticket className="h-4 w-4" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block leading-tight">{t("Biletat", "Tickets")}</span>
+          <span className="block leading-tight">{tUi("tickets")}</span>
           <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-            {t("Filtruar sipas këtij klienti", "Filtered to this client")}
+            {tUi("filtered_to_this_client")}
           </span>
         </span>
       </Link>
@@ -57,9 +58,9 @@ export function AdminClientQuickActions({
           <Package className="h-4 w-4" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block leading-tight">{t("Porositë", "Orders")}</span>
+          <span className="block leading-tight">{tUi("orders")}</span>
           <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-            {t("Porositë e këtij përdoruesi", "This user's orders")}
+            {tUi("this_user_s_orders")}
           </span>
         </span>
       </Link>
@@ -70,7 +71,7 @@ export function AdminClientQuickActions({
       />
 
       <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90">
-        {t("Kontakt", "Contact")}
+        {tUi("contact_2")}
       </p>
       {email ? (
         <>
@@ -83,7 +84,7 @@ export function AdminClientQuickActions({
               <Copy className="h-4 w-4" strokeWidth={2} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block leading-tight">{t("Kopjo emailin", "Copy email")}</span>
+              <span className="block leading-tight">{tUi("copy_email")}</span>
               <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">{email}</span>
             </span>
           </button>
@@ -92,9 +93,9 @@ export function AdminClientQuickActions({
               <Mail className="h-4 w-4" strokeWidth={2} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block leading-tight">{t("Dërgo email", "Send email")}</span>
+              <span className="block leading-tight">{tUi("send_email")}</span>
               <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-                {t("Hap klientin e postës", "Opens your mail app")}
+                {tUi("opens_your_mail_app")}
               </span>
             </span>
           </a>
@@ -102,8 +103,8 @@ export function AdminClientQuickActions({
       ) : (
         <p className="rounded-xl border border-amber-200/80 bg-amber-50/80 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
           {hasPortalAccess
-            ? t("Pa email në regjistrim", "No email on file")
-            : t("Pa email — pa ftesë", "No email — not invited")}
+            ? tUi("no_email_on_file")
+            : tUi("no_email_not_invited")}
         </p>
       )}
       <button
@@ -115,7 +116,7 @@ export function AdminClientQuickActions({
           <Hash className="h-4 w-4" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block leading-tight">{t("Kopjo ID", "Copy ID")}</span>
+          <span className="block leading-tight">{tUi("copy_id")}</span>
           <span className="mt-0.5 block truncate font-mono text-[11px] font-normal text-muted-foreground">
             {userId}
           </span>

@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -110,7 +111,7 @@ export function TicketDetailView({
   const canOwnerActions = isOwner && !readOnlyForViewer;
   const canComment = isStaff || ticket.status !== "CLOSED";
 
-  const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const tUi = useUiT();
 
   const engineerById = useMemo(() => {
     const m = new Map<string, string>();
@@ -189,12 +190,12 @@ export function TicketDetailView({
     });
     setSubmitting(false);
     if (!res.ok) {
-      toast.error(t("Gabim gjatë dërgimit", "Error submitting comment"));
+      toast.error(tUi("error_submitting_comment"));
       return;
     }
     setComment("");
     if (isStaff) setIsInternal(false);
-    toast.success(t("Komenti u shtua", "Comment added"));
+    toast.success(tUi("comment_added"));
     router.refresh();
   }
 
@@ -205,10 +206,10 @@ export function TicketDetailView({
       body: JSON.stringify({ status }),
     });
     if (!res.ok) {
-      toast.error(t("Gabim", "Error"));
+      toast.error(tUi("error"));
       return;
     }
-    toast.success(t("Statusi u ndryshua", "Status updated"));
+    toast.success(tUi("status_updated"));
     router.refresh();
   }
 
@@ -219,7 +220,7 @@ export function TicketDetailView({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rating: stars }),
     });
-    toast.success(t("Faleminderit për vlerësimin!", "Thank you for your rating!"));
+    toast.success(tUi("thank_you_for_your_rating"));
     router.refresh();
   }
 
@@ -229,7 +230,7 @@ export function TicketDetailView({
     <div className="mx-auto w-full max-w-6xl space-y-6 pb-10">
       <nav className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
         <Link href={backHref} className="transition-colors hover:text-foreground">
-          {t("Biletat", "Tickets")}
+          {tUi("tickets")}
         </Link>
         <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
         <span className="font-mono text-foreground/80">{ticket.number}</span>
@@ -261,7 +262,7 @@ export function TicketDetailView({
             {isStaff && ticket.assignedTo ? (
               <div className="flex items-center py-2 sm:px-4 sm:py-0">
                 <span>
-                  {t("Inxhinieri", "Engineer")}: {ticket.assignedTo.firstName} {ticket.assignedTo.lastName}
+                  {tUi("engineer")}: {ticket.assignedTo.firstName} {ticket.assignedTo.lastName}
                 </span>
               </div>
             ) : null}
@@ -275,7 +276,7 @@ export function TicketDetailView({
         <Button variant="outline" size="sm" asChild className="shrink-0 border-border/60 shadow-sm">
           <Link href={backHref}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("Kthehu", "Back")}
+            {tUi("back")}
           </Link>
         </Button>
       </div>
@@ -284,7 +285,7 @@ export function TicketDetailView({
         <div className="space-y-6 lg:col-span-2">
           <section className="admin-card-elevated rounded-2xl border p-6 shadow-sm border-[var(--admin-card-border)]">
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("Përshkrimi", "Description")}
+              {tUi("description")}
             </h2>
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/95">{ticket.description}</p>
           </section>
@@ -293,16 +294,16 @@ export function TicketDetailView({
             <div className="flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 text-base font-semibold">
                 <History className="h-4 w-4 text-muted-foreground" />
-                {t("Aktiviteti", "Activity")}
+                {tUi("activity")}
               </h2>
               <span className="text-xs text-muted-foreground">
-                {activity.length} {t("ngjarje", "events")}
+                {activity.length} {tUi("events")}
               </span>
             </div>
 
             {activity.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border/80 bg-muted/20 px-6 py-12 text-center text-sm text-muted-foreground">
-                {t("Nuk ka aktivitet ende.", "No activity yet.")}
+                {tUi("no_activity_yet")}
               </div>
             ) : (
               <ul className="relative space-y-2 before:absolute before:bottom-2 before:left-[13px] before:top-2 before:w-px before:bg-border/80">
@@ -380,7 +381,7 @@ export function TicketDetailView({
                       <div className="min-w-0 flex-1 rounded-lg border border-border/50 bg-muted/15 px-3 py-2">
                         <div className="mb-1 flex items-center justify-between gap-2">
                           <span className="rounded bg-muted/80 px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                            {t("Status", "Status")}
+                            {tUi("status")}
                           </span>
                           <time className="text-xs text-muted-foreground">{timeAgo(h.createdAt)}</time>
                         </div>
@@ -402,14 +403,14 @@ export function TicketDetailView({
               <CardHeader className="border-b pb-3">
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                   <MessageSquare className="h-4 w-4" />
-                  {t("Shto Koment", "Add Comment")}
+                  {tUi("add_comment")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 pt-4">
                 {isStaff ? (
                   <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
                     <span className="text-xs font-medium text-muted-foreground">
-                      {t("Dukshmëria", "Visibility")}
+                      {tUi("visibility")}
                     </span>
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -427,11 +428,11 @@ export function TicketDetailView({
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={4}
-                  placeholder={t("Shkruani komentin tuaj...", "Write your comment...")}
+                  placeholder={tUi("write_your_comment")}
                 />
                 <Button onClick={() => void submitComment()} disabled={submitting || !comment.trim()}>
                   {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {t("Dërgo", "Submit")}
+                  {tUi("submit")}
                 </Button>
               </CardContent>
             </Card>
@@ -440,7 +441,7 @@ export function TicketDetailView({
           {ticket.status === "RESOLVED" && canOwnerActions ? (
             <Card className="admin-card-elevated">
               <CardContent className="p-4">
-                <p className="mb-3 text-sm font-medium">{t("Vlerëso Shërbimin", "Rate the Service")}</p>
+                <p className="mb-3 text-sm font-medium">{tUi("rate_the_service")}</p>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button key={star} type="button" onClick={() => void submitRating(star)} className="transition-transform hover:scale-110">
@@ -462,32 +463,32 @@ export function TicketDetailView({
           {showStaffActions ? (
             <Card className="admin-card-elevated">
               <CardHeader className="border-b pb-3">
-                <CardTitle className="text-sm">{t("Veprime", "Actions")}</CardTitle>
+                <CardTitle className="text-sm">{tUi("actions")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 pt-4">
                 {ticket.status === "OPEN" ? (
                   <Button size="sm" className="w-full" onClick={() => void updateStatus("IN_PROGRESS")}>
-                    {t("Fillo Punën", "Start Working")}
+                    {tUi("start_working")}
                   </Button>
                 ) : null}
                 {ticket.status === "IN_PROGRESS" ? (
                   <>
                     <Button size="sm" className="w-full" onClick={() => void updateStatus("RESOLVED")}>
-                      {t("Shëno si Zgjidhur", "Mark Resolved")}
+                      {tUi("mark_resolved")}
                     </Button>
                     <Button size="sm" variant="outline" className="w-full" onClick={() => void updateStatus("PENDING_CLIENT")}>
-                      {t("Pret Klientin", "Pending Client")}
+                      {tUi("pending_client")}
                     </Button>
                     <Button size="sm" variant="outline" className="w-full gap-2" onClick={() => void updateStatus("PAUSED")}>
                       <Pause className="h-4 w-4" />
-                      {t("Pezullo", "Pause")}
+                      {tUi("pause")}
                     </Button>
                   </>
                 ) : null}
                 {ticket.status === "PAUSED" ? (
                   <Button size="sm" className="w-full gap-2" onClick={() => void updateStatus("IN_PROGRESS")}>
                     <Play className="h-4 w-4" />
-                    {t("Vazhdo punën", "Resume work")}
+                    {tUi("resume_work")}
                   </Button>
                 ) : null}
               </CardContent>
@@ -496,28 +497,28 @@ export function TicketDetailView({
 
           <Card className="admin-card-elevated">
             <CardHeader className="border-b pb-3">
-              <CardTitle className="text-sm font-semibold">{t("Detajet", "Details")}</CardTitle>
+              <CardTitle className="text-sm font-semibold">{tUi("details")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 pt-4">
               <div>
-                <p className="mb-1 text-xs text-muted-foreground">{t("Statusi", "Status")}</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tUi("status")}</p>
                 <TicketStatusBadge status={ticket.status} locale={locale} />
               </div>
               <Separator />
               <div>
-                <p className="mb-1 text-xs text-muted-foreground">{t("Prioriteti", "Priority")}</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tUi("priority")}</p>
                 <PriorityBadge priority={ticket.priority} locale={locale} />
               </div>
               <Separator />
               <div>
-                <p className="mb-1 text-xs text-muted-foreground">{t("Divisioni", "Division")}</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tUi("division")}</p>
                 <p className="text-sm">{divLabel}</p>
               </div>
               {ticket.company ? (
                 <>
                   <Separator />
                   <div>
-                    <p className="mb-1 text-xs text-muted-foreground">{t("Kompania", "Company")}</p>
+                    <p className="mb-1 text-xs text-muted-foreground">{tUi("company")}</p>
                     <p className="text-sm">{ticket.company.name}</p>
                   </div>
                 </>

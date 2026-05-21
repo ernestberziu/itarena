@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -54,21 +55,21 @@ const patchSchema = z
 export async function PATCH(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiErr(req, "unauthorized", 401);
   }
 
   const denied = await assertAdminApiAcl(session.user.id, "profile", "write");
   if (denied) return denied;
 
   if (!STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = patchSchema.safeParse(body);
@@ -87,7 +88,7 @@ export async function PATCH(req: NextRequest) {
     select: { id: true, passwordHash: true, phone: true },
   });
   if (!user?.passwordHash) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(req, "notFound", 404);
   }
 
   const updateData: { phone?: string | null; passwordHash?: string } = {};
@@ -117,7 +118,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (Object.keys(updateData).length === 0) {
-    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    return apiErr(req, "noFieldsToUpdate", 400);
   }
 
   try {
@@ -131,7 +132,7 @@ export async function PATCH(req: NextRequest) {
       }
     });
   } catch {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return apiErr(req, "updateFailed", 500);
   }
 
   if (clearSessions) {

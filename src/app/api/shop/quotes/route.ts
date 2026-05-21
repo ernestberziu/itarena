@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -25,24 +26,24 @@ export async function POST(req: NextRequest) {
     const parsed = bodySchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Të dhënat janë të pavlefshme" }, { status: 400 });
+      return apiErr(req, "shopInvalidData", 400);
     }
 
     const { sku, productId, productName, quantity, name, company, email, phone, notes } = parsed.data;
     const kod = (sku ?? productId)?.trim();
     if (!kod) {
-      return NextResponse.json({ error: "Mungon sku (kodi ERP)" }, { status: 400 });
+      return apiErr(req, "shopMissingSku", 400);
     }
 
     let erpProduct;
     try {
       erpProduct = await getFinanca5Client().getProductByKod(kod);
     } catch {
-      return NextResponse.json({ error: "Produkti nuk u gjet" }, { status: 404 });
+      return apiErr(req, "shopProductNotFound", 404);
     }
 
     if (!erpProduct.isActive) {
-      return NextResponse.json({ error: "Produkti nuk është aktiv" }, { status: 400 });
+      return apiErr(req, "shopProductInactive", 400);
     }
 
     const unitPriceExVat = erpProduct.price;
@@ -130,6 +131,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: quote.id, quoteNumber: quote.quoteNumber }, { status: 201 });
   } catch (error) {
     console.error("Shop quote error:", error);
-    return NextResponse.json({ error: "Gabim i serverit" }, { status: 500 });
+    return apiErr(req, "serverError", 500);
   }
 }

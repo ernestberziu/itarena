@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState, type ReactElement } from "react";
 import { Plus, BarChart3 } from "lucide-react";
@@ -42,7 +43,7 @@ export function AdminPosFab({
   locale: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [menuOpen, setMenuOpen] = useState(false);
   const [saleOpen, setSaleOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -66,7 +67,7 @@ export function AdminPosFab({
         {both && menuOpen ? (
           <>
             <FabTooltip
-              label={t("Shitjet ditore", "Daily sales")}
+              label={tUi("daily_sales")}
               render={
                 <Button
                   type="button"
@@ -76,12 +77,12 @@ export function AdminPosFab({
                   onClick={openReport}
                 >
                   <BarChart3 className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                  <span className="font-medium">{t("Shitjet ditore", "Daily sales")}</span>
+                  <span className="font-medium">{tUi("daily_sales")}</span>
                 </Button>
               }
             />
             <FabTooltip
-              label={t("Shitje e re", "New sale")}
+              label={tUi("new_sale")}
               render={
                 <Button
                   type="button"
@@ -91,7 +92,7 @@ export function AdminPosFab({
                   onClick={openSale}
                 >
                   <Plus className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                  <span className="font-medium">{t("Shitje e re", "New sale")}</span>
+                  <span className="font-medium">{tUi("new_sale")}</span>
                 </Button>
               }
             />
@@ -100,7 +101,7 @@ export function AdminPosFab({
 
         {onlyReport ? (
           <FabTooltip
-            label={t("Shitjet ditore POS", "Daily POS sales")}
+            label={tUi("daily_pos_sales")}
             render={
               <Button
                 type="button"
@@ -118,9 +119,9 @@ export function AdminPosFab({
             label={
               both
                 ? menuOpen
-                  ? t("Mbyll menunë", "Close menu")
-                  : t("Menu POS", "POS menu")
-                : t("Shitje e re", "New sale")
+                  ? tUi("close_menu")
+                  : tUi("pos_menu")
+                : tUi("new_sale")
             }
             render={
               <Button

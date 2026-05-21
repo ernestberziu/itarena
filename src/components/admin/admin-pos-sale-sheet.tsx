@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Search, Trash2, ShoppingCart } from "lucide-react";
@@ -33,7 +34,7 @@ export function AdminPosSaleSheet({
   locale: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState<PosProductRow[]>([]);
@@ -160,7 +161,7 @@ export function AdminPosSaleSheet({
       if (idx >= 0) {
         const line = prev[idx]!;
         if (line.quantity >= product.stock) {
-          toast.error(t("Stoku maksimal", "Max stock reached"));
+          toast.error(tUi("max_stock_reached"));
           return prev;
         }
         return prev.map((l, i) =>
@@ -182,13 +183,13 @@ export function AdminPosSaleSheet({
       );
       const json = (await res.json()) as { product?: PosProductRow; error?: string };
       if (!res.ok || !json.product) {
-        toast.error(json.error ?? t("Nuk u gjet", "Not found"));
+        toast.error(json.error ?? tUi("not_found"));
         return;
       }
       addToCart(json.product);
       setQuery("");
     } catch {
-      toast.error(t("Gabim kërkimi", "Lookup failed"));
+      toast.error(tUi("lookup_failed"));
     }
   }
 
@@ -200,7 +201,7 @@ export function AdminPosSaleSheet({
           const next = l.quantity + delta;
           if (next <= 0) return null;
           if (next > l.stock) {
-            toast.error(t("Stoku maksimal", "Max stock reached"));
+            toast.error(tUi("max_stock_reached"));
             return l;
           }
           return { ...l, quantity: next };
@@ -211,11 +212,11 @@ export function AdminPosSaleSheet({
 
   async function completeSale() {
     if (cart.length === 0) {
-      toast.error(t("Shtoni produkte", "Add products"));
+      toast.error(tUi("add_products"));
       return;
     }
     if (customerMode === "registered" && !selectedClient) {
-      toast.error(t("Zgjidhni klientin", "Select a customer"));
+      toast.error(tUi("select_a_customer"));
       return;
     }
 
@@ -246,10 +247,10 @@ export function AdminPosSaleSheet({
         "_blank",
         "noopener,noreferrer"
       );
-      toast.success(t("Shitja u regjistrua", "Sale completed"));
+      toast.success(tUi("sale_completed"));
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setCompleting(false);
     }
@@ -264,14 +265,14 @@ export function AdminPosSaleSheet({
         <SheetHeader className="border-b px-4 py-3">
           <SheetTitle className="flex items-center gap-2 text-base">
             <ShoppingCart className="h-5 w-5 text-primary" strokeWidth={2} aria-hidden />
-            {t("Shitje POS", "POS sale")}
+            {tUi("pos_sale")}
           </SheetTitle>
         </SheetHeader>
 
         <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 md:grid-cols-2">
           <div className="flex min-h-0 flex-col border-b md:border-b-0 md:border-r">
             <div className="space-y-2 border-b p-4">
-              <Label htmlFor="pos-search">{t("Kërko SKU / barkod / emër", "Search SKU / barcode / name")}</Label>
+              <Label htmlFor="pos-search">{tUi("search_sku_barcode_name")}</Label>
               <div className="relative">
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -284,33 +285,24 @@ export function AdminPosSaleSheet({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
-                  placeholder={t(
-                    "SKU, barkod ose emër (min. 2 shkronja)…",
-                    "SKU, barcode or name (min. 2 chars)…"
-                  )}
+                  placeholder={tUi("sku_barcode_or_name_min_2_chars")}
                   autoFocus
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                {t(
-                  "Shtyp Enter për skanim barkodi / SKU të plotë.",
-                  "Press Enter to scan full barcode / SKU."
-                )}
+                {tUi("press_enter_to_scan_full_barcode_sku")}
               </p>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
               {query.trim().length < MIN_PRODUCT_SEARCH ? (
                 <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                  {t(
-                    "Shkruani të paktën 2 karaktere për të kërkuar në katalog.",
-                    "Type at least 2 characters to search the catalog."
-                  )}
+                  {tUi("type_at_least_2_characters_to_search_the_catalog")}
                 </p>
               ) : loadingProducts ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">…</p>
               ) : products.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
-                  {t("Nuk u gjet produkt.", "No products found.")}
+                  {tUi("no_products_found")}
                 </p>
               ) : (
                 <ul className="divide-y divide-border/60">
@@ -331,7 +323,7 @@ export function AdminPosSaleSheet({
                         <div className="shrink-0 text-right text-xs">
                           <p className="font-semibold">{formatPrice(p.price)}</p>
                           <p className="text-muted-foreground">
-                            {t("Stok", "Stock")}: {p.stock}
+                            {tUi("stock")}: {p.stock}
                           </p>
                         </div>
                       </button>
@@ -344,7 +336,7 @@ export function AdminPosSaleSheet({
 
           <div className="flex min-h-0 flex-col">
             <div className="space-y-3 border-b p-4">
-              <Label>{t("Klienti", "Customer")}</Label>
+              <Label>{tUi("customer")}</Label>
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -352,7 +344,7 @@ export function AdminPosSaleSheet({
                   variant={customerMode === "cash" ? "default" : "outline"}
                   onClick={selectCashMode}
                 >
-                  {t("Klient me para në dorë", "Cash client")}
+                  {tUi("cash_client")}
                 </Button>
                 <Button
                   type="button"
@@ -360,7 +352,7 @@ export function AdminPosSaleSheet({
                   variant={customerMode === "registered" ? "default" : "outline"}
                   onClick={selectRegisteredMode}
                 >
-                  {t("Klient i regjistruar", "Registered client")}
+                  {tUi("registered_client")}
                 </Button>
               </div>
               {customerMode === "registered" ? (
@@ -382,7 +374,7 @@ export function AdminPosSaleSheet({
                         className="shrink-0 text-xs"
                         onClick={() => setSelectedClient(null)}
                       >
-                        {t("Ndrysho", "Change")}
+                        {tUi("change")}
                       </Button>
                     </div>
                   ) : (
@@ -390,24 +382,18 @@ export function AdminPosSaleSheet({
                       <Input
                         value={clientQuery}
                         onChange={(e) => setClientQuery(e.target.value)}
-                        placeholder={t(
-                          "Emër, email ose telefon (min. 2 shkronja)…",
-                          "Name, email or phone (min. 2 chars)…"
-                        )}
+                        placeholder={tUi("name_email_or_phone_min_2_chars")}
                         autoComplete="off"
                       />
                       {clientQuery.trim().length < MIN_CLIENT_SEARCH ? (
                         <p className="text-xs text-muted-foreground">
-                          {t(
-                            "Shkruani të paktën 2 karaktere për të kërkuar.",
-                            "Type at least 2 characters to search."
-                          )}
+                          {tUi("type_at_least_2_characters_to_search")}
                         </p>
                       ) : loadingClients ? (
                         <p className="text-xs text-muted-foreground">…</p>
                       ) : clients.length === 0 ? (
                         <p className="text-xs text-muted-foreground">
-                          {t("Nuk u gjet klient.", "No clients found.")}
+                          {tUi("no_clients_found")}
                         </p>
                       ) : (
                         <ul className="max-h-36 overflow-y-auto rounded-lg border divide-y">
@@ -443,7 +429,7 @@ export function AdminPosSaleSheet({
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
               {cart.length === 0 ? (
                 <p className="py-8 text-center text-sm text-muted-foreground">
-                  {t("Shporta është bosh", "Cart is empty")}
+                  {tUi("cart_is_empty")}
                 </p>
               ) : (
                 <ul className="divide-y divide-border/60">
@@ -495,7 +481,7 @@ export function AdminPosSaleSheet({
 
             <div className="border-t p-4 space-y-3">
               <div className="flex items-center justify-between text-sm font-semibold">
-                <span>{t("Totali", "Total")}</span>
+                <span>{tUi("total")}</span>
                 <span>{formatPrice(cartTotal)}</span>
               </div>
               <Button
@@ -506,7 +492,7 @@ export function AdminPosSaleSheet({
               >
                 {completing
                   ? "…"
-                  : t("Përfundo shitjen & printo", "Complete sale & print")}
+                  : tUi("complete_sale_print")}
               </Button>
             </div>
           </div>

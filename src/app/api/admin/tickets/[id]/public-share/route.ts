@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -19,7 +20,7 @@ const postSchema = z.object({
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "tickets", "read");
   if (denied) return denied;
 
@@ -28,9 +29,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     where: { id: ticketId },
     select: { id: true, assignedToId: true },
   });
-  if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ticket) return apiErr(_req, "notFound", 404);
   if (!(await canStaffAccessTicket(session.user.id, ticket))) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(_req, "notFound", 404);
   }
 
   const shares = await db.clientResourceShare.findMany({
@@ -48,7 +49,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
   if (denied) return denied;
 
@@ -57,9 +58,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     where: { id: ticketId },
     select: { id: true, assignedToId: true },
   });
-  if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ticket) return apiErr(req, "notFound", 404);
   if (!(await canStaffAccessTicket(session.user.id, ticket))) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(req, "notFound", 404);
   }
 
   const parsed = postSchema.safeParse(await req.json().catch(() => ({})));

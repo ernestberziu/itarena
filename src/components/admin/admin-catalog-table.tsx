@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -39,7 +40,7 @@ export function AdminCatalogTable({
   const [editRow, setEditRow] = useState<AdminCatalogRow | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const reduceMotion = useReducedMotion();
-  const th = (sq: string, enLabel: string) => (locale === "en" ? enLabel : sq);
+  const thUi = useUiT();
 
   const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount, loadNext } =
     useInfiniteList({
@@ -59,7 +60,7 @@ export function AdminCatalogTable({
       {
         id: "product",
         accessorFn: (row) => (locale === "sq" ? row.nameSq : row.nameEn).toLowerCase(),
-        header: th("Produkti", "Product"),
+        header: thUi("product"),
         enableSorting: true,
         meta: {
           headerClassName: "max-w-[13rem] xl:max-w-[16rem]",
@@ -119,7 +120,7 @@ export function AdminCatalogTable({
         id: "category",
         accessorFn: (row) =>
           (locale === "sq" ? row.category.nameSq : row.category.nameEn).toLowerCase(),
-        header: th("Kategoria", "Category"),
+        header: thUi("category"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground">
@@ -130,7 +131,7 @@ export function AdminCatalogTable({
       {
         id: "retail",
         accessorFn: (row) => Number(row.priceRetail) || 0,
-        header: th("Retail", "Retail"),
+        header: thUi("retail"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="font-medium tabular-nums">{formatPrice(Number(row.original.priceRetail))}</span>
@@ -139,7 +140,7 @@ export function AdminCatalogTable({
       {
         id: "b2b",
         accessorFn: (row) => Number(row.priceB2b) || 0,
-        header: th("B2B", "B2B"),
+        header: thUi("b2b"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="font-medium tabular-nums">{formatPrice(Number(row.original.priceB2b))}</span>
@@ -147,7 +148,7 @@ export function AdminCatalogTable({
       },
       {
         accessorKey: "stock",
-        header: th("Stok", "Stock"),
+        header: thUi("stock"),
         enableSorting: true,
         cell: ({ row }) => {
           const lowStock = row.original.stock <= row.original.lowStockAt;
@@ -156,14 +157,14 @@ export function AdminCatalogTable({
               className={`text-sm font-semibold tabular-nums ${lowStock ? "text-red-500" : "text-foreground"}`}
             >
               {row.original.stock}
-              {lowStock && <span className="ml-1 text-xs font-normal">{th("(i ulët)", "(low)")}</span>}
+              {lowStock && <span className="ml-1 text-xs font-normal">{thUi("low")}</span>}
             </span>
           );
         },
       },
       {
         accessorKey: "isActive",
-        header: th("Aktiv", "Active"),
+        header: thUi("active"),
         enableSorting: true,
         sortingFn: (a, b) => Number(a.original.isActive) - Number(b.original.isActive),
         cell: ({ row }) =>
@@ -175,7 +176,7 @@ export function AdminCatalogTable({
       },
       {
         id: "actions",
-        header: th("Veprime", "Actions"),
+        header: thUi("actions"),
         enableSorting: false,
         cell: ({ row }) => {
           const href = shopUrl(`products/${encodeURIComponent(row.original.sku)}`);
@@ -184,7 +185,7 @@ export function AdminCatalogTable({
               <Button variant="outline" size="sm" className="h-8 gap-1 px-2" asChild>
                 <Link href={href} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="h-3.5 w-3.5" />
-                  {th("Shiko", "View")}
+                  {thUi("view")}
                 </Link>
               </Button>
               <Button
@@ -195,7 +196,7 @@ export function AdminCatalogTable({
                 onClick={() => setEditRow(row.original)}
               >
                 <Pencil className="h-3.5 w-3.5" />
-                {th("Ndrysho", "Edit")}
+                {thUi("edit")}
               </Button>
             </div>
           );
@@ -213,7 +214,7 @@ export function AdminCatalogTable({
     getSortedRowModel: getSortedRowModel(),
   });
 
-  const emptyMessage = th("Nuk ka produkte", "No products");
+  const emptyMessage = thUi("no_products");
 
   function productImage(row: AdminCatalogRow): string | undefined {
     try {
@@ -296,7 +297,7 @@ export function AdminCatalogTable({
                       <span
                         className={`text-xs font-semibold tabular-nums ${lowStock ? "text-red-500" : "text-muted-foreground"}`}
                       >
-                        {th("Stok", "Stock")}: {row.stock}
+                        {thUi("stock")}: {row.stock}
                       </span>
                       {row.isActive ? (
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-hidden />
@@ -314,7 +315,7 @@ export function AdminCatalogTable({
                       rel="noopener noreferrer"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
-                      {th("Shiko", "View")}
+                      {thUi("view")}
                     </Link>
                   </Button>
                   <Button
@@ -325,7 +326,7 @@ export function AdminCatalogTable({
                     onClick={() => setEditRow(row)}
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                    {th("Ndrysho", "Edit")}
+                    {thUi("edit")}
                   </Button>
                 </div>
               </motion.article>
@@ -333,7 +334,7 @@ export function AdminCatalogTable({
           })
         )}
         {loadingMore ? (
-          <p className="py-2 text-center text-xs text-muted-foreground">{th("Duke ngarkuar…", "Loading…")}</p>
+          <p className="py-2 text-center text-xs text-muted-foreground">{thUi("loading")}</p>
         ) : null}
         {error ? <p className="text-center text-xs text-destructive">{error}</p> : null}
         <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />

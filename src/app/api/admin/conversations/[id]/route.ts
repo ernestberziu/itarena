@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -14,7 +15,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "messages", "read");
   if (denied) return denied;
 
@@ -23,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (accessDenied) return accessDenied;
 
   const conv = await getConversationDetail(id);
-  if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!conv) return apiErr(_req, "notFound", 404);
 
   const locale = session.user.language === "en" ? "en" : "sq";
   return NextResponse.json(toConversationDetail(conv, session.user.id, locale));
@@ -31,7 +32,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "messages", "write");
   if (denied) return denied;
 
@@ -43,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     where: { id },
     select: { type: true },
   });
-  if (!conv) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!conv) return apiErr(req, "notFound", 404);
   if (conv.type !== "GROUP") {
     return NextResponse.json({ error: "Only group conversations can be updated" }, { status: 400 });
   }
@@ -52,7 +53,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = updateConversationSchema.safeParse(body);

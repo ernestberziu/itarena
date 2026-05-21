@@ -26,6 +26,7 @@ import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
 import { adminListShellClassName } from "@/lib/admin-list-ui";
 import { adminOrdersListWhere, mapOrderToAdminRow } from "@/lib/admin-orders-list-dto";
 import { dbUnavailableDescription } from "@/lib/db-unavailable-message";
+import { getAdminUiT } from "@/lib/i18n/ui-t-server";
 
 export default async function AdminOrdersPage({
   params,
@@ -44,8 +45,7 @@ export default async function AdminOrdersPage({
 
   const sp = await searchParams;
   const lp = locale === "sq" ? "" : `/${locale}`;
-  const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = await getAdminUiT(locale);
   const statusFilter = sp.status;
   const q = sp.q?.trim();
   const userIdRaw = sp.userId?.trim();
@@ -135,7 +135,7 @@ export default async function AdminOrdersPage({
     statusFilter && ORDER_STATUSES.includes(statusFilter) ? statusFilter : null;
 
   const orderFilterChips = [
-    { href: filterHref(null), label: t("Të gjitha", "All"), value: null as string | null },
+    { href: filterHref(null), label: tUi("all"), value: null as string | null },
     ...ORDER_STATUSES.map((s) => ({
       href: filterHref(s),
       label: STATUS_LABELS[s]?.[locale as "sq" | "en"] ?? s,
@@ -149,17 +149,14 @@ export default async function AdminOrdersPage({
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title={t("Porositë", "Orders")}
-        description={t(
-          `${filteredTotal} porosi në këtë pamje`,
-          `${filteredTotal} orders in this view`
-        )}
+        title={tUi("orders")}
+        description={tUi("orders_page_desc", { count: filteredTotal })}
         toolbar={
           <AdminListToolbar>
             <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <AdminListToolbarSearch
                 action={`${lp}/admin/orders`}
-                placeholder={t("Kërko sipas numrit të porosisë…", "Search by order number…")}
+                placeholder={tUi("search_by_order_number")}
                 defaultQuery={q}
                 hiddenFields={{
                   ...(statusFilter && ORDER_STATUSES.includes(statusFilter) ? { status: statusFilter } : {}),
@@ -178,10 +175,10 @@ export default async function AdminOrdersPage({
               />
             </div>
             <AdminQuickFilterChips
-              title={t("Statusi i porosisë", "Order status")}
+              title={tUi("order_status")}
               chips={orderFilterChips}
               activeValue={activeOrderStatus}
-              ariaLabel={t("Filtro sipas statusit të porosisë", "Filter orders by status")}
+              ariaLabel={tUi("filter_orders_by_status")}
             />
           </AdminListToolbar>
         }
@@ -189,13 +186,13 @@ export default async function AdminOrdersPage({
 
       {!postgresUnavailable ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <AdminStatCard label={t("Gjithsej", "Total")} value={totalOrders} icon={ShoppingBag} />
-          <AdminStatCard label={t("Të vendosura", "Placed")} value={placedCount} icon={Package} />
-          <AdminStatCard label={t("Të konfirmuara", "Confirmed")} value={confirmedCount} icon={Truck} />
-          <AdminStatCard label={t("Të dorëzuara", "Delivered")} value={deliveredCount} icon={Truck} />
-          <AdminStatCard label={t("Të anuluara", "Cancelled")} value={cancelledCount} icon={ShoppingBag} />
+          <AdminStatCard label={tUi("total_2")} value={totalOrders} icon={ShoppingBag} />
+          <AdminStatCard label={tUi("placed")} value={placedCount} icon={Package} />
+          <AdminStatCard label={tUi("confirmed")} value={confirmedCount} icon={Truck} />
+          <AdminStatCard label={tUi("delivered")} value={deliveredCount} icon={Truck} />
+          <AdminStatCard label={tUi("cancelled")} value={cancelledCount} icon={ShoppingBag} />
           <AdminStatCard
-            label={t("Vlera (jo anuluar)", "Value (non-cancelled)")}
+            label={tUi("value_non_cancelled")}
             value={formatPrice(gmvOpen)}
             icon={ShoppingBag}
           />
@@ -215,15 +212,15 @@ export default async function AdminOrdersPage({
           className="rounded-2xl border border-border/50 bg-card/40 py-16"
           title={
             hasActiveFilters
-              ? t("Nuk u gjetën porosi", "No orders match")
-              : t("Nuk ka porosi ende", "No orders yet")
+              ? tUi("no_orders_match")
+              : tUi("no_orders_yet")
           }
           description={
             hasActiveFilters
-              ? t("Provo të ndryshosh kërkimin ose filtrat.", "Try adjusting search or filters.")
-              : t("Porositë do të shfaqen këtu.", "Orders will appear here.")
+              ? tUi("try_adjusting_search_or_filters")
+              : tUi("orders_will_appear_here")
           }
-          action={hasActiveFilters ? { label: t("Pastro filtrat", "Clear filters"), href: baseListHref } : undefined}
+          action={hasActiveFilters ? { label: tUi("clear_filters_2"), href: baseListHref } : undefined}
         />
       ) : (
         <div className={adminListShellClassName}>

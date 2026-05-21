@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -37,7 +38,7 @@ export function AdminClientPreviewSheet({
   lp: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const reduceMotion = useReducedMotion();
 
   if (!user) return null;
@@ -75,13 +76,13 @@ export function AdminClientPreviewSheet({
       >
         <SheetHeader className="shrink-0 space-y-1 border-b border-border bg-white px-4 pb-4 pt-4 text-left sm:pr-14 dark:bg-card">
           <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            {t("Klientët", "Clients")}
+            {tUi("clients")}
           </p>
           <SheetTitle className="text-left text-lg font-semibold tracking-tight">
-            {t("Parapamje", "Preview")}
+            {tUi("preview")}
           </SheetTitle>
           <SheetDescription className="text-left text-xs leading-relaxed">
-            {t("Pamje e shpejtë vetëm për lexim.", "Read-only snapshot from the directory.")}
+            {tUi("read_only_snapshot_from_the_directory")}
           </SheetDescription>
         </SheetHeader>
 
@@ -110,15 +111,15 @@ export function AdminClientPreviewSheet({
                   <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                     <div className="flex flex-col gap-0.5 rounded-lg bg-neutral-50 px-2.5 py-2 ring-1 ring-inset ring-border/50 dark:bg-card">
                       <dt className="font-medium uppercase tracking-wide text-[10px] text-muted-foreground">
-                        {t("Roli", "Role")}
+                        {tUi("role")}
                       </dt>
                       <dd className="text-foreground">
-                        {user.role === "COMPANY_ADMIN" ? t("B2B Admin", "B2B Admin") : t("Klient", "Client")}
+                        {user.role === "COMPANY_ADMIN" ? tUi("b2b_admin") : tUi("client")}
                       </dd>
                     </div>
                     <div className="flex flex-col gap-0.5 rounded-lg bg-neutral-50 px-2.5 py-2 ring-1 ring-inset ring-border/50 dark:bg-card">
                       <dt className="font-medium uppercase tracking-wide text-[10px] text-muted-foreground">
-                        {t("Regjistruar", "Registered")}
+                        {tUi("registered")}
                       </dt>
                       <dd className="tabular-nums text-foreground">
                         {formatDate(new Date(user.createdAt))}
@@ -139,16 +140,16 @@ export function AdminClientPreviewSheet({
                       <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-muted-foreground shadow-inner dark:bg-muted">
                         <Building2 className="h-4 w-4" strokeWidth={2} aria-hidden />
                       </span>
-                      {t("Kompania", "Company")}
+                      {tUi("company")}
                     </h3>
                     <dl className="space-y-2.5 text-sm">
                       <div>
-                        <dt className="text-xs text-muted-foreground">{t("Emri", "Name")}</dt>
+                        <dt className="text-xs text-muted-foreground">{tUi("name")}</dt>
                         <dd className="font-medium leading-snug">{user.company.name}</dd>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <div>
-                          <dt className="text-xs text-muted-foreground">{t("Niveli", "Tier")}</dt>
+                          <dt className="text-xs text-muted-foreground">{tUi("tier")}</dt>
                           <dd className="tabular-nums">{user.company.tier ?? "—"}</dd>
                         </div>
                         <Badge
@@ -156,8 +157,8 @@ export function AdminClientPreviewSheet({
                           className="ml-auto text-[11px] font-medium"
                         >
                           {user.company.isApproved
-                            ? t("E miratuar", "Approved")
-                            : t("Në pritje", "Pending")}
+                            ? tUi("approved_2")
+                            : tUi("pending")}
                         </Badge>
                       </div>
                     </dl>
@@ -169,17 +170,17 @@ export function AdminClientPreviewSheet({
                     id="preview-activity-heading"
                     className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
                   >
-                    {t("Aktiviteti", "Activity")}
+                    {tUi("activity")}
                   </h3>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <AdminStatCard
-                      label={t("Biletat", "Tickets")}
+                      label={tUi("tickets")}
                       value={user._count.tickets}
                       icon={Ticket}
                       className="p-3.5 [&_.admin-stat-value]:text-base"
                     />
                     <AdminStatCard
-                      label={t("Porositë", "Orders")}
+                      label={tUi("orders")}
                       value={user._count.orders}
                       icon={ShoppingBag}
                       className="p-3.5 [&_.admin-stat-value]:text-base"
@@ -196,7 +197,7 @@ export function AdminClientPreviewSheet({
             <Link href={detail} onClick={() => onOpenChange(false)} className="no-underline">
               <span className="inline-flex items-center gap-2">
                 <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
-                {t("Hap faqen e plotë", "Open full page")}
+                {tUi("open_full_page")}
               </span>
               <ChevronRight className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
             </Link>
@@ -205,13 +206,13 @@ export function AdminClientPreviewSheet({
             <Button variant="secondary" className="w-full font-normal" asChild>
               <Link href={tickets} onClick={() => onOpenChange(false)} className="gap-1.5">
                 <Ticket className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
-                <span className="truncate">{t("Biletat", "Tickets")}</span>
+                <span className="truncate">{tUi("tickets")}</span>
               </Link>
             </Button>
             <Button variant="secondary" className="w-full font-normal" asChild>
               <Link href={orders} onClick={() => onOpenChange(false)} className="gap-1.5">
                 <ShoppingBag className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
-                <span className="truncate">{t("Porositë", "Orders")}</span>
+                <span className="truncate">{tUi("orders")}</span>
               </Link>
             </Button>
           </div>

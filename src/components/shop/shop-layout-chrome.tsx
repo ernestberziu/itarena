@@ -45,7 +45,6 @@ export function ShopLayoutChrome({
     <CartProvider>
       <div className="flex min-h-screen flex-col">
         <ShopNavbar
-          lang={lang}
           isLoggedIn={isLoggedIn}
           isB2b={isB2b}
           mainDashboardPath={mainDashboardPath}
@@ -54,7 +53,7 @@ export function ShopLayoutChrome({
           }
         />
         <main className="flex-1">{children}</main>
-        <ShopFooter lang={lang} />
+        <ShopFooter />
       </div>
       <Toaster position="top-right" richColors />
     </CartProvider>

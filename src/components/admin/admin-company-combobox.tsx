@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { ChevronsUpDown, X } from "lucide-react";
@@ -17,7 +18,7 @@ export function AdminCompanyCombobox({
   onChange: (id: string | null) => void;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [items, setItems] = useState<CompanyLookupItem[]>([]);
@@ -58,7 +59,7 @@ export function AdminCompanyCombobox({
         className="w-full justify-between bg-white dark:bg-white"
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="truncate">{label || t("Zgjidh kompani...", "Select company...")}</span>
+        <span className="truncate">{label || tUi("select_company")}</span>
         <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
       </Button>
       {value && (
@@ -76,7 +77,7 @@ export function AdminCompanyCombobox({
         <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-white p-2 shadow-lg dark:bg-white">
           <Input
             className={`mb-2 ${adminWhiteInputClassName}`}
-            placeholder={t("Kërko...", "Search...")}
+            placeholder={tUi("search_2")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />

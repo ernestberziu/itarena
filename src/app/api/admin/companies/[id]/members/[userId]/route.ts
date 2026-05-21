@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -6,14 +7,14 @@ import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 function forbidIfNotStaff(role: string | undefined) {
   const allowed = ["ADMIN", "SALES"];
   if (!role || !allowed.includes(role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
   return null;
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string; userId: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "companies", "write");
@@ -29,7 +30,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     },
     select: { id: true },
   });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!user) return apiErr(_req, "notFound", 404);
 
   await db.user.update({
     where: { id: userId },

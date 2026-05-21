@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -30,7 +31,7 @@ export function AdminCompanyForm({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   const [name, setName] = useState(initial?.name ?? "");
   const [vatNumber, setVatNumber] = useState(initial?.vatNumber ?? "");
@@ -42,7 +43,7 @@ export function AdminCompanyForm({
 
   async function submit() {
     if (!name.trim()) {
-      toast.error(t("Emri i kompanisë është i detyrueshëm", "Company name is required"));
+      toast.error(tUi("company_name_is_required"));
       return;
     }
 
@@ -68,12 +69,12 @@ export function AdminCompanyForm({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error((json as { error?: string }).error ?? "Request failed");
 
-      toast.success(mode === "create" ? t("Kompania u krijua", "Company created") : t("U ruajt", "Saved"));
+      toast.success(mode === "create" ? tUi("company_created") : tUi("saved_2"));
       const id = mode === "create" ? (json as { id: string }).id : initial!.id;
       router.push(`${lp}/admin/companies/${id}`);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -83,36 +84,36 @@ export function AdminCompanyForm({
     <div className="space-y-6 rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>{t("Emri i kompanisë", "Company name")}</Label>
+          <Label>{tUi("company_name")}</Label>
           <Input className={adminWhiteInputClassName} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label>{t("NIPT / VAT", "VAT number")}</Label>
+          <Label>{tUi("vat_number")}</Label>
           <Input className={adminWhiteInputClassName} value={vatNumber} onChange={(e) => setVatNumber(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label>{t("Qyteti", "City")}</Label>
+          <Label>{tUi("city")}</Label>
           <Input className={adminWhiteInputClassName} value={city} onChange={(e) => setCity(e.target.value)} />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>{t("Adresa", "Address")}</Label>
+          <Label>{tUi("address")}</Label>
           <Input className={adminWhiteInputClassName} value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>{t("Shteti", "Country")}</Label>
+          <Label>{tUi("country")}</Label>
           <Input className={adminWhiteInputClassName} value={country} onChange={(e) => setCountry(e.target.value)} />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>{t("Shënime", "Notes")}</Label>
+          <Label>{tUi("notes")}</Label>
           <Textarea className={adminWhiteInputClassName} rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => void submit()} disabled={loading}>
-          {mode === "create" ? t("Krijo kompaninë", "Create company") : t("Ruaj", "Save")}
+          {mode === "create" ? tUi("create_company") : tUi("save")}
         </Button>
         <Button variant="outline" onClick={() => router.back()} disabled={loading}>
-          {t("Anulo", "Cancel")}
+          {tUi("cancel")}
         </Button>
       </div>
     </div>

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { getTemplateSettings, upsertTemplateSettings } from "@/lib/templates/settings";
@@ -20,7 +21,7 @@ const settingsSchema = z.object({
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr("sq", "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "templates", "read");
   if (denied) return denied;
   return NextResponse.json(await getTemplateSettings());
@@ -28,7 +29,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "templates", "write");
   if (denied) return denied;
 

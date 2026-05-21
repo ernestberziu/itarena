@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -30,11 +31,11 @@ const clientListSelect = {
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const allowed = ["ADMIN", "SALES"];
   if (!allowed.includes(session.user.role ?? "")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
   const denied = await assertAdminApiAcl(session.user.id, "clients", "read");
   if (denied) return denied;
@@ -109,14 +110,14 @@ function generateTemporaryPassword(): string {
 function forbidIfNotStaff(role: string | undefined) {
   const allowed = ["ADMIN", "SALES"];
   if (!role || !allowed.includes(role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
   return null;
 }
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "clients", "write");
@@ -126,12 +127,12 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -141,12 +142,12 @@ export async function POST(req: NextRequest) {
 
   if (email) {
     const dup = await db.user.findFirst({ where: { email }, select: { id: true } });
-    if (dup) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+    if (dup) return apiErr(req, "emailInUse", 409);
   }
 
   if (data.companyId) {
     const company = await db.company.findUnique({ where: { id: data.companyId }, select: { id: true } });
-    if (!company) return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    if (!company) return apiErr(req, "notFound", 404);
   }
 
   let plainPassword: string | undefined;

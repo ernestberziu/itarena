@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -54,7 +55,7 @@ export function AdminTicketOpsForm({
   className?: string;
 }) {
   const router = useRouter();
-  const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const tUi = useUiT();
   const [loading, setLoading] = useState(false);
   const [assignee, setAssignee] = useState<string | null>(assignedToId);
   const [project, setProject] = useState<string | null>(projectId);
@@ -82,7 +83,7 @@ export function AdminTicketOpsForm({
   };
 
   const selectedEngineer = assignee ? engineers.find((e) => e.id === assignee) : undefined;
-  const assigneeUnassignedLabel = t("I pacaktuar", "Unassigned");
+  const assigneeUnassignedLabel = tUi("unassigned");
   const assigneeTriggerLabel = selectedEngineer
     ? `${selectedEngineer.firstName} ${selectedEngineer.lastName}`.trim()
     : assigneeUnassignedLabel;
@@ -90,7 +91,7 @@ export function AdminTicketOpsForm({
     priorityLabels[pri]?.[locale === "sq" ? "sq" : "en"] ?? pri;
 
   const selectedProject = project ? projects.find((p) => p.id === project) : undefined;
-  const projectNoneLabel = t("Pa projekt", "No project");
+  const projectNoneLabel = tUi("no_project");
   const projectTriggerLabel = selectedProject?.title ?? projectNoneLabel;
 
   function onProjectChange(value: string) {
@@ -118,7 +119,7 @@ export function AdminTicketOpsForm({
       const nd = Number.parseInt(rawDays, 10);
       if (Number.isNaN(nd) || nd < 0 || nd > 62) {
         toast.error(
-          t("Ditët e vlerësuara: 0–62", "Estimated days must be a whole number from 0 to 62")
+          tUi("estimated_days_must_be_a_whole_number_from_0_to_")
         );
         return;
       }
@@ -128,7 +129,7 @@ export function AdminTicketOpsForm({
       const nh = Number.parseInt(rawHours, 10);
       if (Number.isNaN(nh) || nh < 0 || nh > 500) {
         toast.error(
-          t("Orët e vlerësuara: 0–500", "Estimated hours must be a whole number from 0 to 500")
+          tUi("estimated_hours_must_be_a_whole_number_from_0_to")
         );
         return;
       }
@@ -140,16 +141,16 @@ export function AdminTicketOpsForm({
     const sum = d * WORKING_HOURS_PER_DAY + h;
     if (sum > MAX_RESOLUTION_HOURS) {
       toast.error(
-        t(
-          `Shuma ditë×${WORKING_HOURS_PER_DAY} + orë nuk mund të kalojë ${MAX_RESOLUTION_HOURS} orë gjithsej`,
-          `Combined estimate (days×${WORKING_HOURS_PER_DAY}h + hours) cannot exceed ${MAX_RESOLUTION_HOURS} total hours`
-        )
+        tUi("estimate_hours_exceeded", {
+          hoursPerDay: WORKING_HOURS_PER_DAY,
+          maxHours: MAX_RESOLUTION_HOURS,
+        })
       );
       return;
     }
     if (sum === 0 && (rawDays.length > 0 || rawHours.length > 0)) {
       toast.error(
-        t("Vendosni të paktën një ditë ose orë > 0", "Enter at least one day or hour greater than zero")
+        tUi("enter_at_least_one_day_or_hour_greater_than_zero")
       );
       return;
     }
@@ -173,12 +174,12 @@ export function AdminTicketOpsForm({
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? "save_failed");
       }
-      toast.success(t("Ops u ruajtën", "Ops settings saved"));
+      toast.success(tUi("ops_settings_saved"));
       onSaved?.();
       router.refresh();
     } catch (e) {
       const msg = e instanceof Error && e.message !== "save_failed" ? e.message : null;
-      toast.error(msg ?? t("Gabim", "Something went wrong"));
+      toast.error(msg ?? tUi("something_went_wrong"));
     } finally {
       setLoading(false);
     }
@@ -189,7 +190,7 @@ export function AdminTicketOpsForm({
       <div className="space-y-5">
         {(projects.length > 0 || project) && (
           <div className="space-y-2">
-            <Label>{t("Projekti", "Project")}</Label>
+            <Label>{tUi("project")}</Label>
             <Select
               value={project ?? "__none__"}
               onValueChange={(v) => onProjectChange(v ?? "__none__")}
@@ -207,16 +208,13 @@ export function AdminTicketOpsForm({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              {t(
-                "Biletat e projektit përdorin ekipin e projektit, jo caktimin individual të stafit.",
-                "Project tickets use the project team, not an individual staff assignee."
-              )}
+              {tUi("project_tickets_use_the_project_team_not_an_indi")}
             </p>
           </div>
         )}
 
         <div className="space-y-2">
-          <Label>{t("Cakto teknikun", "Assign engineer")}</Label>
+          <Label>{tUi("assign_engineer")}</Label>
           <Select
             value={assignee ?? "__none__"}
             onValueChange={(v) => setAssignee(v === "__none__" ? null : v)}
@@ -238,16 +236,13 @@ export function AdminTicketOpsForm({
           </Select>
           {staffAssignBlocked && (
             <p className="text-xs text-muted-foreground">
-              {t(
-                "Hiqni projektin për të caktuar një inxhinier individual.",
-                "Remove the project to assign an individual engineer."
-              )}
+              {tUi("remove_the_project_to_assign_an_individual_engin")}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label>{t("Prioriteti", "Priority")}</Label>
+          <Label>{tUi("priority")}</Label>
           <Select value={pri} onValueChange={(v) => v && setPri(v as Priority)}>
             <SelectTrigger className="h-10 w-full">
               <SelectValue>{priorityTriggerLabel}</SelectValue>
@@ -263,11 +258,11 @@ export function AdminTicketOpsForm({
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs font-medium text-foreground">{t("Vlerësimi (SLA)", "Estimate (SLA)")}</p>
+          <p className="text-xs font-medium text-foreground">{tUi("estimate_sla")}</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor={`ops-est-days-${ticketId}`} className="text-xs font-normal text-muted-foreground">
-                {t("Ditë kalendari", "Calendar days")}
+                {tUi("calendar_days")}
               </Label>
               <Input
                 id={`ops-est-days-${ticketId}`}
@@ -284,7 +279,7 @@ export function AdminTicketOpsForm({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`ops-est-hours-${ticketId}`} className="text-xs font-normal text-muted-foreground">
-                {t("Orë shtesë", "Additional hours")}
+                {tUi("additional_hours")}
               </Label>
               <Input
                 id={`ops-est-hours-${ticketId}`}
@@ -301,16 +296,16 @@ export function AdminTicketOpsForm({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            {t(
-              `Afati SLA = data e krijimit + ditë×${WORKING_HOURS_PER_DAY} orë + orët (maks. ${MAX_RESOLUTION_HOURS} orë). Lëreni bosh për pa afat.`,
-              `SLA deadline = created at + days×${WORKING_HOURS_PER_DAY}h + hours (max ${MAX_RESOLUTION_HOURS}h). Leave both empty for no SLA.`
-            )}
+            {tUi("sla_deadline_help", {
+              hoursPerDay: WORKING_HOURS_PER_DAY,
+              maxHours: MAX_RESOLUTION_HOURS,
+            })}
           </p>
         </div>
 
         <Button type="button" className="w-full gap-2" onClick={save} disabled={loading}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {t("Ruaj", "Save")}
+          {tUi("save")}
         </Button>
       </div>
     </div>

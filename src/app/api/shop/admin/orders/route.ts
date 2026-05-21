@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -23,7 +24,7 @@ async function requireShopOrdersWrite() {
 
 export async function GET() {
   const result = await requireShopOrdersStaff();
-  if (!result) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!result) return apiErr("sq", "unauthorized", 401);
   if ("error" in result) return result.error;
 
   const orders = await db.order.findMany({
@@ -43,7 +44,7 @@ export async function GET() {
 
 export async function PATCH(req: NextRequest) {
   const result = await requireShopOrdersWrite();
-  if (!result) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!result) return apiErr("sq", "unauthorized", 401);
   if ("error" in result) return result.error;
 
   const { id, status, staffNotes } = await req.json();
@@ -67,7 +68,7 @@ export async function PATCH(req: NextRequest) {
     where: { id },
     select: { status: true, orderNumber: true },
   });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return apiErr(req, "notFound", 404);
 
   const order = await db.order.update({
     where: { id },

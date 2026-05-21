@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Link from "next/link";
 import { ExternalLink, Unlink } from "lucide-react";
@@ -27,12 +28,12 @@ export function AdminCompanyMemberActions({
   onUnassign: () => void;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   return (
     <div className="flex justify-end gap-1">
       <Button variant="outline" size="icon" className="h-8 w-8" asChild>
-        <Link href={`${lp}/admin/clients/${member.id}`} aria-label={t("Shiko", "View")}>
+        <Link href={`${lp}/admin/clients/${member.id}`} aria-label={tUi("view")}>
           <ExternalLink className="h-4 w-4" />
         </Link>
       </Button>

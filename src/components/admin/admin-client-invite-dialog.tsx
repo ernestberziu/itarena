@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { Mail } from "lucide-react";
@@ -38,7 +39,7 @@ export function AdminClientInviteDialog({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
@@ -58,7 +59,7 @@ export function AdminClientInviteDialog({
   async function submit() {
     const trimmed = email.trim();
     if (!trimmed) {
-      toast.error(t("Vendos emailin", "Enter an email address"));
+      toast.error(tUi("enter_an_email_address"));
       return;
     }
 
@@ -78,18 +79,18 @@ export function AdminClientInviteDialog({
       if (!res.ok) throw new Error(json.error ?? "Request failed");
 
       if (json.notifyEmailAttempted && json.credentialsEmailSent) {
-        toast.success(t("Ftesa u dërgua me email", "Invite email sent"));
+        toast.success(tUi("invite_email_sent"));
         setOpen(false);
       } else if (json.temporaryPassword) {
         setShownTemp(json.temporaryPassword);
-        toast.success(t("Ftesa u krijua", "Invite created"));
+        toast.success(tUi("invite_created"));
       } else {
-        toast.success(t("Klienti u ftua në portal", "Client invited to portal"));
+        toast.success(tUi("client_invited_to_portal"));
         setOpen(false);
       }
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -102,23 +103,23 @@ export function AdminClientInviteDialog({
           render={
             <Button variant={triggerVariant} size="sm" className="gap-2">
               <Mail className="h-4 w-4" />
-              {triggerLabel ?? t("Fto në portal", "Invite to portal")}
+              {triggerLabel ?? tUi("invite_to_portal")}
             </Button>
           }
         />
       )}
       <DialogContent className={`sm:max-w-md ${adminWhiteDialogClassName}`}>
         <DialogHeader>
-          <DialogTitle>{t("Fto në portal", "Invite to portal")}</DialogTitle>
+          <DialogTitle>{tUi("invite_to_portal")}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">{userName}</p>
 
         {shownTemp ? (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm">
-            <p className="font-medium text-amber-900">{t("Fjalëkalimi i përkohshëm", "Temporary password")}</p>
+            <p className="font-medium text-amber-900">{tUi("temporary_password")}</p>
             <p className="mt-2 font-mono text-base">{shownTemp}</p>
             <Button className="mt-3" size="sm" onClick={() => setOpen(false)}>
-              {t("Mbyll", "Close")}
+              {tUi("close")}
             </Button>
           </div>
         ) : (
@@ -141,11 +142,11 @@ export function AdminClientInviteDialog({
                 onCheckedChange={(v) => setNotifyCustomer(v === true)}
               />
               <Label htmlFor="invite-notify" className="cursor-pointer text-sm font-normal">
-                {t("Dërgo email me fjalëkalim të përkohshëm", "Send email with temporary password")}
+                {tUi("send_email_with_temporary_password")}
               </Label>
             </div>
             <Button className="w-full" disabled={loading} onClick={() => void submit()}>
-              {t("Dërgo ftesën", "Send invite")}
+              {tUi("send_invite")}
             </Button>
           </div>
         )}

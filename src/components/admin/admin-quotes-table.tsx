@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -53,8 +54,8 @@ export function AdminQuotesTable({
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
-  const emptyMessage = th("Nuk ka rezultate për këtë kërkim.", "No results for this search.");
+  const thUi = useUiT();
+  const emptyMessage = thUi("no_results_for_this_search");
   const [sorting, setSorting] = useState<SortingState>([]);
   const mobileSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +87,7 @@ export function AdminQuotesTable({
     return [
       {
         accessorKey: "quoteNumber",
-        header: th("Nr.", "#"),
+        header: thUi("text"),
         enableSorting: true,
         cell: ({ row }) => {
           const href = `${lp}/admin/quotes/${row.original.id}`;
@@ -103,7 +104,7 @@ export function AdminQuotesTable({
       },
       {
         accessorKey: "title",
-        header: th("Kërkesa", "Request"),
+        header: thUi("request"),
         enableSorting: true,
         sortingFn: "alphanumeric",
         cell: ({ row }) => {
@@ -123,7 +124,7 @@ export function AdminQuotesTable({
       {
         id: "customer",
         accessorFn: (row) => `${row.contactName} ${row.contactEmail}`.toLowerCase(),
-        header: th("Klienti", "Customer"),
+        header: thUi("customer"),
         enableSorting: true,
         cell: ({ row }) => (
           <div className="min-w-0">
@@ -135,7 +136,7 @@ export function AdminQuotesTable({
       {
         id: "company",
         accessorFn: (row) => row.company?.name?.toLowerCase() ?? "",
-        header: th("Kompania", "Company"),
+        header: thUi("company"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.company?.name ?? "—"}</span>
@@ -147,7 +148,7 @@ export function AdminQuotesTable({
           const n = row.total == null ? NaN : Number(row.total);
           return Number.isNaN(n) ? 0 : n;
         },
-        header: th("Shuma", "Amount"),
+        header: thUi("amount"),
         enableSorting: true,
         cell: ({ row }) => {
           const n = row.original.total == null ? null : Number(row.original.total);
@@ -160,7 +161,7 @@ export function AdminQuotesTable({
       },
       {
         accessorKey: "status",
-        header: th("Statusi", "Status"),
+        header: thUi("status"),
         enableSorting: true,
         sortingFn: "alphanumeric",
         cell: ({ row }) => (
@@ -173,7 +174,7 @@ export function AdminQuotesTable({
       },
       {
         accessorKey: "createdAt",
-        header: th("Krijuar", "Created"),
+        header: thUi("created"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="whitespace-nowrap text-xs text-muted-foreground">
@@ -184,7 +185,7 @@ export function AdminQuotesTable({
       {
         id: "validUntil",
         accessorKey: "validUntil",
-        header: th("Skadon", "Expires"),
+        header: thUi("expires"),
         enableSorting: true,
         cell: ({ row }) =>
           row.original.validUntil ? (
@@ -210,7 +211,7 @@ export function AdminQuotesTable({
         ),
       },
     ];
-  }, [locale, lp, th]);
+  }, [locale, lp, thUi]);
 
   const table = useReactTable({
     data: rows,
@@ -253,7 +254,7 @@ export function AdminQuotesTable({
           <span className="tabular-nums">{totalCount}</span>
           {hasMore ? (
             <span className="ml-2 text-muted-foreground/70">
-              · {th("lëviz për më shumë", "scroll for more")}
+              · {thUi("scroll_for_more")}
             </span>
           ) : null}
         </p>
@@ -296,17 +297,17 @@ export function AdminQuotesTable({
               </div>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span>
-                  {th("Shuma", "Amount")}:{" "}
+                  {thUi("amount")}:{" "}
                   <span className="font-semibold text-foreground">
                     {q.total != null && !Number.isNaN(Number(q.total)) ? formatPrice(Number(q.total)) : "—"}
                   </span>
                 </span>
                 <span>
-                  {th("Krijuar", "Created")}: {formatDate(new Date(q.createdAt))}
+                  {thUi("created")}: {formatDate(new Date(q.createdAt))}
                 </span>
                 {q.validUntil ? (
                   <span>
-                    {th("Skadon", "Expires")}: {formatDate(new Date(q.validUntil))}
+                    {thUi("expires")}: {formatDate(new Date(q.validUntil))}
                   </span>
                 ) : null}
               </div>

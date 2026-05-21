@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -155,7 +156,7 @@ export function AdminOrderDetailView({
   activityLogs?: OrderAuditLogEntry[];
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
 
@@ -208,10 +209,10 @@ export function AdminOrderDetailView({
         }),
       });
       if (!res.ok) throw new Error("patch");
-      toast.success(t("Porosia u përditësua", "Order updated"));
+      toast.success(tUi("order_updated"));
       router.refresh();
     } catch {
-      toast.error(t("Ruajtja dështoi", "Save failed"));
+      toast.error(tUi("save_failed_2"));
     } finally {
       setSaving(false);
     }
@@ -241,7 +242,7 @@ export function AdminOrderDetailView({
               {order.orderNumber}
             </p>
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              {t("Porosi", "Order")} · {order.user.firstName} {order.user.lastName}
+              {tUi("order")} · {order.user.firstName} {order.user.lastName}
             </h2>
             <div className="flex flex-wrap items-center gap-2">
               <OrderStatusBadge status={status} locale={locale} />
@@ -250,7 +251,7 @@ export function AdminOrderDetailView({
           <div className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
             <span>
-              {t("Krijuar", "Created")} {formatDate(new Date(order.createdAt))}
+              {tUi("created")} {formatDate(new Date(order.createdAt))}
             </span>
           </div>
         </div>
@@ -258,18 +259,18 @@ export function AdminOrderDetailView({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <AdminStatCard
-          label={t("Totali i porositur", "Ordered total")}
+          label={tUi("ordered_total")}
           value={formatPrice(fulfillment.orderedTotal)}
           icon={ShoppingBag}
         />
         <AdminStatCard
-          label={t("Totali i disponueshëm", "Available total")}
+          label={tUi("available_total")}
           value={formatPrice(fulfillment.fulfilledTotal)}
           icon={ShoppingBag}
           className={fulfillment.hasShortfall ? "ring-amber-300/60" : "ring-primary/15"}
         />
         <AdminStatCard
-          label={t("Njësi", "Units")}
+          label={tUi("units")}
           value={`${fulfillment.fulfilledUnits} / ${fulfillment.orderedUnits}`}
           icon={Package}
           className="sm:col-span-2 lg:col-span-1"
@@ -278,12 +279,12 @@ export function AdminOrderDetailView({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-5">
-          <DetailCard title={t("Klienti", "Customer")} icon={User}>
+          <DetailCard title={tUi("customer")} icon={User}>
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <UserAvatar firstName={order.user.firstName} lastName={order.user.lastName} size="lg" />
               <dl className="grid min-w-0 flex-1 gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs text-muted-foreground">{t("Emri", "Name")}</dt>
+                  <dt className="text-xs text-muted-foreground">{tUi("name")}</dt>
                   <dd className="font-medium">
                     {order.user.firstName} {order.user.lastName}
                   </dd>
@@ -297,7 +298,7 @@ export function AdminOrderDetailView({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground">{t("Telefoni", "Phone")}</dt>
+                  <dt className="text-xs text-muted-foreground">{tUi("phone")}</dt>
                   <dd className="flex items-center gap-1.5">
                     <Phone className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} aria-hidden />
                     {order.contactPhone}
@@ -305,7 +306,7 @@ export function AdminOrderDetailView({
                 </div>
                 {order.company ? (
                   <div className="sm:col-span-2">
-                    <dt className="text-xs text-muted-foreground">{t("Kompania", "Company")}</dt>
+                    <dt className="text-xs text-muted-foreground">{tUi("company")}</dt>
                     <dd className="flex items-center gap-1.5">
                       <Building2 className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} aria-hidden />
                       {order.company.name}
@@ -316,7 +317,7 @@ export function AdminOrderDetailView({
             </div>
           </DetailCard>
 
-          <DetailCard title={t("Dorëzimi", "Delivery")} icon={MapPin}>
+          <DetailCard title={tUi("delivery")} icon={MapPin}>
             <div className="space-y-3 text-sm">
               <p>{order.deliveryAddress}</p>
               <p className="text-muted-foreground">{order.deliveryCity}</p>
@@ -328,23 +329,20 @@ export function AdminOrderDetailView({
             </div>
           </DetailCard>
 
-          <DetailCard title={t("Artikujt", "Line items")} icon={Package}>
+          <DetailCard title={tUi("line_items")} icon={Package}>
             {items.length === 0 ? (
               <p className="text-sm text-muted-foreground">—</p>
             ) : (
               <>
                 {fulfillment.hasShortfall ? (
                   <div className="mb-4 rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
-                    {t(
-                      "Disa artikuj nuk janë plotësisht në stok. Vendosni sasinë e disponueshme për çdo rresht dhe ruajeni porosinë.",
-                      "Some items are not fully in stock. Set the available quantity for each line and save the order."
-                    )}
+                    {tUi("some_items_are_not_fully_in_stock_set_the_availa")}
                     {fulfillment.unavailableLines > 0 ? (
                       <span className="mt-1 block text-xs opacity-90">
                         {fulfillment.unavailableLines}{" "}
-                        {t("artikuj mungojnë", "items unavailable")}
+                        {tUi("items_unavailable")}
                         {fulfillment.shortLines > 0
-                          ? ` · ${fulfillment.shortLines} ${t("pjesërisht", "partial")}`
+                          ? ` · ${fulfillment.shortLines} ${tUi("partial")}`
                           : ""}
                       </span>
                     ) : null}
@@ -355,22 +353,22 @@ export function AdminOrderDetailView({
                     <thead>
                       <tr className="border-b bg-muted/30">
                         <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground">
-                          {t("Produkti", "Product")}
+                          {tUi("product")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
-                          {t("Kërkuar", "Requested")}
+                          {tUi("requested")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
-                          {t("Disponueshëm", "Available")}
+                          {tUi("available")}
                         </th>
                         <th className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
-                          {t("Statusi", "Status")}
+                          {tUi("status")}
                         </th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">
-                          {t("Çmimi", "Price")}
+                          {tUi("price")}
                         </th>
                         <th className="px-3 py-2 text-right text-xs font-semibold text-muted-foreground">
-                          {t("Totali", "Total")}
+                          {tUi("total")}
                         </th>
                       </tr>
                     </thead>
@@ -425,7 +423,7 @@ export function AdminOrderDetailView({
                     <tfoot>
                       <tr className="border-t bg-muted/20">
                         <td colSpan={5} className="px-3 py-2 text-right text-xs text-muted-foreground">
-                          {t("Totali i porositur", "Ordered total")}
+                          {tUi("ordered_total")}
                         </td>
                         <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
                           {formatPrice(fulfillment.orderedTotal)}
@@ -433,7 +431,7 @@ export function AdminOrderDetailView({
                       </tr>
                       <tr className="border-t bg-muted/30">
                         <td colSpan={5} className="px-3 py-2 text-right text-sm font-semibold">
-                          {t("Totali i disponueshëm", "Available total")}
+                          {tUi("available_total")}
                         </td>
                         <td className="px-3 py-2 text-right font-bold tabular-nums">
                           {formatPrice(fulfillment.fulfilledTotal)}
@@ -446,10 +444,10 @@ export function AdminOrderDetailView({
             )}
           </DetailCard>
 
-          <DetailCard title={t("Aktiviteti", "Activity")} icon={Clock}>
+          <DetailCard title={tUi("activity")} icon={Clock}>
             {activityItems.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {t("Nuk ka aktivitet ende.", "No activity yet.")}
+                {tUi("no_activity_yet")}
               </p>
             ) : (
               <ul className="space-y-4 border-l border-border pl-4">
@@ -473,7 +471,7 @@ export function AdminOrderDetailView({
                           variant="outline"
                           className="border-amber-200 bg-amber-50 text-[10px] font-normal text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
                         >
-                          {t("Pa ruajtur", "Unsaved")}
+                          {tUi("unsaved")}
                         </Badge>
                       ) : null}
                     </div>
@@ -485,7 +483,7 @@ export function AdminOrderDetailView({
                     <p className="text-xs text-muted-foreground">
                       {row.actorName ? `${row.actorName} · ` : ""}
                       {row.pending
-                        ? t("Ndryshim lokal", "Local change")
+                        ? tUi("local_change")
                         : formatDateTime(new Date(row.at))}
                     </p>
                   </li>
@@ -503,16 +501,13 @@ export function AdminOrderDetailView({
             className="overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-b from-card to-muted/10 shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
           >
             <header className="border-b border-border/50 px-4 py-4">
-              <h3 className="text-sm font-semibold tracking-tight">{t("Veprime stafi", "Staff actions")}</h3>
+              <h3 className="text-sm font-semibold tracking-tight">{tUi("staff_actions")}</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                {t(
-                  "Përditësoni statusin, stokun e artikujve dhe shënimet.",
-                  "Update status, item availability, and notes."
-                )}
+                {tUi("update_status_item_availability_and_notes")}
               </p>
             </header>
 
-            <RailSection title={t("Statusi", "Status")} icon={Tag}>
+            <RailSection title={tUi("status")} icon={Tag}>
               <Select value={status} onValueChange={(v) => v != null && setStatus(v)}>
                 <SelectTrigger id="order-status" className="w-full">
                   <SelectValue>{statusLabel}</SelectValue>
@@ -527,26 +522,26 @@ export function AdminOrderDetailView({
               </Select>
             </RailSection>
 
-            <RailSection title={t("Shënim i brendshëm", "Internal note")} icon={CheckCircle2}>
+            <RailSection title={tUi("internal_note")} icon={CheckCircle2}>
               <Textarea
                 id="order-staff-notes"
                 rows={4}
                 className="bg-background text-sm"
                 value={staffNotes}
                 onChange={(e) => setStaffNotes(e.target.value)}
-                placeholder={t("Vetëm për stafin…", "Staff only…")}
+                placeholder={tUi("staff_only")}
               />
             </RailSection>
 
             <div className="space-y-2 border-t border-border/50 p-4">
               <Button type="button" className="w-full gap-2" disabled={saving} onClick={() => void saveStaffFields()}>
                 <Save className="h-4 w-4" strokeWidth={2} aria-hidden />
-                {saving ? "…" : t("Ruaj", "Save")}
+                {saving ? "…" : tUi("save")}
               </Button>
               {order.user.email ? (
                 <EmailClientButton
                   apiUrl={`/api/admin/orders/${order.id}/email-client`}
-                  label={t("Email klientit", "Email client")}
+                  label={tUi("email_client")}
                   variant="secondary"
                   className="w-full"
                   size="default"
@@ -559,7 +554,7 @@ export function AdminOrderDetailView({
                   rel="noopener noreferrer"
                 >
                   <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  {t("Printo faturën", "Print invoice")}
+                  {tUi("print_invoice")}
                 </a>
               </Button>
             </div>

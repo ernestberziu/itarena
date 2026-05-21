@@ -8,6 +8,7 @@ import { ProductCard } from "./product-card";
 import { cn } from "@/lib/utils";
 import { shopCatalogHref } from "@/lib/shop-url";
 import { useShopLocale } from "@/hooks/use-shop-locale";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { SHOP_CATEGORY_SELECTED_TEXT } from "@/lib/shop-category-selected-color";
 
@@ -57,6 +58,7 @@ export function ShopCatalog({
 }: ShopCatalogProps) {
   const router = useRouter();
   const shopLocale = useShopLocale();
+  const t = useTranslations("shop");
   const [search, setSearch] = useState(searchQuery ?? "");
   const [isPending, startTransition] = useTransition();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -123,7 +125,7 @@ export function ShopCatalog({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applySearch(search)}
-            placeholder="Kërko produkte, marka, SKU..."
+            placeholder={t("search_placeholder")}
             className="w-full rounded-xl border-2 border-border/60 bg-white pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
           />
           {search && (
@@ -142,14 +144,14 @@ export function ShopCatalog({
           className="lg:hidden flex shrink-0 items-center justify-center gap-2 rounded-xl border-2 border-border/60 bg-white px-4 py-3 text-sm font-medium cursor-pointer select-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:bg-slate-50 hover:border-primary/50 hover:shadow-sm active:bg-slate-100 motion-safe:active:scale-[0.98]"
         >
           <SlidersHorizontal className="h-4 w-4" />
-          Filtro
+          {t("filter")}
         </button>
         <Button
           type="button"
           onClick={() => applySearch(search)}
           className="shrink-0 rounded-xl border-2 border-primary/80 px-4 py-3 h-auto text-sm font-medium lg:h-9 lg:py-2"
         >
-          Kërko
+          {t("searchBtn")}
         </Button>
       </div>
 
@@ -164,7 +166,7 @@ export function ShopCatalog({
         >
           {sidebarOpen && (
             <div className="flex items-center justify-between mb-4 lg:hidden">
-              <h3 className="font-bold">Kategoritë</h3>
+              <h3 className="font-bold">{t("categories")}</h3>
               <button type="button" onClick={() => setSidebarOpen(false)} className="cursor-pointer rounded-lg p-2 text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-slate-100 hover:text-foreground active:bg-slate-200 motion-safe:active:scale-95">
                 <X className="h-5 w-5" />
               </button>
@@ -173,7 +175,7 @@ export function ShopCatalog({
 
           <div className="rounded-2xl bg-white border border-border/50 overflow-hidden shadow-sm">
             <div className="px-4 py-3 border-b border-border/40 bg-gradient-to-r from-primary/5 to-transparent">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">Kategoritë</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary">{t("categories")}</p>
             </div>
             <div className="p-2 space-y-0.5">
               <button
@@ -185,7 +187,7 @@ export function ShopCatalog({
                 )}
                 style={!activeSlug ? { color: SHOP_CATEGORY_SELECTED_TEXT } : undefined}
               >
-                Të gjitha
+                {t("allCategories")}
               </button>
               {categories.map((cat) => (
                 <button
@@ -200,7 +202,7 @@ export function ShopCatalog({
                     activeSlug === cat.slug ? { color: SHOP_CATEGORY_SELECTED_TEXT } : undefined
                   }
                 >
-                  {cat.nameSq}
+                  {shopLocale === "en" ? cat.nameEn : cat.nameSq}
                 </button>
               ))}
             </div>
@@ -209,10 +211,8 @@ export function ShopCatalog({
           {/* B2B badge */}
           {isB2b && (
             <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200/60 p-4">
-              <p className="text-xs font-bold text-violet-700 mb-1">Çmimet B2B të aplikuara</p>
-              <p className="text-xs text-violet-600/70 leading-relaxed">
-                Shihni çmimet ekskluzive të rezervuara për bizneset e regjistruara.
-              </p>
+              <p className="text-xs font-bold text-violet-700 mb-1">{t("b2bPricesApplied")}</p>
+              <p className="text-xs text-violet-600/70 leading-relaxed">{t("b2bPricesAppliedDesc")}</p>
             </div>
           )}
         </aside>
@@ -224,8 +224,8 @@ export function ShopCatalog({
               <div className="h-20 w-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                 <Search className="h-8 w-8 text-slate-300" />
               </div>
-              <h3 className="font-bold text-lg mb-2">Nuk u gjet asnjë produkt</h3>
-              <p className="text-muted-foreground text-sm">Provoni terma të tjerë kërkimi ose hiqni filtrat.</p>
+              <h3 className="font-bold text-lg mb-2">{t("noProducts")}</h3>
+              <p className="text-muted-foreground text-sm">{t("noProductsHint")}</p>
             </div>
           ) : (
             <>
@@ -248,28 +248,23 @@ export function ShopCatalog({
               {totalPages > 1 ? (
                 <nav
                   className="mt-10 flex flex-col gap-4 border-t border-slate-200 pt-8 sm:flex-row sm:items-center sm:justify-between"
-                  aria-label="Faqosja e produkteve"
+                  aria-label={t("paginationAria")}
                 >
                   <p className="text-sm text-slate-600">
-                    Shfaqen{" "}
-                    <span className="font-semibold text-slate-900">
-                      {rangeFrom}–{rangeTo}
-                    </span>{" "}
-                    nga{" "}
-                    <span className="font-semibold text-slate-900">{totalFiltered}</span> produkte
+                    {t("showingRange", { from: rangeFrom, to: rangeTo, total: totalFiltered })}
                     <span className="mt-1 block text-xs font-normal text-slate-500 sm:hidden">
-                      Faqja {page} nga {totalPages}
+                      {t("pageOfShort", { page, total: totalPages })}
                     </span>
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                     <span className="mr-1 hidden text-sm text-slate-500 sm:inline">
-                      Faqja {page} / {totalPages}
+                      {t("pageOf", { page, total: totalPages })}
                     </span>
                     {page > 1 ? (
                       <Button type="button" variant="outline" size="sm" className="h-9 gap-1 px-3" asChild>
                         <Link href={catalogPageHref(page - 1)} scroll>
                           <ChevronLeft className="h-4 w-4" aria-hidden />
-                          Mëparës
+                          {t("prev")}
                         </Link>
                       </Button>
                     ) : (
@@ -281,7 +276,7 @@ export function ShopCatalog({
                     {page < totalPages ? (
                       <Button type="button" variant="outline" size="sm" className="h-9 gap-1 px-3" asChild>
                         <Link href={catalogPageHref(page + 1)} scroll>
-                          Tjetra
+                          {t("next")}
                           <ChevronRight className="h-4 w-4" aria-hidden />
                         </Link>
                       </Button>

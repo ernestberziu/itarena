@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -36,7 +37,7 @@ export function AdminCompaniesTable({
   filterQuery: string;
 }) {
   const router = useRouter();
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const thUi = useUiT();
   const [sorting, setSorting] = useState<SortingState>([]);
   const mobileSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +70,7 @@ export function AdminCompaniesTable({
       {
         id: "company",
         accessorFn: (row) => row.name.toLowerCase(),
-        header: th("Kompania", "Company"),
+        header: thUi("company"),
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10">
@@ -84,7 +85,7 @@ export function AdminCompaniesTable({
                 {row.original.name}
               </Link>
               <p className="text-xs text-muted-foreground truncate">
-                {row.original.vatNumber || th("Pa NIPT", "No VAT")}
+                {row.original.vatNumber || thUi("no_vat")}
               </p>
             </div>
           </div>
@@ -93,7 +94,7 @@ export function AdminCompaniesTable({
       {
         id: "location",
         accessorFn: (row) => row.city?.toLowerCase() ?? "",
-        header: th("Qyteti", "City"),
+        header: thUi("city"),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.city || "—"}</span>
         ),
@@ -101,7 +102,7 @@ export function AdminCompaniesTable({
       {
         id: "members",
         accessorFn: (row) => row._count.users,
-        header: th("Anëtarë", "Members"),
+        header: thUi("members_2"),
         cell: ({ row }) => (
           <span className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted-foreground">
             <Users className="h-3.5 w-3.5 shrink-0" />
@@ -112,7 +113,7 @@ export function AdminCompaniesTable({
       {
         id: "tickets",
         accessorFn: (row) => row._count.tickets,
-        header: th("Bileta", "Tickets"),
+        header: thUi("tickets_2"),
         cell: ({ row }) => (
           <span className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted-foreground">
             <Ticket className="h-3.5 w-3.5 shrink-0" />
@@ -123,7 +124,7 @@ export function AdminCompaniesTable({
       {
         id: "orders",
         accessorFn: (row) => row._count.orders,
-        header: th("Porosi", "Orders"),
+        header: thUi("orders_2"),
         cell: ({ row }) => (
           <span className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted-foreground">
             <ShoppingBag className="h-3.5 w-3.5 shrink-0" />
@@ -134,14 +135,14 @@ export function AdminCompaniesTable({
       {
         id: "created",
         accessorFn: (row) => row.createdAt,
-        header: th("Krijuar", "Created"),
+        header: thUi("created"),
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{formatDate(row.original.createdAt)}</span>
         ),
       },
       {
         id: "actions",
-        header: () => <span className="sr-only">{th("Veprime", "Actions")}</span>,
+        header: () => <span className="sr-only">{thUi("actions")}</span>,
         enableSorting: false,
         cell: ({ row }) => (
           <div
@@ -153,7 +154,7 @@ export function AdminCompaniesTable({
         ),
       },
     ];
-  }, [lp, locale, th]);
+  }, [lp, locale, thUi]);
 
   const table = useReactTable({
     data: rows,
@@ -212,7 +213,7 @@ export function AdminCompaniesTable({
                   <div className="min-w-0">
                     <p className="font-semibold leading-tight">{c.name}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {c.vatNumber || th("Pa NIPT", "No VAT")}
+                      {c.vatNumber || thUi("no_vat")}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
@@ -238,7 +239,7 @@ export function AdminCompaniesTable({
           ))}
         </AnimatePresence>
         {loadingMore ? (
-          <p className="py-2 text-center text-xs text-muted-foreground">{th("Duke ngarkuar…", "Loading…")}</p>
+          <p className="py-2 text-center text-xs text-muted-foreground">{thUi("loading")}</p>
         ) : null}
         <div ref={mobileSentinelRef} className="h-1" />
       </div>

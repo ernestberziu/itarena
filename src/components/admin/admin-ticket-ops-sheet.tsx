@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import { Settings2 } from "lucide-react";
@@ -37,9 +38,8 @@ export function AdminTicketOpsSheet({
   estimatedDays: number | null;
   estimatedHours: number | null;
 }) {
+  const tUi = useUiT();
   const [open, setOpen] = useState(false);
-  const t = (sq: string, en: string) => (locale === "sq" ? sq : en);
-
   return (
     <>
       <Button
@@ -50,13 +50,13 @@ export function AdminTicketOpsSheet({
         onClick={() => setOpen(true)}
       >
         <Settings2 className="h-4 w-4" strokeWidth={2} />
-        {t("Operacione", "Ops")}
+        {tUi("ops")}
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="flex w-[min(100vw,24rem)] flex-col gap-0 p-0">
           <SheetHeader className="border-b border-border/60 px-5 py-4 text-left">
             <SheetTitle className="text-base font-semibold">
-              {t("Menaxho biletën", "Manage ticket")}
+              {tUi("manage_ticket")}
             </SheetTitle>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto px-5 py-5 pb-8">

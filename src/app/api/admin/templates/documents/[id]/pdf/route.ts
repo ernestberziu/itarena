@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import {  NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { buildPdfBufferForDocument } from "@/lib/templates/generate-document";
@@ -7,7 +8,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(req: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "templates", "read");
   if (denied) return denied;
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Command,
   CommandEmpty,
@@ -47,19 +47,37 @@ interface CommandMenuProps {
   portalLocale?: "sq" | "en";
 }
 
-const adminNav = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Njoftimet", href: "/admin/notifications", icon: Bell },
-  { label: "Biletat", href: "/admin/tickets", icon: Ticket },
-  { label: "Kalendari", href: "/admin/calendar", icon: Calendar },
-  { label: "Klientët", href: "/admin/clients", icon: Users },
-  { label: "Ofertat", href: "/admin/quotes", icon: FileText },
-  { label: "Porositë", href: "/admin/orders", icon: ShoppingBag },
-  { label: "Katalog", href: "/admin/catalog", icon: Package },
-  { label: "Stafi", href: "/admin/staff", icon: UserCog },
-  { label: "Raportet", href: "/admin/reports", icon: BarChart3 },
-  { label: "Shabllonet", href: "/admin/templates", icon: FileText },
-  { label: "Cilësimet", href: "/admin/settings", icon: Settings },
+type AdminNavKey =
+  | "dashboard"
+  | "notifications"
+  | "tickets"
+  | "calendar"
+  | "clients"
+  | "quotes"
+  | "orders"
+  | "catalog"
+  | "staff"
+  | "reports"
+  | "templates"
+  | "settings";
+
+const adminNavDefs: {
+  key: AdminNavKey;
+  href: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+}[] = [
+  { key: "dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { key: "notifications", href: "/admin/notifications", icon: Bell },
+  { key: "tickets", href: "/admin/tickets", icon: Ticket },
+  { key: "calendar", href: "/admin/calendar", icon: Calendar },
+  { key: "clients", href: "/admin/clients", icon: Users },
+  { key: "quotes", href: "/admin/quotes", icon: FileText },
+  { key: "orders", href: "/admin/orders", icon: ShoppingBag },
+  { key: "catalog", href: "/admin/catalog", icon: Package },
+  { key: "staff", href: "/admin/staff", icon: UserCog },
+  { key: "reports", href: "/admin/reports", icon: BarChart3 },
+  { key: "templates", href: "/admin/templates", icon: FileText },
+  { key: "settings", href: "/admin/settings", icon: Settings },
 ];
 
 const portalNavLabels: Record<string, { sq: string; en: string }> = {
@@ -112,6 +130,9 @@ export function CommandMenu({
 }: CommandMenuProps) {
   const router = useRouter();
   const locale = useLocale();
+  const tAdmin = useTranslations("admin.commandMenu");
+  const tPortal = useTranslations("portal.commandMenu");
+  const t = mode === "admin" ? tAdmin : tPortal;
   const lp = locale === "sq" ? "" : `/${locale}`;
   const effectiveAdminLocale =
     adminLocale === "en" ? "en" : locale === "en" ? "en" : "sq";
@@ -120,7 +141,11 @@ export function CommandMenu({
 
   const nav =
     mode === "admin"
-      ? adminNav
+      ? adminNavDefs.map((item) => ({
+          label: tAdmin(item.key),
+          href: item.href,
+          icon: item.icon,
+        }))
       : buildPortalNav(portalNavContext, effectivePortalLocale);
 
   function go(href: string) {
@@ -200,7 +225,7 @@ export function CommandMenu({
                     strokeWidth={2}
                   />
                   <CommandInput
-                    placeholder="Kërko faqe, biletë, klient..."
+                    placeholder={t("searchPlaceholder")}
                     className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                     autoFocus
                   />
@@ -209,9 +234,9 @@ export function CommandMenu({
               </div>
               <CommandList className="max-h-[min(18rem,50vh)] overflow-y-auto px-1.5 py-2">
                 <CommandEmpty className="py-10 text-center text-sm text-muted-foreground">
-                  Nuk u gjet asgjë.
+                  {t("noResults")}
                 </CommandEmpty>
-                <CommandGroup heading="Navigim" className={groupHeadingClass}>
+                <CommandGroup heading={t("navigation")} className={groupHeadingClass}>
                   {nav.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -230,14 +255,14 @@ export function CommandMenu({
                 {mode === "portal" && (
                   <>
                     <CommandSeparator className="my-1.5 h-px bg-border/70" />
-                    <CommandGroup heading="Veprime" className={groupHeadingClass}>
+                    <CommandGroup heading={t("quickActions")} className={groupHeadingClass}>
                       <CommandItem
-                        value="biletë e re"
+                        value={tPortal("newTicket")}
                         onSelect={() => go("/portal/tickets/new")}
                         className={itemClass}
                       >
                         <Plus className="h-4 w-4 text-muted-foreground" />
-                        Hap biletë të re
+                        {tPortal("newTicket")}
                       </CommandItem>
                     </CommandGroup>
                   </>
@@ -245,14 +270,14 @@ export function CommandMenu({
                 {mode === "admin" && (
                   <>
                     <CommandSeparator className="my-1.5 h-px bg-border/70" />
-                    <CommandGroup heading="Veprime" className={groupHeadingClass}>
+                    <CommandGroup heading={tAdmin("quickActions")} className={groupHeadingClass}>
                       <CommandItem
-                        value="biletë e re admin"
+                        value={tAdmin("newTicket")}
                         onSelect={() => go("/admin/tickets/new")}
                         className={itemClass}
                       >
                         <Plus className="h-4 w-4 text-muted-foreground" />
-                        Hap biletë të re
+                        {tAdmin("newTicket")}
                       </CommandItem>
                     </CommandGroup>
                   </>
@@ -261,15 +286,15 @@ export function CommandMenu({
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border/50 bg-muted/10 px-4 py-2.5 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <kbd className={kbdChip}>↑↓</kbd>
-                  lëviz
+                  {t("moveHint")}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <kbd className={kbdChip}>↵</kbd>
-                  zgjidh
+                  {t("selectHint")}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <kbd className={kbdChip}>Esc</kbd>
-                  mbyll
+                  {t("closeHint")}
                 </span>
               </div>
             </Command>

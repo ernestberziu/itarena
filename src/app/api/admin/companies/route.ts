@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -27,14 +28,14 @@ const postSchema = z
 function forbidIfNotStaff(role: string | undefined) {
   const allowed = ["ADMIN", "SALES"];
   if (!role || !allowed.includes(role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
   return null;
 }
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "companies", "read");
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "companies", "write");
@@ -72,12 +73,12 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;

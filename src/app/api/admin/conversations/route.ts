@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { canAccessProject } from "@/lib/projects/access";
@@ -17,7 +18,7 @@ import {
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "messages", "read");
   if (denied) return denied;
 
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
   const listType = projectId ? "PROJECT" : type;
   if (projectId) {
     const ok = await canAccessProject(session.user.id, projectId, "read");
-    if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!ok) return apiErr(req, "notFound", 404);
     await ensureProjectConversation(projectId, session.user.id);
   } else {
     await syncAccessibleProjectChannels(session.user.id);
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "messages", "write");
   if (denied) return denied;
 
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = createConversationSchema.safeParse(body);
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
   const { type, title, participantIds, projectId } = parsed.data;
   if (projectId) {
     const ok = await canAccessProject(session.user.id, projectId, "read");
-    if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!ok) return apiErr(req, "notFound", 404);
   }
 
   try {

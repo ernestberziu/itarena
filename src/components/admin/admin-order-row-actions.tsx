@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -46,7 +47,7 @@ export function AdminOrderRowActions({
   locale: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -55,12 +56,12 @@ export function AdminOrderRowActions({
     setLoading(true);
     try {
       await patchOrder(orderId, { status });
-      toast.success(t("Statusi u përditësua", "Status updated"));
+      toast.success(tUi("status_updated"));
       setSheetOpen(false);
       router.refresh();
       return true;
     } catch {
-      toast.error(t("Gabim gjatë përditësimit", "Update failed"));
+      toast.error(tUi("update_failed"));
       return false;
     } finally {
       setLoading(false);
@@ -71,11 +72,11 @@ export function AdminOrderRowActions({
     <>
       <DropdownMenuItem render={<Link href={detailHref} />}>
         <Eye className="mr-2 h-4 w-4 opacity-70" />
-        {t("Shiko porosinë", "View order")}
+        {tUi("view_order")}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger>{t("Ndrysho statusin", "Set status")}</DropdownMenuSubTrigger>
+        <DropdownMenuSubTrigger>{tUi("set_status")}</DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
           {ORDER_STATUSES.map((s) => (
             <DropdownMenuItem
@@ -102,7 +103,7 @@ export function AdminOrderRowActions({
                 variant="secondary"
                 size="icon"
                 className="h-8 w-8 shrink-0 border border-border shadow-sm"
-                aria-label={t("Veprime", "Actions")}
+                aria-label={tUi("actions")}
               />
             }
           >
@@ -123,7 +124,7 @@ export function AdminOrderRowActions({
                 variant="secondary"
                 size="icon"
                 className="h-8 w-8 shrink-0 border border-border shadow-sm"
-                aria-label={t("Veprime", "Actions")}
+                aria-label={tUi("actions")}
               />
             }
           >
@@ -131,17 +132,17 @@ export function AdminOrderRowActions({
           </SheetTrigger>
           <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
             <SheetHeader className="text-left">
-              <SheetTitle>{t("Veprime", "Actions")}</SheetTitle>
+              <SheetTitle>{tUi("actions")}</SheetTitle>
             </SheetHeader>
             <div className="mt-4 flex flex-col gap-2 pb-6">
               <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
                 <Link href={detailHref} onClick={() => setSheetOpen(false)}>
                   <Eye className="mr-2 h-4 w-4 shrink-0" />
-                  {t("Shiko porosinë", "View order")}
+                  {tUi("view_order")}
                 </Link>
               </Button>
               <p className="pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                {t("Statusi", "Status")}
+                {tUi("status")}
               </p>
               <div className="flex max-h-[min(50vh,16rem)] flex-col gap-2 overflow-y-auto overscroll-y-contain">
                 {ORDER_STATUSES.map((s) => (

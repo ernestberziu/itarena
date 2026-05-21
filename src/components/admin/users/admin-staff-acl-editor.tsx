@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -54,7 +55,7 @@ export function AdminStaffAclEditor({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   const defaults = ROLE_DEFAULT_ACL[staffRole];
 
@@ -81,10 +82,7 @@ export function AdminStaffAclEditor({
   if (staffRole === "ADMIN") {
     return (
       <div className="rounded-2xl border border-border/60 bg-muted/20 p-5 text-sm text-muted-foreground">
-        {t(
-          "Administratorët kanë qasje të plotë; ACL nuk zbatohet për këtë rol.",
-          "Administrators have full access; ACL does not apply to this role."
-        )}
+        {tUi("administrators_have_full_access_acl_does_not_app")}
       </div>
     );
   }
@@ -112,10 +110,10 @@ export function AdminStaffAclEditor({
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(json.error ?? "Request failed");
-      toast.success(t("Lejet u përditësuan", "Permissions updated"));
+      toast.success(tUi("permissions_updated"));
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -123,24 +121,21 @@ export function AdminStaffAclEditor({
 
   const label = (f: AdminFeature) =>
     f === "pos_sale"
-      ? t("POS — shitje në dyqan", "POS — in-store sale")
+      ? tUi("pos_in_store_sale")
       : f === "shop_products"
-        ? t("Produkte dyqani", "Shop products")
+        ? tUi("shop_products")
         : f === "shop_orders"
-          ? t("Porosi dyqani", "Shop orders")
+          ? tUi("shop_orders")
           : f === "view_shop"
-            ? t("Shiko dyqanin", "View shop")
+            ? tUi("view_shop")
             : f.charAt(0).toUpperCase() + f.slice(1).replace(/_/g, " ");
 
   return (
     <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
       <div>
-        <h2 className="text-sm font-semibold tracking-tight">{t("Lejet (ACL)", "Permissions (ACL)")}</h2>
+        <h2 className="text-sm font-semibold tracking-tight">{tUi("permissions_acl")}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {t(
-            "Trashëgimi = roli i paracaktuar. Zgjidh nivelin për të mbishkruar.",
-            "Inherit = role default. Pick a level to override."
-          )}
+          {tUi("inherit_role_default_pick_a_level_to_override")}
         </p>
       </div>
 
@@ -148,9 +143,9 @@ export function AdminStaffAclEditor({
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-muted/80 backdrop-blur">
             <tr className="border-b border-border/60">
-              <th className="px-3 py-2 font-medium">{t("Zona", "Area")}</th>
-              <th className="px-3 py-2 font-medium">{t("Parazgjedhje", "Default")}</th>
-              <th className="px-3 py-2 font-medium">{t("Mbishkrim", "Override")}</th>
+              <th className="px-3 py-2 font-medium">{tUi("area")}</th>
+              <th className="px-3 py-2 font-medium">{tUi("default")}</th>
+              <th className="px-3 py-2 font-medium">{tUi("override")}</th>
             </tr>
           </thead>
           <tbody>
@@ -167,7 +162,7 @@ export function AdminStaffAclEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="inherit">{t("Trashëgim", "Inherit")}</SelectItem>
+                      <SelectItem value="inherit">{tUi("inherit")}</SelectItem>
                       <SelectItem value="none">none</SelectItem>
                       <SelectItem value="read">read</SelectItem>
                       <SelectItem value="write">write</SelectItem>
@@ -181,7 +176,7 @@ export function AdminStaffAclEditor({
       </div>
 
       <Button type="button" onClick={() => void save()} disabled={loading}>
-        {t("Ruaj lejet", "Save permissions")}
+        {tUi("save_permissions")}
       </Button>
     </div>
   );

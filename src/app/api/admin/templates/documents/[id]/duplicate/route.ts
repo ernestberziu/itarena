@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import {  NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -9,13 +10,13 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function POST(_req: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "templates", "write");
   if (denied) return denied;
 
   const { id } = await params;
   const source = await db.contractDocument.findUnique({ where: { id } });
-  if (!source) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!source) return apiErr(_req, "notFound", 404);
 
   const doc = await db.contractDocument.create({
     data: {

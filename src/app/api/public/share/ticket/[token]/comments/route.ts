@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { assertPublicShareAccess } from "@/lib/public-share/assert-share-access";
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   });
   if (!ticket) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (ticket.status === "CLOSED") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   const comment = await db.ticketComment.create({

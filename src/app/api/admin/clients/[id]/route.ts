@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -25,7 +26,7 @@ const patchSchema = z
 function forbidIfNotStaff(role: string | undefined) {
   const allowed = ["ADMIN", "SALES"];
   if (!role || !allowed.includes(role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
   return null;
 }
@@ -40,7 +41,7 @@ function mailLocale(lang: string | null | undefined): "sq" | "en" {
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user?.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "clients", "write");
@@ -52,12 +53,12 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const patch = parsed.data;
@@ -66,7 +67,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     where: { id, role: { in: [...CLIENT_ROLES] } },
     select: { id: true, email: true, passwordHash: true, firstName: true, lastName: true, language: true },
   });
-  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!current) return apiErr(req, "notFound", 404);
 
   const isFirstInvite = !current.email || !current.passwordHash;
 
@@ -96,7 +97,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       select: { id: true },
     });
     if (dup) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+      return apiErr(req, "emailInUse", 409);
     }
   }
 
@@ -123,7 +124,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       prismaData.companyId = null;
     } else {
       const company = await db.company.findUnique({ where: { id: patch.companyId }, select: { id: true } });
-      if (!company) return NextResponse.json({ error: "Company not found" }, { status: 404 });
+      if (!company) return apiErr(req, "notFound", 404);
       prismaData.companyId = patch.companyId;
     }
   }
@@ -134,7 +135,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const hasPrismaUpdates = Object.keys(prismaData).length > 0;
   if (!hasPrismaUpdates && !patch.notifyCustomer) {
-    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    return apiErr(req, "noFieldsToUpdate", 400);
   }
 
   const shouldClearSessions = Boolean(plainPassword || emailChanged);
@@ -152,7 +153,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       }
     });
   } catch {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return apiErr(req, "updateFailed", 500);
   }
 
   let credentialsEmailSent = false;
@@ -205,7 +206,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user?.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "clients", "write");
@@ -216,7 +217,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     where: { id, role: { in: [...CLIENT_ROLES] } },
     select: { id: true },
   });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return apiErr(_req, "notFound", 404);
 
   const [orders, ticketsAsCreator, ticketsAsAssignee, quotes, comments, histories, audits] =
     await Promise.all([
@@ -256,7 +257,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     ]);
   } catch (e) {
     console.error(e);
-    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    return apiErr(_req, "deleteFailed", 500);
   }
 
   return NextResponse.json({ ok: true });

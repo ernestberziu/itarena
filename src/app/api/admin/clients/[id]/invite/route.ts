@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -14,14 +15,14 @@ const inviteSchema = z
 function forbidIfNotStaff(role: string | undefined) {
   const allowed = ["ADMIN", "SALES"];
   if (!role || !allowed.includes(role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
   return null;
 }
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "clients", "write");
@@ -33,12 +34,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = inviteSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const locale = session.user.language === "en" ? "en" : "sq";
@@ -69,13 +70,13 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   } catch (err) {
     if (err instanceof Error) {
       if (err.message === "NOT_FOUND") {
-        return NextResponse.json({ error: "Not found" }, { status: 404 });
+        return apiErr(req, "notFound", 404);
       }
       if (err.message === "INACTIVE") {
         return NextResponse.json({ error: "Client account is suspended" }, { status: 400 });
       }
       if (err.message === "EMAIL_EXISTS") {
-        return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+        return apiErr(req, "emailInUse", 409);
       }
     }
     return NextResponse.json({ error: "Invite failed" }, { status: 500 });

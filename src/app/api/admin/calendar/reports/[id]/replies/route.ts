@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { canReplyToReport } from "@/lib/calendar/access";
@@ -10,27 +11,27 @@ type Params = { params: Promise<{ id: string }> };
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiErr(req, "unauthorized", 401);
   }
 
   const denied = await assertAdminApiAcl(session.user.id, "calendar", "write");
   if (denied) return denied;
 
   if (!canReplyToReport(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   const { id: reportId } = await params;
   const report = await getReportById(reportId);
   if (!report) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(req, "notFound", 404);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = createReplySchema.safeParse(body);

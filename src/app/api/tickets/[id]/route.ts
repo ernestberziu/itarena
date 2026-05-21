@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -36,7 +37,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const { id } = await params;
   const body = await req.json();
@@ -44,7 +45,7 @@ export async function PATCH(
   if (!parsed.success) return NextResponse.json({ error: "Invalid" }, { status: 400 });
 
   const ticket = await db.ticket.findUnique({ where: { id } });
-  if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ticket) return apiErr(req, "notFound", 404);
 
   const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
   const clientUser = portalUser(session);
@@ -52,18 +53,18 @@ export async function PATCH(
   const canView = isStaff || canViewPortalTicket(clientUser, ticket);
 
   if (!canView) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   if (!isStaff && !isOwner) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   if (isStaff) {
     const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
     if (denied) return denied;
     if (!(await canStaffAccessTicket(session.user.id, ticket))) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiErr(req, "forbidden", 403);
     }
   }
 
@@ -326,7 +327,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const { id } = await params;
   const ticket = await db.ticket.findUnique({
@@ -345,19 +346,19 @@ export async function GET(
     },
   });
 
-  if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ticket) return apiErr(req, "notFound", 404);
 
   const isStaff = STAFF_ROLES.includes(session.user.role as (typeof STAFF_ROLES)[number]);
   const clientUser = portalUser(session);
   if (!isStaff && !canViewPortalTicket(clientUser, ticket)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   if (isStaff) {
     const denied = await assertAdminApiAcl(session.user.id, "tickets", "read");
     if (denied) return denied;
     if (!(await canStaffAccessTicket(session.user.id, ticket))) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiErr(req, "forbidden", 403);
     }
   }
 

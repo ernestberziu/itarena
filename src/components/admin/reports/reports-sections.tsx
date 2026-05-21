@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { SlaRing } from "@/components/admin/dashboard-charts";
 import { formatPrice } from "@/lib/utils";
@@ -33,15 +34,15 @@ export function ReportsSections({
 }) {
   const en = locale === "en";
   const loc: ReportLocale = en ? "en" : "sq";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const { sections } = data;
 
   return (
     <div className="space-y-6 print:space-y-4">
       <ReportsSection
         id="revenue"
-        title={t("Xhiro", "Revenue")}
-        description={t("Tendenca dhe shpërndarja e porosive", "Order trends and breakdown")}
+        title={tUi("revenue")}
+        description={tUi("order_trends_and_breakdown")}
         locale={locale}
         rangeParams={rangeParams}
       >
@@ -64,11 +65,11 @@ export function ReportsSections({
             </div>
           ))}
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Të përfunduara", "Completed")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("completed")}</p>
             <p className="font-semibold">{sections.revenue.completedCount}</p>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Të anuluara", "Cancelled")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("cancelled")}</p>
             <p className="font-semibold">{sections.revenue.cancelledCount}</p>
           </div>
         </div>
@@ -76,7 +77,7 @@ export function ReportsSections({
 
       <ReportsSection
         id="users"
-        title={t("Përdorues & klientë", "Users & clients")}
+        title={tUi("users_clients")}
         locale={locale}
         rangeParams={rangeParams}
       >
@@ -84,11 +85,11 @@ export function ReportsSections({
           <ReportLineChart data={sections.users.dailySignups} />
           <div className="flex flex-col justify-center gap-4 rounded-xl border border-border/50 bg-muted/15 p-4">
             <p>
-              <span className="text-muted-foreground">{t("Të rinj", "New")}: </span>
+              <span className="text-muted-foreground">{tUi("new")}: </span>
               <span className="font-semibold">{sections.users.newCustomers}</span>
             </p>
             <p>
-              <span className="text-muted-foreground">{t("Kthyes", "Returning")}: </span>
+              <span className="text-muted-foreground">{tUi("returning")}: </span>
               <span className="font-semibold">{sections.users.returningCustomers}</span>
             </p>
           </div>
@@ -105,9 +106,9 @@ export function ReportsSections({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2">{t("Kompania", "Company")}</th>
-                  <th className="pb-2">{t("Xhiro", "Revenue")}</th>
-                  <th className="pb-2">{t("Porosi", "Orders")}</th>
+                  <th className="pb-2">{tUi("company")}</th>
+                  <th className="pb-2">{tUi("revenue")}</th>
+                  <th className="pb-2">{tUi("orders_2")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,7 +125,7 @@ export function ReportsSections({
         ) : null}
       </ReportsSection>
 
-      <ReportsSection id="quotes" title={t("Oferta", "Quotes")} locale={locale} rangeParams={rangeParams}>
+      <ReportsSection id="quotes" title={tUi("quotes_2")} locale={locale} rangeParams={rangeParams}>
         <div className="grid gap-6 lg:grid-cols-2">
           <ReportDonutChart
             data={sections.quotes.byStatus.map((s) => ({
@@ -140,14 +141,14 @@ export function ReportsSections({
           />
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          {t("Pipeline", "Pipeline")}: {sections.quotes.pipelineCount} · {formatPrice(sections.quotes.pipelineValue)}
+          {tUi("pipeline")}: {sections.quotes.pipelineCount} · {formatPrice(sections.quotes.pipelineValue)}
           {sections.quotes.avgResponseHours != null
-            ? ` · ${t("Koha mesatare përgjigjeje", "Avg response")}: ${sections.quotes.avgResponseHours}h`
+            ? ` · ${tUi("avg_response")}: ${sections.quotes.avgResponseHours}h`
             : ""}
         </p>
       </ReportsSection>
 
-      <ReportsSection id="products" title={t("Produkte", "Products")} locale={locale} rangeParams={rangeParams}>
+      <ReportsSection id="products" title={tUi("products")} locale={locale} rangeParams={rangeParams}>
         <ReportBarChart
           data={sections.products.topSkus.slice(0, 10).map((s) => ({
             label: s.name.slice(0, 24),
@@ -158,7 +159,7 @@ export function ReportsSections({
 
       <ReportsSection
         id="funnel"
-        title={t("Funnel komercial", "Commercial funnel")}
+        title={tUi("commercial_funnel")}
         locale={locale}
         rangeParams={rangeParams}
       >
@@ -170,7 +171,7 @@ export function ReportsSections({
         />
       </ReportsSection>
 
-      <ReportsSection id="support" title={t("Mbështetje", "Support")} locale={locale} rangeParams={rangeParams}>
+      <ReportsSection id="support" title={tUi("support")} locale={locale} rangeParams={rangeParams}>
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <ReportLineChart data={sections.support.ticketsOpenedDaily} />
@@ -180,7 +181,7 @@ export function ReportsSections({
           </div>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
-          {t("Koha mesatare zgjidhjeje", "Avg resolution")}: {sections.support.avgResolutionHours}h
+          {tUi("avg_resolution")}: {sections.support.avgResolutionHours}h
         </p>
         {sections.support.auditByAction.length > 0 ? (
           <div className="mt-4">
@@ -196,37 +197,34 @@ export function ReportsSections({
 
       <ReportsSection
         id="projects"
-        title={t("Projektet", "Projects")}
-        description={t(
-          "Aktiviteti i projekteve, hapat dhe mesazhet në periudhën e zgjedhur",
-          "Project activity, steps, and messages in the selected period"
-        )}
+        title={tUi("projects")}
+        description={tUi("project_activity_steps_and_messages_in_the_selec")}
         locale={locale}
         rangeParams={rangeParams}
       >
         <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3 lg:grid-cols-6">
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Aktive", "Active")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("active")}</p>
             <p className="font-semibold tabular-nums">{sections.projects.totals.active}</p>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Të reja", "Created")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("created_2")}</p>
             <p className="font-semibold tabular-nums">{sections.projects.totals.createdInRange}</p>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Mesazhe", "Messages")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("messages")}</p>
             <p className="font-semibold tabular-nums">{sections.projects.totals.messagesInRange}</p>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Bileta", "Tickets")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("tickets_2")}</p>
             <p className="font-semibold tabular-nums">{sections.projects.totals.ticketsInRange}</p>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Përfunduar", "Completed")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("completed_2")}</p>
             <p className="font-semibold tabular-nums">{sections.projects.totals.completed}</p>
           </div>
           <div className="rounded-xl border border-border/50 bg-muted/20 p-3">
-            <p className="text-xs text-muted-foreground">{t("Arkivuar", "Archived")}</p>
+            <p className="text-xs text-muted-foreground">{tUi("archived")}</p>
             <p className="font-semibold tabular-nums">{sections.projects.totals.archived}</p>
           </div>
         </div>
@@ -255,11 +253,11 @@ export function ReportsSections({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2">{t("Projekti", "Project")}</th>
-                  <th className="pb-2">{t("Statusi", "Status")}</th>
-                  <th className="pb-2">{t("Bileta", "Tickets")}</th>
-                  <th className="pb-2">{t("Mesazhe", "Messages")}</th>
-                  <th className="pb-2">{t("Hapa", "Steps")}</th>
+                  <th className="pb-2">{tUi("project")}</th>
+                  <th className="pb-2">{tUi("status")}</th>
+                  <th className="pb-2">{tUi("tickets_2")}</th>
+                  <th className="pb-2">{tUi("messages")}</th>
+                  <th className="pb-2">{tUi("steps")}</th>
                 </tr>
               </thead>
               <tbody>

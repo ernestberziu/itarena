@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
@@ -41,7 +42,7 @@ async function countOtherActiveAdmins(excludeUserId: string): Promise<number> {
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "staff", "read");
   if (denied) return denied;
 
@@ -64,14 +65,14 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
       _count: { select: { assignedTickets: true } },
     },
   });
-  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!user) return apiErr(_req, "notFound", 404);
 
   return NextResponse.json(user);
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "staff", "write");
   if (denied) return denied;
 
@@ -81,12 +82,12 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const patch = parsed.data;
@@ -102,7 +103,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       isActive: true,
     },
   });
-  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!current) return apiErr(req, "notFound", 404);
 
   if (patch.role === "ADMIN" && current.role !== "ADMIN" && session.user.id === id) {
     return NextResponse.json({ error: "Cannot promote yourself to admin via this endpoint" }, { status: 403 });
@@ -110,7 +111,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const roleChanging = patch.role !== undefined && patch.role !== current.role;
   if (roleChanging && session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   if (current.role === "ADMIN") {
@@ -129,7 +130,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
 
   if (patch.adminAclJson !== undefined && session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   const trimmedPassword =
@@ -156,7 +157,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       select: { id: true },
     });
     if (dup) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+      return apiErr(req, "emailInUse", 409);
     }
   }
 
@@ -191,7 +192,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const hasPrismaUpdates = Object.keys(prismaData).length > 0;
   if (!hasPrismaUpdates) {
-    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+    return apiErr(req, "noFieldsToUpdate", 400);
   }
 
   const shouldClearSessions = Boolean(plainPassword || emailChanged);
@@ -209,7 +210,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
       }
     });
   } catch {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return apiErr(req, "updateFailed", 500);
   }
 
   if (aclChanged) {
@@ -255,7 +256,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "staff", "write");
   if (denied) return denied;
 
@@ -269,7 +270,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     where: { id, ...activeStaffWhere() },
     select: { id: true, role: true, isActive: true },
   });
-  if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!current) return apiErr(_req, "notFound", 404);
 
   if (current.role === "ADMIN" && current.isActive) {
     const others = await countOtherActiveAdmins(id);

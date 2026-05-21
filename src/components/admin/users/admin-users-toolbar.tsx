@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Link from "next/link";
 import { Search } from "lucide-react";
@@ -56,7 +57,7 @@ export function AdminUsersToolbar({
   portalAccess?: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const activeNorm = active || "all";
   const affiliationNorm = affiliation || "all";
   const portalAccessNorm = portalAccess || "all";
@@ -75,33 +76,33 @@ export function AdminUsersToolbar({
 
   const tierSummary =
     tier === "RETAIL"
-      ? t("Retail", "Retail")
+      ? tUi("retail")
       : tier === "B2B"
         ? "B2B"
         : null;
   const approvedSummary =
     approved === "true"
-      ? t("Të miratuar", "Approved")
+      ? tUi("approved_3")
       : approved === "false"
-        ? t("Në pritje", "Pending")
+        ? tUi("pending")
         : null;
   const accountSummary =
     activeNorm === "active"
-      ? t("Aktive", "Active")
+      ? tUi("active")
       : activeNorm === "suspended"
-        ? t("Të pezulluara", "Suspended")
+        ? tUi("suspended")
         : null;
   const affiliationSummary =
     affiliationNorm === "linked"
-      ? t("Me kompani", "With company")
+      ? tUi("with_company")
       : affiliationNorm === "individual"
-        ? t("Individual", "Individual")
+        ? tUi("individual")
         : null;
   const portalAccessSummary =
     portalAccessNorm === "invited"
-      ? t("Të ftuar", "Invited")
+      ? tUi("invited")
       : portalAccessNorm === "pending"
-        ? t("Pa ftesë", "Pending invite")
+        ? tUi("pending_invite_2")
         : null;
 
   const summaryParts = [tierSummary, approvedSummary, accountSummary, affiliationSummary, portalAccessSummary].filter(Boolean);
@@ -115,10 +116,7 @@ export function AdminUsersToolbar({
       ? `${en ? "Applied" : "Aplikuar"}: ${summaryParts.join(" · ")}`
       : null;
   const deckHint = [searchHint, filterHintLine].filter(Boolean).join(" — ") ||
-    t(
-      "Niveli, miratimi dhe llogaria përditësojnë URL-në (GET).",
-      "Tier, approval, and account update the URL (GET)."
-    );
+    tUi("tier_approval_and_account_update_the_url_get");
 
   const clearAll =
     filtersActive ? (
@@ -126,7 +124,7 @@ export function AdminUsersToolbar({
         href={`${lp}/admin/clients`}
         className="inline-flex rounded-lg border border-transparent px-2 py-1.5 text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:border-border/60 hover:bg-background/80 hover:text-foreground hover:underline"
       >
-        {t("Hiq filtrat", "Clear filters")}
+        {tUi("clear_filters")}
       </Link>
     ) : null;
 
@@ -143,7 +141,7 @@ export function AdminUsersToolbar({
             <Input
               name="q"
               defaultValue={q}
-              placeholder={t("Kërko klient, email…", "Search client, email…")}
+              placeholder={tUi("search_client_email")}
               className="h-10 border-0 bg-transparent pl-10 pr-3 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 md:text-sm"
               autoComplete="off"
             />
@@ -156,25 +154,25 @@ export function AdminUsersToolbar({
         {portalAccessNorm !== "all" ? <input type="hidden" name="portalAccess" value={portalAccessNorm} /> : null}
         <Button type="submit" className="h-10 shrink-0 gap-2 rounded-xl px-5 shadow-sm sm:w-auto w-full">
           <Search className="h-4 w-4" strokeWidth={2} aria-hidden />
-          {t("Kërko", "Search")}
+          {tUi("search")}
         </Button>
       </form>
 
       <AdminTicketsFilterDeck
         defaultOpen={defaultOpen}
-        title={t("Filtro klientët", "Filter clients")}
+        title={tUi("filter_clients")}
         hint={deckHint}
         clearAll={clearAll}
       >
         <div className="space-y-5">
           <div className="space-y-2">
             <span className="text-xs font-semibold tracking-tight text-foreground">
-              {t("Niveli", "Tier")}
+              {tUi("tier")}
             </span>
             <SegmentedFilterTrack>
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { tier: null })}
-                label={t("Të gjitha", "All")}
+                label={tUi("all")}
                 selected={!tier}
               />
               <SegmentedFilterLink
@@ -192,22 +190,22 @@ export function AdminUsersToolbar({
 
           <div className="space-y-2">
             <span className="text-xs font-semibold tracking-tight text-foreground">
-              {t("Miratimi", "Approval")}
+              {tUi("approval")}
             </span>
             <SegmentedFilterTrack>
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { approved: null })}
-                label={t("Të gjitha", "All")}
+                label={tUi("all")}
                 selected={!approved}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { approved: "true" })}
-                label={t("Të miratuar", "Approved")}
+                label={tUi("approved_3")}
                 selected={approved === "true"}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { approved: "false" })}
-                label={t("Në pritje", "Pending")}
+                label={tUi("pending")}
                 selected={approved === "false"}
               />
             </SegmentedFilterTrack>
@@ -215,66 +213,66 @@ export function AdminUsersToolbar({
 
           <div className="space-y-2">
             <span className="text-xs font-semibold tracking-tight text-foreground">
-              {t("Llogaria", "Account")}
+              {tUi("account")}
             </span>
             <SegmentedFilterTrack>
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { active: "all" })}
-                label={t("Të gjitha", "All")}
+                label={tUi("all")}
                 selected={activeNorm === "all"}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { active: "active" })}
-                label={t("Aktive", "Active")}
+                label={tUi("active")}
                 selected={activeNorm === "active"}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { active: "suspended" })}
-                label={t("Të pezulluara", "Suspended")}
+                label={tUi("suspended")}
                 selected={activeNorm === "suspended"}
               />
             </SegmentedFilterTrack>
           </div>
           <div className="space-y-2">
             <span className="text-xs font-semibold tracking-tight text-foreground">
-              {t("Lidhja me kompani", "Company link")}
+              {tUi("company_link")}
             </span>
             <SegmentedFilterTrack>
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { affiliation: "all" })}
-                label={t("Të gjitha", "All")}
+                label={tUi("all")}
                 selected={affiliationNorm === "all"}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { affiliation: "linked" })}
-                label={t("Me kompani", "With company")}
+                label={tUi("with_company")}
                 selected={affiliationNorm === "linked"}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { affiliation: "individual" })}
-                label={t("Individual", "Individual")}
+                label={tUi("individual")}
                 selected={affiliationNorm === "individual"}
               />
             </SegmentedFilterTrack>
           </div>
           <div className="space-y-2">
             <span className="text-xs font-semibold tracking-tight text-foreground">
-              {t("Aksesi në portal", "Portal access")}
+              {tUi("portal_access")}
             </span>
             <SegmentedFilterTrack>
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { portalAccess: "all" })}
-                label={t("Të gjitha", "All")}
+                label={tUi("all")}
                 selected={portalAccessNorm === "all"}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { portalAccess: "invited" })}
-                label={t("Të ftuar", "Invited")}
+                label={tUi("invited")}
                 selected={portalAccessNorm === "invited"}
               />
               <SegmentedFilterLink
                 href={buildClientsHref(lp, base, { portalAccess: "pending" })}
-                label={t("Pa ftesë", "Pending invite")}
+                label={tUi("pending_invite_2")}
                 selected={portalAccessNorm === "pending"}
               />
             </SegmentedFilterTrack>

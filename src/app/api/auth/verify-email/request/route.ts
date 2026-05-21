@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!user?.email) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(req, "notFound", 404);
   }
 
   if (user.emailVerified) {

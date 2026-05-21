@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -27,13 +28,13 @@ async function assertTicketShareAccess(
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
   if (denied) return denied;
 
   const { id: ticketId, shareId } = await params;
   const share = await assertTicketShareAccess(session.user.id, ticketId, shareId);
-  if (!share) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!share) return apiErr(_req, "notFound", 404);
 
   await db.clientResourceShare.update({
     where: { id: shareId },
@@ -45,13 +46,13 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
   if (denied) return denied;
 
   const { id: ticketId, shareId } = await params;
   const share = await assertTicketShareAccess(session.user.id, ticketId, shareId);
-  if (!share) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!share) return apiErr(req, "notFound", 404);
 
   const body = await req.json().catch(() => ({}));
   if (body?.action !== "regenerate_passcode") {

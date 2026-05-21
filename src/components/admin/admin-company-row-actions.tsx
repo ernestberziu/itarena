@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -33,7 +34,7 @@ export function AdminCompanyRowActions({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const detailHref = `${lp}/admin/companies/${company.id}`;
   const [danger, setDanger] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,11 +47,11 @@ export function AdminCompanyRowActions({
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: string }).error ?? "Request failed");
       }
-      toast.success(t("Kompania u fshi", "Company deleted"));
+      toast.success(tUi("company_deleted"));
       setDanger(false);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ export function AdminCompanyRowActions({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t("Veprime", "Actions")} />
+              <Button variant="outline" size="icon" className="h-8 w-8" aria-label={tUi("actions")} />
             }
           >
             <MoreHorizontal className="h-4 w-4" />
@@ -70,15 +71,15 @@ export function AdminCompanyRowActions({
           <DropdownMenuContent align="end" className="min-w-52 bg-white dark:bg-white">
             <DropdownMenuItem render={<Link href={detailHref} />}>
               <Eye className="mr-2 h-4 w-4" />
-              {t("Shiko", "View")}
+              {tUi("view")}
             </DropdownMenuItem>
             <DropdownMenuItem render={<Link href={`${detailHref}#edit`} />}>
               <Pencil className="mr-2 h-4 w-4" />
-              {t("Ndrysho", "Edit")}
+              {tUi("edit")}
             </DropdownMenuItem>
             <DropdownMenuItem render={<Link href={`${detailHref}#members`} />}>
               <UserPlus className="mr-2 h-4 w-4" />
-              {t("Anëtarët", "Members")}
+              {tUi("members")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -86,7 +87,7 @@ export function AdminCompanyRowActions({
               onClick={() => setDanger(true)}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              {t("Fshi", "Delete")}
+              {tUi("delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -95,13 +96,10 @@ export function AdminCompanyRowActions({
       <ConfirmDangerDialog
         open={danger}
         onOpenChange={setDanger}
-        title={t("Fshi kompaninë?", "Delete company?")}
-        description={t(
-          "Vetëm kompanitë pa lidhje me përdorues, bileta ose porosi mund të fshihen.",
-          "Only companies with no linked users, tickets, or orders can be deleted."
-        )}
-        confirmLabel={t("Fshi", "Delete")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("delete_company")}
+        description={tUi("only_companies_with_no_linked_users_tickets_or_o")}
+        confirmLabel={tUi("delete")}
+        cancelLabel={tUi("cancel")}
         loading={loading}
         onConfirm={deleteCompany}
       />

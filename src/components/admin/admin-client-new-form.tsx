@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,7 @@ import { adminWhiteInputClassName } from "@/components/admin/admin-white-dialog"
 export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -38,7 +39,7 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
 
   async function submit() {
     if (!firstName.trim() || !lastName.trim()) {
-      toast.error(t("Plotëso emrin dhe mbiemrin", "Fill in first and last name"));
+      toast.error(tUi("fill_in_first_and_last_name"));
       return;
     }
 
@@ -47,17 +48,17 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
 
     if (useAdvanced && emailTrim) {
       if (newPassword.trim().length > 0 && newPassword !== confirmPassword) {
-        toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
+        toast.error(tUi("passwords_do_not_match"));
         return;
       }
       if (!generateTemp && newPassword.trim().length < 8 && !notifyCustomer) {
-        toast.error(t("Vendos fjalëkalim ≥8 ose gjenero të përkohshëm", "Set password ≥8 or generate temp"));
+        toast.error(tUi("set_password_8_or_generate_temp"));
         return;
       }
     }
 
     if (useAdvanced && !emailTrim && (generateTemp || notifyCustomer || newPassword.trim())) {
-      toast.error(t("Email kërkohet për fjalëkalim ose njoftim", "Email is required for password or notification"));
+      toast.error(tUi("email_is_required_for_password_or_notification"));
       return;
     }
 
@@ -93,17 +94,14 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
       if (!res.ok) throw new Error(json.error ?? "Request failed");
 
       if (json.credentialsEmailSent) {
-        toast.success(t("Klienti u krijua dhe u njoftua me email", "Client created and notified"));
+        toast.success(tUi("client_created_and_notified"));
         router.push(`${lp}/admin/clients/${json.id}`);
       } else if (json.temporaryPassword) {
         setShownTemp(json.temporaryPassword);
-        toast.success(t("Klienti u krijua", "Client created"));
+        toast.success(tUi("client_created"));
       } else if (json.pendingInvite) {
         toast.success(
-          t(
-            "Klienti u krijua. Mund ta ftoni në portal më vonë.",
-            "Client created. You can invite them to the portal later."
-          )
+          tUi("client_created_you_can_invite_them_to_the_portal")
         );
         router.push(`${lp}/admin/clients/${json.id}`);
       } else {
@@ -111,7 +109,7 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
       }
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -120,11 +118,11 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
   if (shownTemp) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-        <p className="font-semibold text-amber-900">{t("Klienti u krijua", "Client created")}</p>
-        <p className="mt-2 text-sm text-amber-800">{t("Fjalëkalimi i përkohshëm", "Temporary password")}:</p>
+        <p className="font-semibold text-amber-900">{tUi("client_created")}</p>
+        <p className="mt-2 text-sm text-amber-800">{tUi("temporary_password")}:</p>
         <p className="mt-1 font-mono text-lg">{shownTemp}</p>
         <Button className="mt-4" onClick={() => router.push(`${lp}/admin/clients`)}>
-          {t("Shko te klientët", "Go to clients")}
+          {tUi("go_to_clients")}
         </Button>
       </div>
     );
@@ -133,26 +131,23 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
   return (
     <div className="space-y-6 rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
       <div>
-        <h2 className="text-sm font-semibold">{t("Të dhënat bazë", "Basic details")}</h2>
+        <h2 className="text-sm font-semibold">{tUi("basic_details")}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {t(
-            "Mjafton emri dhe mbiemri. Ftesa në portal mund të dërgohet më vonë.",
-            "First and last name are enough. Portal invite can be sent later."
-          )}
+          {tUi("first_and_last_name_are_enough_portal_invite_can")}
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>{t("Emri", "First name")} *</Label>
+          <Label>{tUi("first_name")} *</Label>
           <Input className={adminWhiteInputClassName} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label>{t("Mbiemri", "Last name")} *</Label>
+          <Label>{tUi("last_name")} *</Label>
           <Input className={adminWhiteInputClassName} value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
-          <Label>{t("Kompania (opsionale)", "Company (optional)")}</Label>
+          <Label>{tUi("company_optional")}</Label>
           <AdminCompanyCombobox locale={locale} value={companyId} onChange={setCompanyId} />
         </div>
       </div>
@@ -163,7 +158,7 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
           className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium"
           onClick={() => setAdvancedOpen((v) => !v)}
         >
-          <span>{t("Opsionale: email, telefon, fjalëkalim", "Optional: email, phone, password")}</span>
+          <span>{tUi("optional_email_phone_password")}</span>
           {advancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {advancedOpen ? (
@@ -178,12 +173,12 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("Telefon", "Phone")}</Label>
+              <Label>{tUi("phone_2")}</Label>
               <Input className={adminWhiteInputClassName} value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>{t("Fjalëkalimi", "Password")}</Label>
+                <Label>{tUi("password")}</Label>
                 <Input
                   className={adminWhiteInputClassName}
                   type="password"
@@ -192,7 +187,7 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>{t("Konfirmo", "Confirm")}</Label>
+                <Label>{tUi("confirm")}</Label>
                 <Input
                   className={adminWhiteInputClassName}
                   type="password"
@@ -203,18 +198,18 @@ export function AdminClientNewForm({ locale, lp }: { locale: string; lp: string 
             </div>
             <div className="flex items-center gap-2">
               <Checkbox id="gen" checked={generateTemp} onCheckedChange={(v) => setGenerateTemp(v === true)} />
-              <Label htmlFor="gen">{t("Gjenero fjalëkalim të përkohshëm", "Generate temporary password")}</Label>
+              <Label htmlFor="gen">{tUi("generate_temporary_password")}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox id="notify" checked={notifyCustomer} onCheckedChange={(v) => setNotifyCustomer(v === true)} />
-              <Label htmlFor="notify">{t("Njofto klientin me email", "Notify customer by email")}</Label>
+              <Label htmlFor="notify">{tUi("notify_customer_by_email")}</Label>
             </div>
           </div>
         ) : null}
       </div>
 
       <Button onClick={() => void submit()} disabled={loading}>
-        {t("Krijo klientin", "Create client")}
+        {tUi("create_client")}
       </Button>
     </div>
   );

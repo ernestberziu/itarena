@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
@@ -44,7 +45,7 @@ export function AdminPosDailySalesSheet({
   locale: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const dateLocale = en ? enUS : sq;
   const [date, setDate] = useState(getTodayCalendarDate());
   const [data, setData] = useState<PosDailySalesPayload | null>(null);
@@ -120,7 +121,7 @@ export function AdminPosDailySalesSheet({
     const ok = printHtmlDocument(html);
     if (!ok) {
       toast.error(
-        t("Printimi dështoi. Provoni përsëri.", "Print failed. Please try again.")
+        tUi("print_failed_please_try_again")
       );
     }
   }
@@ -138,13 +139,10 @@ export function AdminPosDailySalesSheet({
             </div>
             <div>
               <SheetTitle className="text-base">
-                {t("Shitjet ditore POS", "Daily POS sales")}
+                {tUi("daily_pos_sales")}
               </SheetTitle>
               <p className="text-xs font-normal text-muted-foreground">
-                {t(
-                  "Çfarë ka shitur çdo punonjës (pa partnerët).",
-                  "What each staff member sold (partners excluded)."
-                )}
+                {tUi("what_each_staff_member_sold_partners_excluded")}
               </p>
             </div>
           </div>
@@ -154,10 +152,10 @@ export function AdminPosDailySalesSheet({
           <section className="mb-4 rounded-xl border border-border/60 bg-card p-4 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Calendar className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              {t("Periudha", "Period")}
+              {tUi("period")}
             </div>
             <Label htmlFor="pos-report-date" className="sr-only">
-              {t("Data", "Date")}
+              {tUi("date")}
             </Label>
             <Input
               id="pos-report-date"
@@ -183,13 +181,10 @@ export function AdminPosDailySalesSheet({
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/15 px-6 py-12 text-center">
               <Receipt className="mb-3 h-10 w-10 text-muted-foreground/50" strokeWidth={1.5} aria-hidden />
               <p className="text-sm font-medium text-foreground">
-                {t("Nuk ka shitje", "No sales")}
+                {tUi("no_sales")}
               </p>
               <p className="mt-1 max-w-[280px] text-xs text-muted-foreground">
-                {t(
-                  "Nuk u regjistruan shitje POS për këtë datë.",
-                  "No POS sales were recorded for this date."
-                )}
+                {tUi("no_pos_sales_were_recorded_for_this_date")}
               </p>
             </div>
           ) : data ? (
@@ -197,7 +192,7 @@ export function AdminPosDailySalesSheet({
               <div className="mb-4 grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-border/60 bg-gradient-to-br from-primary/[0.06] to-transparent p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("Totali", "Total")}
+                    {tUi("total")}
                   </p>
                   <p className="mt-1 text-lg font-bold tabular-nums text-primary">
                     {formatPrice(data.grandTotal)}
@@ -205,7 +200,7 @@ export function AdminPosDailySalesSheet({
                 </div>
                 <div className="rounded-xl border border-border/60 bg-card p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {t("Shitje", "Sales")}
+                    {tUi("sales")}
                   </p>
                   <p className="mt-1 text-lg font-bold tabular-nums">{data.grandCount}</p>
                 </div>
@@ -214,10 +209,10 @@ export function AdminPosDailySalesSheet({
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   <Users className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                  {t("Detajet sipas stafit", "Details by staff")}
+                  {tUi("details_by_staff")}
                 </div>
                 <Badge variant="secondary" className="text-[10px] font-medium">
-                  {data.staff.length} {t("punonjës", "staff")}
+                  {data.staff.length} {tUi("staff")}
                 </Badge>
               </div>
 
@@ -245,7 +240,7 @@ export function AdminPosDailySalesSheet({
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {staffRoleLabelFromRole(row.role as Role, en ? "en" : "sq")} ·{" "}
-                            {row.saleCount} {t("shitje", "sales")}
+                            {row.saleCount} {tUi("sales_2")}
                           </p>
                         </div>
                         <p className="shrink-0 text-sm font-bold tabular-nums text-primary">
@@ -316,7 +311,7 @@ export function AdminPosDailySalesSheet({
             onClick={printReport}
           >
             <Printer className="h-4 w-4" strokeWidth={2} aria-hidden />
-            {t("Printo raportin", "Print report")}
+            {tUi("print_report")}
           </Button>
         </div>
       </SheetContent>

@@ -17,6 +17,7 @@ import { AdminStatCard } from "@/components/admin/users";
 import { Input } from "@/components/ui/input";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { getAdminUiT } from "@/lib/i18n/ui-t-server";
 
 export default async function AdminCatalogPage({
   params,
@@ -35,8 +36,7 @@ export default async function AdminCatalogPage({
 
   const sp = await searchParams;
   const lp = locale === "sq" ? "" : `/${locale}`;
-  const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = await getAdminUiT(locale);
   const q = sp.q?.trim();
   /** ERP category id (LISTE.KOD), same as slug in shop URLs. */
   const categorySlug = sp.category?.trim() || undefined;
@@ -64,12 +64,12 @@ export default async function AdminCatalogPage({
     return (
       <div className="space-y-6">
         <AdminPageHeader
-          title={t("Katalog Produktesh", "Product Catalog")}
-          description={t("Burimi: Financa5", "Source: Financa5")}
+          title={tUi("product_catalog")}
+          description={tUi("source_financa5")}
         />
         <EmptyState
           icon={Package}
-          title={t("Katalogu nuk është i arritshëm", "Catalog unavailable")}
+          title={tUi("catalog_unavailable")}
           description={
             locale === "sq"
               ? "Kontrollo FINANCA5_API_URL dhe FINANCA5_API_KEY. Lokalisht: npm run dev:with-mock ose node dev-mock/financa5/server.js."
@@ -97,7 +97,7 @@ export default async function AdminCatalogPage({
     categorySlug && categories.some((c) => c.slug === categorySlug) ? categorySlug : null;
 
   const categoryChips = [
-    { href: categoryHref(null), label: t("Të gjitha", "All"), value: null as string | null },
+    { href: categoryHref(null), label: tUi("all"), value: null as string | null },
     ...categories.map((c) => ({
       href: categoryHref(c.slug),
       label: locale === "sq" ? c.nameSq : c.nameEn,
@@ -108,11 +108,8 @@ export default async function AdminCatalogPage({
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title={t("Katalog Produktesh", "Product Catalog")}
-        description={t(
-          `${totalCount} produkte në këtë pamje (Financa5 + përshkrime/figura lokale)`,
-          `${totalCount} products in this view (Financa5 + local descriptions/images)`
-        )}
+        title={tUi("product_catalog")}
+        description={tUi("catalog_page_desc", { count: totalCount })}
         toolbar={
           <AdminListToolbar>
             <div className="flex w-full flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
@@ -121,9 +118,9 @@ export default async function AdminCatalogPage({
                   <Input
                     name="q"
                     defaultValue={q}
-                    placeholder={t("Kërko produkt, SKU…", "Search product, SKU…")}
+                    placeholder={tUi("search_product_sku")}
                     className="h-10"
-                    aria-label={t("Kërko", "Search")}
+                    aria-label={tUi("search")}
                   />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex-initial">
@@ -132,14 +129,14 @@ export default async function AdminCatalogPage({
                     defaultValue={categorySlug ?? ""}
                     className="h-10 min-w-[10rem] flex-1 rounded-xl border-2 border-border bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-initial"
                   >
-                    <option value="">{t("Të gjitha kategoritë", "All categories")}</option>
+                    <option value="">{tUi("all_categories")}</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.slug}>
                         {locale === "sq" ? c.nameSq : c.nameEn}
                       </option>
                     ))}
                   </select>
-                  <AdminListToolbarSubmitButton>{t("Kërko", "Search")}</AdminListToolbarSubmitButton>
+                  <AdminListToolbarSubmitButton>{tUi("search")}</AdminListToolbarSubmitButton>
                 </div>
               </form>
               <AdminListToolbarClear
@@ -152,10 +149,10 @@ export default async function AdminCatalogPage({
             </div>
             {categories.length > 0 ? (
               <AdminQuickFilterChips
-                title={t("Kategoria e shpejtë", "Quick category")}
+                title={tUi("quick_category")}
                 chips={categoryChips}
                 activeValue={activeCategory}
-                ariaLabel={t("Filtro sipas kategorisë", "Filter catalog by category")}
+                ariaLabel={tUi("filter_catalog_by_category")}
               />
             ) : null}
           </AdminListToolbar>
@@ -163,23 +160,23 @@ export default async function AdminCatalogPage({
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <AdminStatCard label={t("Produkte", "Products")} value={totalCount} icon={Package} />
-        <AdminStatCard label={t("Stok i ulët", "Low stock")} value={lowStock} icon={AlertTriangle} />
-        <AdminStatCard label={t("Jo aktivë", "Inactive")} value={inactive} icon={Layers} />
-        <AdminStatCard label={t("Kategori (filtër)", "Categories")} value={categories.length} icon={Layers} />
+        <AdminStatCard label={tUi("products")} value={totalCount} icon={Package} />
+        <AdminStatCard label={tUi("low_stock")} value={lowStock} icon={AlertTriangle} />
+        <AdminStatCard label={tUi("inactive")} value={inactive} icon={Layers} />
+        <AdminStatCard label={tUi("categories")} value={categories.length} icon={Layers} />
       </div>
 
       {totalCount === 0 ? (
         <EmptyState
           icon={Package}
           className="rounded-2xl border border-border/50 bg-card/40 py-16"
-          title={hasActiveFilters ? t("Nuk u gjetën produkte", "No products match") : t("Nuk ka produkte", "No products")}
+          title={hasActiveFilters ? tUi("no_products_match") : tUi("no_products")}
           description={
             hasActiveFilters
-              ? t("Provo të ndryshosh kërkimin ose kategorinë.", "Try adjusting search or category.")
-              : t("Nuk u kthyen produkte nga ERP për këtë filtrim.", "ERP returned no products for this filter.")
+              ? tUi("try_adjusting_search_or_category")
+              : tUi("erp_returned_no_products_for_this_filter")
           }
-          action={hasActiveFilters ? { label: t("Pastro filtrat", "Clear filters"), href: baseHref } : undefined}
+          action={hasActiveFilters ? { label: tUi("clear_filters_2"), href: baseHref } : undefined}
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.06]">

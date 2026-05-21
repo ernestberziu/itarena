@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -59,25 +60,25 @@ export function AdminQuoteRowActions({
   pdfUrl?: string | null;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const backendSoon = t("Kërkon mbështetje në server.", "Requires backend support.");
+  const backendSoon = tUi("requires_backend_support");
 
   async function applyStatus(status: string): Promise<boolean> {
     setLoading(true);
     try {
       await patchQuote(quoteId, { status });
-      toast.success(t("Statusi u përditësua", "Status updated"));
+      toast.success(tUi("status_updated"));
       setSheetOpen(false);
       router.refresh();
       return true;
     } catch {
-      toast.error(t("Gabim gjatë përditësimit", "Update failed"));
+      toast.error(tUi("update_failed"));
       return false;
     } finally {
       setLoading(false);
@@ -88,12 +89,12 @@ export function AdminQuoteRowActions({
     <>
       <DropdownMenuItem render={<Link href={detailHref} />}>
         <Eye className="mr-2 h-4 w-4 opacity-70" />
-        {t("Shiko ofertën", "View quote")}
+        {tUi("view_quote")}
       </DropdownMenuItem>
       {pdfUrl ? (
         <DropdownMenuItem render={<a href={pdfUrl} target="_blank" rel="noreferrer" />}>
           <FileDown className="mr-2 h-4 w-4 opacity-70" />
-          {t("Hap PDF", "Open PDF")}
+          {tUi("open_pdf")}
           <ExternalLink className="ml-auto h-3 w-3 opacity-50" />
         </DropdownMenuItem>
       ) : null}
@@ -103,7 +104,7 @@ export function AdminQuoteRowActions({
         onClick={() => setApproveOpen(true)}
       >
         <Check className="mr-2 h-4 w-4 text-emerald-600" />
-        {t("Prano", "Approve")}
+        {tUi("approve")}
       </DropdownMenuItem>
       <DropdownMenuItem
         disabled={currentStatus === "REJECTED"}
@@ -111,11 +112,11 @@ export function AdminQuoteRowActions({
         onClick={() => setRejectOpen(true)}
       >
         <X className="mr-2 h-4 w-4" />
-        {t("Refuzo", "Reject")}
+        {tUi("reject")}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger>{t("Ndrysho statusin", "Set status")}</DropdownMenuSubTrigger>
+        <DropdownMenuSubTrigger>{tUi("set_status")}</DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="max-h-64 overflow-y-auto">
           {STATUS_ORDER.map((s) => (
             <DropdownMenuItem
@@ -136,16 +137,16 @@ export function AdminQuoteRowActions({
             .then(async (res) => {
               const json = (await res.json().catch(() => ({}))) as { error?: string; emailSent?: boolean };
               if (!res.ok) throw new Error(json.error ?? "Failed");
-              if (json.emailSent) toast.success(t("Email u dërgua", "Email sent"));
-              else toast.warning(t("SMTP jo i konfiguruar", "SMTP not configured"));
+              if (json.emailSent) toast.success(tUi("email_sent"));
+              else toast.warning(tUi("smtp_not_configured"));
             })
             .catch((err) => toast.error(err instanceof Error ? err.message : "Error"));
         }}
       >
-        {t("Dërgo email", "Send email")}
+        {tUi("send_email")}
       </DropdownMenuItem>
       <DropdownMenuItem disabled title={backendSoon}>
-        {t("Fshi", "Delete")}
+        {tUi("delete")}
       </DropdownMenuItem>
     </>
   );
@@ -161,7 +162,7 @@ export function AdminQuoteRowActions({
                 variant="secondary"
                 size="icon"
                 className="h-8 w-8 shrink-0 border border-border shadow-sm"
-                aria-label={t("Veprime", "Actions")}
+                aria-label={tUi("actions")}
               />
             }
           >
@@ -182,7 +183,7 @@ export function AdminQuoteRowActions({
                 variant="secondary"
                 size="icon"
                 className="h-8 w-8 shrink-0 border border-border shadow-sm"
-                aria-label={t("Veprime", "Actions")}
+                aria-label={tUi("actions")}
               />
             }
           >
@@ -190,20 +191,20 @@ export function AdminQuoteRowActions({
           </SheetTrigger>
           <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
             <SheetHeader className="text-left">
-              <SheetTitle>{t("Veprime", "Actions")}</SheetTitle>
+              <SheetTitle>{tUi("actions")}</SheetTitle>
             </SheetHeader>
             <div className="mt-4 flex flex-col gap-2 pb-6">
               <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
                 <Link href={detailHref} onClick={() => setSheetOpen(false)}>
                   <Eye className="mr-2 h-4 w-4 shrink-0" />
-                  {t("Shiko ofertën", "View quote")}
+                  {tUi("view_quote")}
                 </Link>
               </Button>
               {pdfUrl ? (
                 <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
                   <a href={pdfUrl} target="_blank" rel="noreferrer" onClick={() => setSheetOpen(false)}>
                     <FileDown className="mr-2 h-4 w-4 shrink-0" />
-                    {t("Hap PDF", "Open PDF")}
+                    {tUi("open_pdf")}
                   </a>
                 </Button>
               ) : null}
@@ -217,7 +218,7 @@ export function AdminQuoteRowActions({
                 }}
               >
                 <Check className="mr-2 h-4 w-4 shrink-0" />
-                {t("Prano", "Approve")}
+                {tUi("approve")}
               </Button>
               <Button
                 variant="destructive"
@@ -229,10 +230,10 @@ export function AdminQuoteRowActions({
                 }}
               >
                 <X className="mr-2 h-4 w-4 shrink-0" />
-                {t("Refuzo", "Reject")}
+                {tUi("reject")}
               </Button>
               <p className="pt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                {t("Statusi", "Status")}
+                {tUi("status")}
               </p>
               <div className="flex max-h-40 flex-col gap-1 overflow-y-auto">
                 {STATUS_ORDER.map((s) => (
@@ -257,10 +258,10 @@ export function AdminQuoteRowActions({
       <ConfirmDangerDialog
         open={approveOpen}
         onOpenChange={setApproveOpen}
-        title={t("Prano ofertën?", "Approve this quote?")}
-        description={t("Klienti do të shohë statusin e pranuar.", "The client will see the quote as accepted.")}
-        confirmLabel={t("Prano", "Approve")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("approve_this_quote")}
+        description={tUi("the_client_will_see_the_quote_as_accepted")}
+        confirmLabel={tUi("approve")}
+        cancelLabel={tUi("cancel")}
         confirmVariant="default"
         loading={loading}
         onConfirm={async () => {
@@ -272,10 +273,10 @@ export function AdminQuoteRowActions({
       <ConfirmDangerDialog
         open={rejectOpen}
         onOpenChange={setRejectOpen}
-        title={t("Refuzo ofertën?", "Reject this quote?")}
-        description={t("Ky veprim shënon ofertën si të refuzuar.", "This marks the quote as rejected.")}
-        confirmLabel={t("Refuzo", "Reject")}
-        cancelLabel={t("Anulo", "Cancel")}
+        title={tUi("reject_this_quote")}
+        description={tUi("this_marks_the_quote_as_rejected")}
+        confirmLabel={tUi("reject")}
+        cancelLabel={tUi("cancel")}
         confirmVariant="destructive"
         loading={loading}
         onConfirm={async () => {

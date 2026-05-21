@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -91,7 +92,7 @@ function TicketMobileCard({
   locale: string;
   onOpen: () => void;
 }) {
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const thUi = useUiT();
   const href = `${listPrefix}/admin/tickets/${ticket.id}`;
   const name = customerName(ticket);
 
@@ -195,7 +196,7 @@ export function AdminTicketsTable({
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const thUi = useUiT();
   const [sorting, setSorting] = useState<SortingState>([]);
   const mobileSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -229,7 +230,7 @@ export function AdminTicketsTable({
       {
         id: "number",
         accessorKey: "number",
-        header: th("Nr.", "#"),
+        header: thUi("text"),
         enableSorting: true,
         ...meta({
           headerClassName: "w-[6.5rem] shrink-0",
@@ -245,7 +246,7 @@ export function AdminTicketsTable({
                   <AlertTriangle
                     className="h-3.5 w-3.5 shrink-0 text-rose-500"
                     strokeWidth={2}
-                    aria-label={th("SLA e shkelur", "SLA breached")}
+                    aria-label={thUi("sla_breached")}
                   />
                 ) : null}
                 <Link
@@ -263,7 +264,7 @@ export function AdminTicketsTable({
       {
         id: "subject",
         accessorKey: "title",
-        header: th("Bileta", "Ticket"),
+        header: thUi("ticket"),
         enableSorting: true,
         ...meta({
           headerClassName: "min-w-[14rem] w-[32%]",
@@ -286,7 +287,7 @@ export function AdminTicketsTable({
       },
       {
         id: "customer",
-        header: th("Klienti", "Customer"),
+        header: thUi("customer"),
         enableSorting: false,
         ...meta({
           headerClassName: "hidden md:table-cell min-w-[10rem] w-[16%]",
@@ -317,7 +318,7 @@ export function AdminTicketsTable({
       },
       {
         id: "state",
-        header: th("Gjendja", "State"),
+        header: thUi("state"),
         enableSorting: false,
         ...meta({
           headerClassName: "w-[8.5rem] shrink-0",
@@ -339,7 +340,7 @@ export function AdminTicketsTable({
     if (!hideAssigneeColumn) {
       cols.push({
         id: "assignee",
-        header: th("Caktuar", "Assignee"),
+        header: thUi("assignee"),
         enableSorting: false,
         ...meta({
           headerClassName: "hidden lg:table-cell min-w-[8rem] w-[12%]",
@@ -373,7 +374,7 @@ export function AdminTicketsTable({
       {
         id: "activity",
         accessorKey: "updatedAt",
-        header: th("Përditësuar", "Updated"),
+        header: thUi("updated"),
         enableSorting: true,
         ...meta({
           headerClassName: "hidden sm:table-cell w-[6.5rem] shrink-0",
@@ -434,7 +435,7 @@ export function AdminTicketsTable({
     [listPrefix, router]
   );
 
-  const emptyMessage = th("Nuk u gjetën bileta.", "No tickets found.");
+  const emptyMessage = thUi("no_tickets_found");
 
   return (
     <>
@@ -475,7 +476,7 @@ export function AdminTicketsTable({
           <span className="tabular-nums">{totalCount}</span>
           {hasMore ? (
             <span className="ml-2 text-muted-foreground/70">
-              · {th("lëviz për më shumë", "scroll for more")}
+              · {thUi("scroll_for_more")}
             </span>
           ) : null}
         </p>
@@ -502,7 +503,7 @@ export function AdminTicketsTable({
           ))
         )}
         {loadingMore ? (
-          <p className="py-2 text-center text-xs text-muted-foreground">{th("Duke ngarkuar…", "Loading…")}</p>
+          <p className="py-2 text-center text-xs text-muted-foreground">{thUi("loading")}</p>
         ) : null}
         {error ? <p className="text-center text-xs text-destructive">{error}</p> : null}
         <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />

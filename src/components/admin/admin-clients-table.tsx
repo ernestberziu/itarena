@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -87,7 +88,7 @@ export function AdminClientsTable({
   canMessage: boolean;
 }) {
   const router = useRouter();
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
+  const thUi = useUiT();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -140,16 +141,16 @@ export function AdminClientsTable({
       const csv = buildClientsCsv(data, [...CSV_COLUMNS]);
       const day = new Date().toISOString().slice(0, 10);
       downloadTextFile(`clients-export-${day}.csv`, csv);
-      toast.success(th("CSV u shkarkua", "CSV downloaded"));
+      toast.success(thUi("csv_downloaded"));
     },
-    [th]
+    [thUi]
   );
 
   const runBulk = useCallback(
     async (action: "activate" | "suspend") => {
       const sel = selectedFromState();
       if (sel.length === 0) {
-        toast.error(th("Zgjidh klientë", "Select clients"));
+        toast.error(thUi("select_clients"));
         return;
       }
       const res = await fetch("/api/admin/clients/bulk", {
@@ -159,38 +160,38 @@ export function AdminClientsTable({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error((body as { error?: string }).error ?? th("Gabim", "Error"));
+        toast.error((body as { error?: string }).error ?? thUi("error"));
         return;
       }
       const n = (body as { updatedCount?: number }).updatedCount ?? sel.length;
       toast.success(
         action === "activate"
-          ? th(`${n} llogari u aktivizuan`, `${n} accounts activated`)
-          : th(`${n} llogari u pezulluan`, `${n} accounts suspended`)
+          ? thUi("accounts_activated", { n })
+          : thUi("accounts_suspended", { n })
       );
       setRowSelection({});
       router.refresh();
     },
-    [selectedFromState, router, th]
+    [selectedFromState, router, thUi]
   );
 
   const bulkBar = (
     <div className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-primary/[0.07] px-3 py-2 text-sm dark:bg-primary/10">
       <span className="font-medium text-foreground">
         {selectionCount}{" "}
-        {th("të zgjedhur", "selected")}
+        {thUi("selected")}
       </span>
       <Button type="button" variant="outline" size="sm" onClick={() => runExport(selectedFromState())}>
-        {th("Eksporto CSV", "Export CSV")}
+        {thUi("export_csv")}
       </Button>
       <Button type="button" variant="outline" size="sm" onClick={() => void runBulk("activate")}>
-        {th("Aktivizo", "Activate")}
+        {thUi("activate")}
       </Button>
       <Button type="button" variant="outline" size="sm" onClick={() => void runBulk("suspend")}>
-        {th("Pezullo", "Suspend")}
+        {thUi("suspend")}
       </Button>
       <Button type="button" variant="secondary" size="sm" className="ml-auto" onClick={() => setRowSelection({})}>
-        {th("Hiq zgjedhjen", "Clear selection")}
+        {thUi("clear_selection")}
       </Button>
       <Button
         type="button"
@@ -200,8 +201,8 @@ export function AdminClientsTable({
         className="text-muted-foreground"
       >
         {hasMore
-          ? th("Eksporto të ngarkuara", "Export loaded")
-          : th("Eksporto të gjithë listën", "Export full list")}
+          ? thUi("export_loaded")
+          : thUi("export_full_list")}
       </Button>
     </div>
   );
@@ -215,7 +216,7 @@ export function AdminClientsTable({
             <Checkbox
               checked={table.getIsAllPageRowsSelected()}
               onCheckedChange={(v) => table.toggleAllPageRowsSelected(v === true)}
-              aria-label={th("Zgjidh të gjithë", "Select all")}
+              aria-label={thUi("select_all")}
             />
           </div>
         ),
@@ -224,7 +225,7 @@ export function AdminClientsTable({
             <Checkbox
               checked={row.getIsSelected()}
               onCheckedChange={(v) => row.toggleSelected(v === true)}
-              aria-label={th("Zgjidh rreshtin", "Select row")}
+              aria-label={thUi("select_row")}
             />
           </div>
         ),
@@ -234,7 +235,7 @@ export function AdminClientsTable({
       {
         id: "client",
         accessorFn: (row) => `${row.firstName} ${row.lastName}`.toLowerCase(),
-        header: th("Klienti", "Client"),
+        header: thUi("client_2"),
         enableSorting: true,
         cell: ({ row }) => {
           const badgeInput: UserStatusBadgeInput = {
@@ -275,7 +276,7 @@ export function AdminClientsTable({
       {
         id: "company",
         accessorFn: (row) => row.company?.name?.toLowerCase() ?? "",
-        header: th("Kompania", "Company"),
+        header: thUi("company"),
         enableSorting: true,
         cell: ({ row }) =>
           row.original.company ? (
@@ -302,19 +303,19 @@ export function AdminClientsTable({
       },
       {
         id: "type",
-        header: th("Lloji", "Type"),
+        header: thUi("type"),
         cell: ({ row }) => (
           <Badge variant="outline" className="text-xs">
             {row.original.company || row.original.hasRegistrationCompanyData
-              ? th("Biznes", "Business")
-              : th("Individual", "Individual")}
+              ? thUi("business")
+              : thUi("individual")}
           </Badge>
         ),
       },
       {
         id: "tickets",
         accessorFn: (row) => row._count.tickets,
-        header: th("Biletat", "Tickets"),
+        header: thUi("tickets"),
         enableSorting: true,
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -326,7 +327,7 @@ export function AdminClientsTable({
       {
         id: "orders",
         accessorFn: (row) => row._count.orders,
-        header: th("Porositë", "Orders"),
+        header: thUi("orders"),
         enableSorting: true,
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -337,7 +338,7 @@ export function AdminClientsTable({
       },
       {
         accessorKey: "createdAt",
-        header: th("Regjistruar", "Registered"),
+        header: thUi("registered"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -347,7 +348,7 @@ export function AdminClientsTable({
       },
       {
         id: "preview",
-        header: () => <span className="sr-only">{th("Parapamje", "Preview")}</span>,
+        header: () => <span className="sr-only">{thUi("preview")}</span>,
         enableSorting: false,
         cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()}>
@@ -356,7 +357,7 @@ export function AdminClientsTable({
               variant="outline"
               size="icon"
               className="h-8 w-8 shrink-0"
-              aria-label={th("Parapamje", "Preview")}
+              aria-label={thUi("preview")}
               onClick={() => openPreview(row.original)}
             >
               <Eye className="h-4 w-4" strokeWidth={2} />
@@ -366,7 +367,7 @@ export function AdminClientsTable({
       },
       {
         id: "actions",
-        header: () => <span className="sr-only">{th("Veprime", "Actions")}</span>,
+        header: () => <span className="sr-only">{thUi("actions")}</span>,
         enableSorting: false,
         cell: ({ row }) => (
           <div
@@ -396,7 +397,7 @@ export function AdminClientsTable({
         ),
       },
     ];
-  }, [locale, lp, th, openPreview, currentUserId, canMessage]);
+  }, [locale, lp, thUi, openPreview, currentUserId, canMessage]);
 
   const table = useReactTable({
     data: rows,
@@ -469,7 +470,7 @@ export function AdminClientsTable({
                           return next;
                         });
                       }}
-                      aria-label={th("Zgjidh rreshtin", "Select row")}
+                      aria-label={thUi("select_row")}
                     />
                   </div>
                   <Link href={`${lp}/admin/clients/${u.id}`} className="flex min-w-0 flex-1 items-center gap-3">
@@ -490,7 +491,7 @@ export function AdminClientsTable({
                       variant="outline"
                       size="icon"
                       className="h-9 w-9"
-                      aria-label={th("Parapamje", "Preview")}
+                      aria-label={thUi("preview")}
                       onClick={() => openPreview(u)}
                     >
                       <Eye className="h-4 w-4" strokeWidth={2} />
@@ -518,11 +519,11 @@ export function AdminClientsTable({
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                   <div>
-                    <p className="font-medium text-foreground">{th("Kompania", "Company")}</p>
+                    <p className="font-medium text-foreground">{thUi("company")}</p>
                     <p className="truncate">{u.company?.name ?? "—"}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{th("Regjistruar", "Registered")}</p>
+                    <p className="font-medium text-foreground">{thUi("registered")}</p>
                     <p>{formatDate(new Date(u.createdAt))}</p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -541,7 +542,7 @@ export function AdminClientsTable({
         <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />
         {loadingMore ? (
           <p className="text-center text-xs text-muted-foreground">
-            {th("Duke ngarkuar…", "Loading more…")}
+            {thUi("loading_more")}
           </p>
         ) : null}
       </div>

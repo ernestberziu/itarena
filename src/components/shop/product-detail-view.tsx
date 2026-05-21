@@ -14,6 +14,7 @@ import { ProductCard } from "./product-card";
 import { formatPrice } from "@/lib/utils";
 import { shopCatalogHref } from "@/lib/shop-url";
 import { useShopLocale, useShopPath } from "@/hooks/use-shop-locale";
+import { useTranslations } from "next-intl";
 
 interface Product {
   id: string;
@@ -46,6 +47,8 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
   const { addItem } = useCart();
   const shopLocale = useShopLocale();
   const shopHome = useShopPath();
+  const t = useTranslations("shop");
+  const productName = shopLocale === "en" ? product.nameEn : product.nameSq;
   const shopCart = useShopPath("cart");
   const [selectedImage, setSelectedImage] = useState(0);
   const [qty, setQty] = useState(1);
@@ -70,7 +73,7 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
       stock: product.stock,
       images: product.images,
     }, qty);
-    toast.success(`${product.nameSq} (${qty}x) u shtua në shportë!`);
+    toast.success(t("addedToCartNamedQty", { name: productName, qty }));
   }
 
   async function handleQuoteSubmit(e: React.FormEvent) {
@@ -421,7 +424,6 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
                     lowStockAt: 5,
                   } as never}
                   isB2b={isB2b}
-                  lang="sq"
                 />
               ))}
             </div>

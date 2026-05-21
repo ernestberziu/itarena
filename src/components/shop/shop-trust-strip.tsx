@@ -1,57 +1,21 @@
-import { Truck, CreditCard, Shield, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+"use client";
 
-type ShopLang = "sq" | "en";
+import { Truck, CreditCard, Shield, type LucideIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 type TrustFeature = {
   icon: LucideIcon;
-  label: string;
-  desc: string;
+  labelKey: "trustDeliveryLabel" | "trustCodLabel" | "trustWarrantyLabel";
+  descKey: "trustDeliveryDesc" | "trustCodDesc" | "trustWarrantyDesc";
   accent: "blue" | "amber" | "emerald";
 };
 
-const TRUST_FEATURES: Record<ShopLang, TrustFeature[]> = {
-  sq: [
-    {
-      icon: Truck,
-      label: "Dorëzim 24–48h",
-      desc: "Në të gjithë Shqipërinë",
-      accent: "blue",
-    },
-    {
-      icon: CreditCard,
-      label: "Pagesë me Dorëzim",
-      desc: "Pagoni vetëm kur merrni",
-      accent: "amber",
-    },
-    {
-      icon: Shield,
-      label: "Garanci Zyrtare",
-      desc: "Produkte origjinale",
-      accent: "emerald",
-    },
-  ],
-  en: [
-    {
-      icon: Truck,
-      label: "24–48h Delivery",
-      desc: "Across Albania",
-      accent: "blue",
-    },
-    {
-      icon: CreditCard,
-      label: "Cash on Delivery",
-      desc: "Pay only when you receive",
-      accent: "amber",
-    },
-    {
-      icon: Shield,
-      label: "Official Warranty",
-      desc: "Original products",
-      accent: "emerald",
-    },
-  ],
-};
+const TRUST_FEATURES: TrustFeature[] = [
+  { icon: Truck, labelKey: "trustDeliveryLabel", descKey: "trustDeliveryDesc", accent: "blue" },
+  { icon: CreditCard, labelKey: "trustCodLabel", descKey: "trustCodDesc", accent: "amber" },
+  { icon: Shield, labelKey: "trustWarrantyLabel", descKey: "trustWarrantyDesc", accent: "emerald" },
+];
 
 const accentStyles = {
   blue: {
@@ -75,30 +39,27 @@ const accentStyles = {
 } as const;
 
 interface ShopTrustStripProps {
-  lang: ShopLang;
   className?: string;
   /** Tighter padding when nested under the shop hero */
   compact?: boolean;
 }
 
-export function ShopTrustStrip({ lang, className, compact }: ShopTrustStripProps) {
-  const features = TRUST_FEATURES[lang];
+export function ShopTrustStrip({ className, compact }: ShopTrustStripProps) {
+  const t = useTranslations("shop");
 
   return (
     <div
-      className={cn(
-        compact ? "pt-8 md:pt-10" : "py-8 md:py-10",
-        className
-      )}
-      aria-label={lang === "sq" ? "Përfitimet e blerjes" : "Shopping benefits"}
+      className={cn(compact ? "pt-8 md:pt-10" : "py-8 md:py-10", className)}
+      aria-label={t("trustAriaLabel")}
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-        {features.map((f) => {
+        {TRUST_FEATURES.map((f) => {
           const accent = accentStyles[f.accent];
           const Icon = f.icon;
+          const label = t(f.labelKey);
           return (
             <div
-              key={f.label}
+              key={f.labelKey}
               className={cn(
                 "group relative flex items-center gap-4 rounded-2xl border border-white/10",
                 "bg-gradient-to-br from-white/[0.06] to-white/[0.02] px-4 py-4 md:px-5 md:py-5",
@@ -117,10 +78,10 @@ export function ShopTrustStrip({ lang, className, compact }: ShopTrustStripProps
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-sm md:text-[0.9375rem] text-white leading-snug tracking-tight">
-                  {f.label}
+                  {label}
                 </p>
                 <p className="text-xs md:text-[0.8125rem] text-slate-400 mt-1 leading-relaxed">
-                  {f.desc}
+                  {t(f.descKey)}
                 </p>
               </div>
               <span

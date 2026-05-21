@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -21,7 +22,7 @@ const patchSchema = z
 function forbidIfNotStaff(role: string | undefined) {
   const allowed = ["ADMIN", "SALES"];
   if (!role || !allowed.includes(role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
   return null;
 }
@@ -92,7 +93,7 @@ function mapDetail(company: {
 
 export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "companies", "read");
@@ -129,13 +130,13 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     },
   });
 
-  if (!company) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!company) return apiErr(_req, "notFound", 404);
   return NextResponse.json(mapDetail(company));
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "companies", "write");
@@ -146,16 +147,16 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const existing = await db.company.findUnique({ where: { id }, select: { id: true } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return apiErr(req, "notFound", 404);
 
   const p = parsed.data;
   const company = await db.company.update({
@@ -203,7 +204,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const forbidden = forbidIfNotStaff(session.user.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "companies", "write");
@@ -217,7 +218,7 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
       _count: { select: { users: true, tickets: true, orders: true, quotes: true, projectClients: true } },
     },
   });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!existing) return apiErr(_req, "notFound", 404);
 
   const blocked =
     existing._count.users +

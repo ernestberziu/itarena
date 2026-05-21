@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -21,14 +22,14 @@ const patchSchema = z
 
 function assertStaff(role: string | undefined) {
   if (!role || !STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr("sq", "forbidden", 403);
   }
   return null;
 }
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ erpKod: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const forbidden = assertStaff(session.user?.role);
   if (forbidden) return forbidden;
   const denied = await assertAdminApiAcl(session.user.id, "shop_products", "write");
@@ -44,12 +45,12 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ erpKod: s
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const { images, descriptionSq, descriptionEn } = parsed.data;

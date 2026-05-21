@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { getFinanca5Client } from "@/lib/financa5-client";
 
@@ -13,7 +14,7 @@ export type CatalogSearchItem = {
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiErr(req, "unauthorized", 401);
   }
 
   const q = (req.nextUrl.searchParams.get("q") ?? "").trim().toLowerCase();

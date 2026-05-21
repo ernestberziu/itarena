@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { portalUser } from "@/lib/portal/access";
@@ -9,15 +10,15 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   if (!PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number])) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(_req, "forbidden", 403);
   }
 
   const { id } = await params;
   const user = portalUser(session);
   const allowed = await assertPortalProjectAccess(user, id);
-  if (!allowed) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!allowed) return apiErr(_req, "notFound", 404);
 
   const project = await db.project.findUnique({
     where: { id },
@@ -55,7 +56,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     },
   });
 
-  if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!project) return apiErr(_req, "notFound", 404);
 
   return NextResponse.json(project);
 }

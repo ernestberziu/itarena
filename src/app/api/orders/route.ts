@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -25,14 +26,14 @@ const createSchema = z.object({
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return apiErr(req, "unauthorized", 401);
   }
 
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    return apiErr(req, "invalidData", 400);
   }
 
   const { items, deliveryAddress, deliveryCity, contactPhone, deliveryNotes, total } =
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr("sq", "unauthorized", 401);
 
   const isStaff = ["ADMIN", "OPS"].includes(session.user.role);
 

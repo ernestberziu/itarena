@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -30,7 +31,7 @@ export function AdminClientAccountPanel({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [email, setEmail] = useState(initialEmail ?? "");
@@ -60,15 +61,15 @@ export function AdminClientAccountPanel({
 
   async function save() {
     if (newPassword.trim().length > 0 && newPassword.trim().length < 8) {
-      toast.error(t("Fjalëkalimi duhet të jetë të paktën 8 karaktere", "Password must be at least 8 characters"));
+      toast.error(tUi("password_must_be_at_least_8_characters"));
       return;
     }
     if (newPassword.trim().length > 0 && newPassword !== confirmPassword) {
-      toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
+      toast.error(tUi("passwords_do_not_match"));
       return;
     }
     if (notifyCustomer && !email.trim()) {
-      toast.error(t("Vendos emailin për njoftim", "Enter an email to notify"));
+      toast.error(tUi("enter_an_email_to_notify"));
       return;
     }
 
@@ -106,20 +107,14 @@ export function AdminClientAccountPanel({
 
       if (json.notifyEmailAttempted && json.credentialsEmailSent) {
         toast.success(
-          t(
-            "U ruajt dhe klienti u njoftua me email (fjalëkalimi i përkohshëm).",
-            "Saved and the customer was emailed (temporary password)."
-          )
+          tUi("saved_and_the_customer_was_emailed_temporary_pas")
         );
       } else if (json.notifyEmailAttempted && !json.credentialsEmailSent) {
         toast.warning(
-          t(
-            "U ruajt, por emaili nuk u dërgua. Kontrollo SMTP_HOST / SMTP_USER / SMTP_PASS në .env.",
-            "Saved, but the email was not sent. Check SMTP_HOST / SMTP_USER / SMTP_PASS in .env."
-          )
+          tUi("saved_but_the_email_was_not_sent_check_smtp_host")
         );
       } else {
-        toast.success(t("U ruajt", "Saved"));
+        toast.success(tUi("saved_2"));
       }
 
       setNewPassword("");
@@ -128,7 +123,7 @@ export function AdminClientAccountPanel({
       setNotifyCustomer(false);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -137,19 +132,16 @@ export function AdminClientAccountPanel({
   return (
     <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
       <h2 className="text-sm font-semibold tracking-tight" id="account">
-        {t("Llogaria", "Account")}
+        {tUi("account")}
       </h2>
 
       {!hasPortalAccess ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-950/30">
           <p className="font-medium text-amber-900 dark:text-amber-200">
-            {t("Klienti nuk ka ende akses në portal", "Client does not have portal access yet")}
+            {tUi("client_does_not_have_portal_access_yet")}
           </p>
           <p className="mt-1 text-amber-800 dark:text-amber-300/90">
-            {t(
-              "Përdorni ftesën me email për të caktuar adresën dhe fjalëkalimin e përkohshëm.",
-              "Use invite by email to set their address and temporary password."
-            )}
+            {tUi("use_invite_by_email_to_set_their_address_and_tem")}
           </p>
           <AdminClientInviteDialog
             userId={userId}
@@ -160,18 +152,18 @@ export function AdminClientAccountPanel({
             hideTrigger
           />
           <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => setInviteOpen(true)}>
-            {t("Fto në portal", "Invite to portal")}
+            {tUi("invite_to_portal")}
           </Button>
         </div>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="acf">{t("Emri", "First name")}</Label>
+          <Label htmlFor="acf">{tUi("first_name")}</Label>
           <Input id="acf" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="acl">{t("Mbiemri", "Last name")}</Label>
+          <Label htmlFor="acl">{tUi("last_name")}</Label>
           <Input id="acl" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-2 sm:col-span-2">
@@ -182,14 +174,11 @@ export function AdminClientAccountPanel({
             value={email}
             disabled={!hasPortalAccess}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder={!hasPortalAccess ? t("Pa email — përdorni ftesën", "No email — use invite") : undefined}
+            placeholder={!hasPortalAccess ? tUi("no_email_use_invite") : undefined}
           />
           {hasPortalAccess ? (
             <p className="text-[11px] text-muted-foreground">
-              {t(
-                "Nëse ndryshon emailin dhe zgjedh njoftimin, klienti merr mesazh në adresën e re me fjalëkalimin e përkohshëm.",
-                "If you change the email and enable notification, the customer receives the message at the new address with the temporary password."
-              )}
+              {tUi("if_you_change_the_email_and_enable_notification_")}
             </p>
           ) : null}
         </div>
@@ -201,11 +190,11 @@ export function AdminClientAccountPanel({
 
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("Fjalëkalimi", "Password")}
+              {tUi("password")}
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="acp-new">{t("Fjalëkalim i ri (opsional)", "New password (optional)")}</Label>
+                <Label htmlFor="acp-new">{tUi("new_password_optional")}</Label>
                 <Input
                   id="acp-new"
                   type="password"
@@ -213,11 +202,11 @@ export function AdminClientAccountPanel({
                   value={newPassword}
                   disabled={generateTemp}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={t("minimum 8 karaktere", "at least 8 characters")}
+                  placeholder={tUi("at_least_8_characters")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="acp-confirm">{t("Konfirmo fjalëkalimin", "Confirm password")}</Label>
+                <Label htmlFor="acp-confirm">{tUi("confirm_password")}</Label>
                 <Input
                   id="acp-confirm"
                   type="password"
@@ -243,10 +232,7 @@ export function AdminClientAccountPanel({
                 }}
               />
               <Label htmlFor="acp-gen" className="cursor-pointer text-sm font-normal leading-snug">
-                {t(
-                  "Gjenero fjalëkalim të përkohshëm të rastësishëm (në vend të fjalëkalimit të shkruar më sipër)",
-                  "Generate a random temporary password (instead of the password fields above)"
-                )}
+                {tUi("generate_a_random_temporary_password_instead_of_")}
               </Label>
             </div>
 
@@ -257,10 +243,7 @@ export function AdminClientAccountPanel({
                 onCheckedChange={(v) => setNotifyCustomer(v === true)}
               />
               <Label htmlFor="acp-notify" className="cursor-pointer text-sm font-normal leading-snug">
-                {t(
-                  "Njofto klientin me email: adresë hyrjeje + fjalëkalim i përkohshëm (gjenerohet automatikisht nëse nuk vendos një fjalëkalim).",
-                  "Email the customer their sign-in address and a temporary password (one is generated automatically if you do not set a password)."
-                )}
+                {tUi("email_the_customer_their_sign_in_address_and_a_t")}
               </Label>
             </div>
           </div>
@@ -268,14 +251,11 @@ export function AdminClientAccountPanel({
       ) : null}
 
       <Button type="button" onClick={() => void save()} disabled={loading || !canSave}>
-        {t("Ruaj ndryshimet", "Save changes")}
+        {tUi("save_changes")}
       </Button>
       {hasPortalAccess ? (
         <p className="text-[11px] text-muted-foreground" aria-live="polite">
-          {t(
-            "Emaili i njoftimit përdor gjuhën e profilit të klientit",
-            "Notification email uses the customer’s profile language"
-          )}
+          {tUi("notification_email_uses_the_customer_s_profile_l")}
           : <span className="font-mono">{userLanguage === "en" ? "en" : "sq"}</span>.
         </p>
       ) : null}

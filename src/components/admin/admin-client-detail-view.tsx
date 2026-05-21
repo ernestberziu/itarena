@@ -1,3 +1,6 @@
+"use client";
+
+import { useUiT } from "@/hooks/use-ui-t";
 import Link from "next/link";
 import { Shield, StickyNote, Ticket, ShoppingBag, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +75,7 @@ export function AdminClientDetailView({
   canMessage: boolean;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const badgeInput: UserStatusBadgeInput = {
     isActive: user.isActive,
     emailVerified: user.emailVerified,
@@ -102,32 +105,32 @@ export function AdminClientDetailView({
                   <div className="flex flex-wrap items-center gap-2">
                     {!user.hasPortalAccess ? (
                       <Badge variant="secondary" className="border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                        {t("Në pritje të ftesës", "Pending invite")}
+                        {tUi("pending_invite")}
                       </Badge>
                     ) : null}
                     <UserStatusBadges user={badgeInput} locale={locale} />
                   </div>
                   <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <div>
-                      <dt className="inline font-medium text-foreground">{t("Lloji", "Type")}: </dt>
+                      <dt className="inline font-medium text-foreground">{tUi("type")}: </dt>
                       <dd className="inline">
                         {user.company || user.registeredCompany || user.registrationSnapshot
-                          ? t("Kontakt biznesi", "Business contact")
-                          : t("Individual", "Individual")}
+                          ? tUi("business_contact")
+                          : tUi("individual")}
                       </dd>
                     </div>
                     <div>
-                      <dt className="inline font-medium text-foreground">{t("Gjuha", "Language")}: </dt>
+                      <dt className="inline font-medium text-foreground">{tUi("language")}: </dt>
                       <dd className="inline">{user.language}</dd>
                     </div>
                     <div>
-                      <dt className="inline font-medium text-foreground">{t("Hyrja e fundit", "Last login")}: </dt>
+                      <dt className="inline font-medium text-foreground">{tUi("last_login")}: </dt>
                       <dd className="inline">
                         {user.lastLoginAt ? timeAgo(new Date(user.lastLoginAt)) : "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="inline font-medium text-foreground">{t("Krijuar", "Created")}: </dt>
+                      <dt className="inline font-medium text-foreground">{tUi("created")}: </dt>
                       <dd className="inline">{formatDate(new Date(user.createdAt))}</dd>
                     </div>
                   </dl>
@@ -165,17 +168,17 @@ export function AdminClientDetailView({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <AdminStatCard label={t("Biletat", "Tickets")} value={user._count.tickets} icon={Ticket} />
-            <AdminStatCard label={t("Porositë", "Orders")} value={user._count.orders} icon={ShoppingBag} />
-            <AdminStatCard label={t("Ofertat", "Quotes")} value={user._count.quotes} icon={FileText} />
+            <AdminStatCard label={tUi("tickets")} value={user._count.tickets} icon={Ticket} />
+            <AdminStatCard label={tUi("orders")} value={user._count.orders} icon={ShoppingBag} />
+            <AdminStatCard label={tUi("quotes")} value={user._count.quotes} icon={FileText} />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
-              <h2 className="text-sm font-semibold tracking-tight mb-3">{t("Kontakti", "Contact")}</h2>
+              <h2 className="text-sm font-semibold tracking-tight mb-3">{tUi("contact")}</h2>
               <dl className="space-y-2 text-sm">
                 <div>
-                  <dt className="text-muted-foreground">{t("Telefoni", "Phone")}</dt>
+                  <dt className="text-muted-foreground">{tUi("phone")}</dt>
                   <dd>{user.phone ?? "—"}</dd>
                 </div>
                 <div>
@@ -190,18 +193,18 @@ export function AdminClientDetailView({
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold tracking-tight">
                 <Shield className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-                {t("Siguria", "Security")}
+                {tUi("security")}
               </h2>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
                   {user.twoFactorEnabled
-                    ? t("2FA është aktivizuar", "Two-factor authentication is on")
-                    : t("2FA është i fikur", "Two-factor authentication is off")}
+                    ? tUi("two_factor_authentication_is_on")
+                    : tUi("two_factor_authentication_is_off")}
                 </li>
                 <li>
                   {user.emailVerified
-                    ? t("Email i verifikuar", "Email verified")
-                    : t("Email pa verifikuar", "Email not verified")}
+                    ? tUi("email_verified")
+                    : tUi("email_not_verified")}
                 </li>
               </ul>
             </div>
@@ -230,21 +233,21 @@ export function AdminClientDetailView({
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/10 p-5">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold tracking-tight text-muted-foreground">
               <StickyNote className="h-4 w-4" strokeWidth={2} />
-              {t("Shënime", "Notes")}
+              {tUi("notes")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {t("Nuk ka shënime të ruajtura për këtë klient.", "No saved notes for this client yet.")}
+              {tUi("no_saved_notes_for_this_client_yet")}
             </p>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
               <div className="border-b bg-muted/30 px-4 py-3">
-                <h2 className="text-sm font-semibold">{t("Biletat e fundit", "Recent tickets")}</h2>
+                <h2 className="text-sm font-semibold">{tUi("recent_tickets")}</h2>
               </div>
               <ul className="divide-y">
                 {user.recentTickets.length === 0 ? (
-                  <li className="px-4 py-6 text-sm text-muted-foreground">{t("Asnjë", "None")}</li>
+                  <li className="px-4 py-6 text-sm text-muted-foreground">{tUi("none")}</li>
                 ) : (
                   user.recentTickets.map((tk) => (
                     <li key={tk.id} className="px-4 py-3">
@@ -266,11 +269,11 @@ export function AdminClientDetailView({
 
             <div className="rounded-2xl border border-border/60 bg-card overflow-hidden shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
               <div className="border-b bg-muted/30 px-4 py-3">
-                <h2 className="text-sm font-semibold">{t("Porositë e fundit", "Recent orders")}</h2>
+                <h2 className="text-sm font-semibold">{tUi("recent_orders")}</h2>
               </div>
               <ul className="divide-y">
                 {user.recentOrders.length === 0 ? (
-                  <li className="px-4 py-6 text-sm text-muted-foreground">{t("Asnjë", "None")}</li>
+                  <li className="px-4 py-6 text-sm text-muted-foreground">{tUi("none")}</li>
                 ) : (
                   user.recentOrders.map((o) => (
                     <li key={o.id} className="px-4 py-3 text-sm">
@@ -300,7 +303,7 @@ export function AdminClientDetailView({
         <aside className="space-y-4 lg:sticky lg:top-4 h-fit">
           <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-              {t("Veprime të shpejta", "Quick actions")}
+              {tUi("quick_actions")}
             </p>
             <AdminClientQuickActions
               locale={locale}

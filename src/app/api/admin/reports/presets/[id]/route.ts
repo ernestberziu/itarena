@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -17,7 +18,7 @@ async function assertWrite(session: { user: { id: string; role: string } }) {
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertWrite(session);
   if (denied) return denied;
 
@@ -38,13 +39,13 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     });
     return NextResponse.json(preset);
   } catch {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(req, "notFound", 404);
   }
 }
 
 export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertWrite(session);
   if (denied) return denied;
 
@@ -53,6 +54,6 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     await db.reportPreset.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(_req, "notFound", 404);
   }
 }

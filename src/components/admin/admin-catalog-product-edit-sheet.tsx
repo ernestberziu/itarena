@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
@@ -29,7 +30,7 @@ type Props = {
 export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }: Props) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
 
   const [images, setImages] = useState<string[]>([]);
   const [descriptionSq, setDescriptionSq] = useState("");
@@ -71,11 +72,11 @@ export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }
       e.target.value = "";
       if (!file || !row) return;
       if (!file.type.startsWith("image/")) {
-        toast.error(t("Zgjidh një skedar figure.", "Pick an image file."));
+        toast.error(tUi("pick_an_image_file"));
         return;
       }
       if (images.length >= SHOP_OVERLAY_MAX_IMAGES) {
-        toast.error(t(`Maksimumi është ${SHOP_OVERLAY_MAX_IMAGES} figura.`, `Maximum is ${SHOP_OVERLAY_MAX_IMAGES} images.`));
+        toast.error(tUi("max_images_error", { max: SHOP_OVERLAY_MAX_IMAGES }));
         return;
       }
       setUploading(true);
@@ -118,17 +119,17 @@ export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }
               ? fileUrl
               : null;
         if (!url) {
-          throw new Error(t("URL e pavlefshme nga Cloudinary.", "Invalid URL from Cloudinary."));
+          throw new Error(tUi("invalid_url_from_cloudinary"));
         }
         setImages((prev) => [...prev, url]);
-        toast.success(t("Figura u ngarkua.", "Image uploaded."));
+        toast.success(tUi("image_uploaded"));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : t("Ngarkimi dështoi.", "Upload failed."));
+        toast.error(err instanceof Error ? err.message : tUi("upload_failed"));
       } finally {
         setUploading(false);
       }
     },
-    [images.length, row, t]
+    [images.length, row, tUi]
   );
 
   const onSave = useCallback(async () => {
@@ -148,29 +149,26 @@ export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }
       if (!res.ok) {
         throw new Error(data.error || "Save failed");
       }
-      toast.success(t("Ruajtja u krye.", "Saved."));
+      toast.success(tUi("saved"));
       onOpenChange(false);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("Ruajtja dështoi.", "Save failed."));
+      toast.error(err instanceof Error ? err.message : tUi("save_failed"));
     } finally {
       setSaving(false);
     }
-  }, [descriptionEn, descriptionSq, images, onOpenChange, row, router, t]);
+  }, [descriptionEn, descriptionSq, images, onOpenChange, row, router, tUi]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
-            {t("Ndrysho pamjen e produktit", "Edit product presentation")}
+            {tUi("edit_product_presentation")}
           </SheetTitle>
           <SheetDescription>
             {row
-              ? t(
-                  `SKU: ${row.sku} — vetëm figura (Cloudinary) dhe përshkrimi ruhen në databazë; çmimet dhe stoku vijnë nga Financa5.`,
-                  `SKU: ${row.sku} — only images (Cloudinary) and descriptions are stored in the database; prices and stock come from Financa5.`
-                )
+              ? tUi("sku_overlay_sheet_desc", { sku: row.sku })
               : null}
           </SheetDescription>
         </SheetHeader>
@@ -178,15 +176,15 @@ export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }
         {row ? (
           <div className="flex flex-col gap-6 px-4 pb-4">
             <div className="space-y-2">
-              <Label>{t("Figurat", "Images")}</Label>
+              <Label>{tUi("images")}</Label>
               <p className="text-xs text-muted-foreground">
-                {t(`Deri në ${SHOP_OVERLAY_MAX_IMAGES} URL nga Cloudinary.`, `Up to ${SHOP_OVERLAY_MAX_IMAGES} Cloudinary URLs.`)}
+                {tUi("up_to_cloudinary_urls", { max: SHOP_OVERLAY_MAX_IMAGES })}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" size="sm" disabled={uploading || images.length >= SHOP_OVERLAY_MAX_IMAGES} asChild>
                   <label className="cursor-pointer">
                     {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-                    <span className="ml-1.5">{t("Shto figurë", "Add image")}</span>
+                    <span className="ml-1.5">{tUi("add_image")}</span>
                     <input type="file" accept="image/*" className="sr-only" onChange={onPickFile} disabled={uploading} />
                   </label>
                 </Button>
@@ -220,7 +218,7 @@ export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }
                     </div>
                     <Button type="button" variant="outline" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeImage(url)}>
                       <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">{t("Hiq", "Remove")}</span>
+                      <span className="sr-only">{tUi("remove")}</span>
                     </Button>
                   </li>
                 ))}
@@ -228,23 +226,23 @@ export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cat-desc-sq">{t("Përshkrimi (SQ)", "Description (SQ)")}</Label>
+              <Label htmlFor="cat-desc-sq">{tUi("description_sq")}</Label>
               <Textarea
                 id="cat-desc-sq"
                 value={descriptionSq}
                 onChange={(e) => setDescriptionSq(e.target.value)}
                 rows={5}
-                placeholder={t("Lëreni bosh për të përdorur emrin nga Financa5.", "Leave empty to use the Financa5 name.")}
+                placeholder={tUi("leave_empty_to_use_the_financa5_name")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cat-desc-en">{t("Përshkrimi (EN)", "Description (EN)")}</Label>
+              <Label htmlFor="cat-desc-en">{tUi("description_en")}</Label>
               <Textarea
                 id="cat-desc-en"
                 value={descriptionEn}
                 onChange={(e) => setDescriptionEn(e.target.value)}
                 rows={5}
-                placeholder={t("Lëreni bosh për të përdorur emrin nga Financa5.", "Leave empty to use the Financa5 name.")}
+                placeholder={tUi("leave_empty_to_use_the_financa5_name")}
               />
             </div>
           </div>
@@ -252,11 +250,11 @@ export function AdminCatalogProductEditSheet({ row, open, onOpenChange, locale }
 
         <SheetFooter className="border-t border-border pt-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {t("Anulo", "Cancel")}
+            {tUi("cancel")}
           </Button>
           <Button type="button" onClick={onSave} disabled={!row || saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {t("Ruaj", "Save")}
+            {tUi("save")}
           </Button>
         </SheetFooter>
       </SheetContent>

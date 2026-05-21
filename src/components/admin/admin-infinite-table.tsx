@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import {
   flexRender,
@@ -57,12 +58,13 @@ export function AdminInfiniteTable<TData>({
   lastColumnId,
   bulkActions,
 }: AdminInfiniteTableProps<TData>) {
-  const th = (sq: string, en: string) => (locale === "sq" ? sq : en);
-  const entity = th(labels.entitySq, labels.entityEn);
-  const emptyMsg = th(labels.emptySq, labels.emptyEn);
-  const scrollHint = th(
-    labels.scrollMoreSq ?? "lëviz për më shumë",
-    labels.scrollMoreEn ?? "scroll for more"
+  const thUi = useUiT();
+  const pick = (sq: string, en: string) => (locale === "en" ? en : sq);
+  const entity = pick(labels.entitySq, labels.entityEn);
+  const emptyMsg = pick(labels.emptySq, labels.emptyEn);
+  const scrollHint = pick(
+    labels.scrollMoreSq ?? thUi("scroll_for_more"),
+    labels.scrollMoreEn ?? thUi("scroll_for_more")
   );
   const colCount = table.getVisibleLeafColumns().length;
   const resolvedFirst = firstColumnId ?? table.getVisibleLeafColumns()[0]?.id;
@@ -85,7 +87,7 @@ export function AdminInfiniteTable<TData>({
         {loadingMore ? (
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-            {th("Duke ngarkuar…", "Loading…")}
+            {thUi("loading")}
           </span>
         ) : null}
         {error ? <p className="text-xs text-destructive">{error}</p> : null}

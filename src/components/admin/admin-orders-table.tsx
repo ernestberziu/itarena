@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
@@ -59,7 +60,7 @@ export function AdminOrdersTable({
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const th = (sq: string, enLabel: string) => (locale === "sq" ? sq : enLabel);
+  const thUi = useUiT();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount, loadNext } =
@@ -86,7 +87,7 @@ export function AdminOrdersTable({
     return [
       {
         accessorKey: "orderNumber",
-        header: th("Nr. Porosisë", "Order #"),
+        header: thUi("order"),
         enableSorting: true,
         cell: ({ row }) => {
           const href = `${lp}/admin/orders/${row.original.id}`;
@@ -112,7 +113,7 @@ export function AdminOrdersTable({
       {
         id: "customer",
         accessorFn: (row) => `${row.user.firstName} ${row.user.lastName}`.toLowerCase(),
-        header: th("Klienti", "Customer"),
+        header: thUi("customer"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="font-medium">
@@ -123,7 +124,7 @@ export function AdminOrdersTable({
       {
         id: "company",
         accessorFn: (row) => row.company?.name?.toLowerCase() ?? "",
-        header: th("Kompania", "Company"),
+        header: thUi("company"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{row.original.company?.name ?? "—"}</span>
@@ -132,7 +133,7 @@ export function AdminOrdersTable({
       {
         id: "items",
         accessorFn: (row) => itemCount(row.itemsJson),
-        header: th("Artikuj", "Items"),
+        header: thUi("items"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="tabular-nums text-sm">{itemCount(row.original.itemsJson)}</span>
@@ -141,7 +142,7 @@ export function AdminOrdersTable({
       {
         id: "total",
         accessorFn: (row) => Number(row.total) || 0,
-        header: th("Total", "Total"),
+        header: thUi("total"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="font-semibold tabular-nums">{formatPrice(Number(row.original.total))}</span>
@@ -149,7 +150,7 @@ export function AdminOrdersTable({
       },
       {
         accessorKey: "status",
-        header: th("Statusi", "Status"),
+        header: thUi("status"),
         enableSorting: true,
         cell: ({ row }) => (
           <OrderStatusBadge status={row.original.status} locale={locale} />
@@ -157,7 +158,7 @@ export function AdminOrdersTable({
       },
       {
         accessorKey: "createdAt",
-        header: th("Datë", "Date"),
+        header: thUi("date"),
         enableSorting: true,
         cell: ({ row }) => (
           <span className="whitespace-nowrap text-xs text-muted-foreground">
@@ -190,7 +191,7 @@ export function AdminOrdersTable({
     getSortedRowModel: getSortedRowModel(),
   });
 
-  const emptyMessage = th("Nuk u gjetën porosi", "No orders found");
+  const emptyMessage = thUi("no_orders_found");
 
   return (
     <>
@@ -267,7 +268,7 @@ export function AdminOrdersTable({
                   ) : null}
                   <p className="mt-2 text-xs text-muted-foreground">
                     {formatDate(new Date(order.createdAt))} · {itemCount(order.itemsJson)}{" "}
-                    {th("artikuj", "items")}
+                    {thUi("items_2")}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-2">
@@ -287,7 +288,7 @@ export function AdminOrdersTable({
           ))
         )}
         {loadingMore ? (
-          <p className="py-2 text-center text-xs text-muted-foreground">{th("Duke ngarkuar…", "Loading…")}</p>
+          <p className="py-2 text-center text-xs text-muted-foreground">{thUi("loading")}</p>
         ) : null}
         {error ? <p className="text-center text-xs text-destructive">{error}</p> : null}
         <div ref={mobileSentinelRef} className="h-px w-full" aria-hidden />

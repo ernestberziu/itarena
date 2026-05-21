@@ -27,6 +27,7 @@ export default async function QuoteRequestPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "quotePage" });
   const session = await auth();
 
   let prefilled: QuoteRequestPrefill | null = null;
@@ -53,38 +54,10 @@ export default async function QuoteRequestPage({
   }
 
   const benefits = [
-    {
-      icon: Zap,
-      color: "text-primary bg-primary/10",
-      title: locale === "sq" ? "Ofertë brenda 24 orëve" : "Quote within 24 hours",
-      desc: locale === "sq"
-        ? "Ekipi ynë analizon kërkesat dhe dërgon ofertën detale brenda ditës."
-        : "Our team analyzes the requirements and sends a detailed quote within the day.",
-    },
-    {
-      icon: Shield,
-      color: "text-emerald-600 bg-emerald-50",
-      title: locale === "sq" ? "Konfidencialitet i Plotë" : "Full Confidentiality",
-      desc: locale === "sq"
-        ? "Të dhënat tuaja biznesore trajtohen me standarde ISO 27001."
-        : "Your business data is handled with ISO 27001 standards.",
-    },
-    {
-      icon: CheckCircle2,
-      color: "text-violet-600 bg-violet-50",
-      title: locale === "sq" ? "Pa Angazhim" : "No Commitment",
-      desc: locale === "sq"
-        ? "Oferta është falas dhe pa asnjë detyrim. Vendosni me liri."
-        : "The quote is free and with no obligation. Decide freely.",
-    },
-    {
-      icon: Clock,
-      color: "text-amber-600 bg-amber-50",
-      title: locale === "sq" ? "Mbështetje Pas Shitjes" : "After-Sales Support",
-      desc: locale === "sq"
-        ? "Çdo projekt vjen me plan mbështetjeje dhe SLA të garantuara."
-        : "Every project comes with a support plan and guaranteed SLA.",
-    },
+    { icon: Zap, color: "text-primary bg-primary/10", title: t("benefit1Title"), desc: t("benefit1Desc") },
+    { icon: Shield, color: "text-emerald-600 bg-emerald-50", title: t("benefit2Title"), desc: t("benefit2Desc") },
+    { icon: CheckCircle2, color: "text-violet-600 bg-violet-50", title: t("benefit3Title"), desc: t("benefit3Desc") },
+    { icon: Clock, color: "text-amber-600 bg-amber-50", title: t("benefit4Title"), desc: t("benefit4Desc") },
   ];
 
   const services = [
@@ -92,6 +65,8 @@ export default async function QuoteRequestPage({
     "Web & Marketing", "Rrjet & Infrastrukturë", "Zhvillim Softuerësh",
     "Telekomunikacion", "Printerë",
   ];
+
+  const processSteps = [t("process1"), t("process2"), t("process3"), t("process4")];
 
   return (
     <div className="flex flex-col">
@@ -103,16 +78,10 @@ export default async function QuoteRequestPage({
         <div className="container relative mx-auto px-4 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-5 py-2 text-sm text-white/80">
             <Building2 className="h-4 w-4" />
-            {locale === "sq" ? "Shërbim B2B" : "B2B Service"}
+            {t("badge")}
           </div>
-          <h1 className="mb-5 text-4xl font-extrabold md:text-5xl">
-            {locale === "sq" ? "Kërkoni Ofertën Tuaj Falas" : "Request Your Free Quote"}
-          </h1>
-          <p className="mx-auto max-w-2xl text-lg text-white/70">
-            {locale === "sq"
-              ? "Tregoni çfarë keni nevojë dhe ekipi ynë do t'ju dërgojë një ofertë të personalizuar brenda 24 orëve."
-              : "Tell us what you need and our team will send you a personalized quote within 24 hours."}
-          </p>
+          <h1 className="mb-5 text-4xl font-extrabold md:text-5xl">{t("heroTitle")}</h1>
+          <p className="mx-auto max-w-2xl text-lg text-white/70">{t("heroSubtitle")}</p>
         </div>
       </section>
 
@@ -121,9 +90,7 @@ export default async function QuoteRequestPage({
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 lg:gap-10">
             <div className="space-y-6 lg:col-span-2">
               <div>
-                <h2 className="mb-5 text-xl font-extrabold">
-                  {locale === "sq" ? "Pse Të Zgjidhni IT Arena?" : "Why Choose IT Arena?"}
-                </h2>
+                <h2 className="mb-5 text-xl font-extrabold">{t("whyTitle")}</h2>
                 <div className="space-y-4">
                   {benefits.map((b) => (
                     <div key={b.title} className="flex items-start gap-4">
@@ -140,9 +107,7 @@ export default async function QuoteRequestPage({
               </div>
 
               <div className="rounded-2xl border border-border/60 bg-white p-5 shadow-sm">
-                <p className="mb-4 text-sm font-bold">
-                  {locale === "sq" ? "Shërbimet Tona" : "Our Services"}
-                </p>
+                <p className="mb-4 text-sm font-bold">{t("servicesTitle")}</p>
                 <div className="flex flex-wrap gap-2">
                   {services.map((s) => (
                     <span
@@ -158,14 +123,9 @@ export default async function QuoteRequestPage({
               <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 p-5">
                 <p className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-900">
                   <ArrowRight className="h-4 w-4 text-amber-600" />
-                  {locale === "sq" ? "Procesi Ynë" : "Our Process"}
+                  {t("processTitle")}
                 </p>
-                {[
-                  locale === "sq" ? "1. Dërgoni kërkesën" : "1. Submit your request",
-                  locale === "sq" ? "2. Analizojmë nevojat" : "2. We analyze your needs",
-                  locale === "sq" ? "3. Dërgojmë ofertën detale" : "3. We send detailed quote",
-                  locale === "sq" ? "4. Fillojmë projektin" : "4. We start the project",
-                ].map((step) => (
+                {processSteps.map((step) => (
                   <p key={step} className="border-b border-amber-100 py-1 text-xs text-amber-800 last:border-0">
                     {step}
                   </p>
@@ -175,17 +135,9 @@ export default async function QuoteRequestPage({
 
             <div className="lg:col-span-3">
               <div className="rounded-2xl border border-border/60 bg-white p-5 shadow-xl shadow-slate-200/50 sm:rounded-3xl sm:p-8 md:p-10">
-                <h2 className="mb-2 text-2xl font-extrabold">
-                  {locale === "sq" ? "Detajet e Kërkesës" : "Request Details"}
-                </h2>
+                <h2 className="mb-2 text-2xl font-extrabold">{t("formTitle")}</h2>
                 <p className="mb-8 text-sm text-muted-foreground">
-                  {prefilled
-                    ? locale === "sq"
-                      ? "Të dhënat tuaja janë plotësuar nga llogaria. Plotësoni detajet e projektit."
-                      : "Your details are filled from your account. Complete the project details."
-                    : locale === "sq"
-                      ? "Sa më shumë detaje të jepni, aq më e saktë do të jetë oferta jonë."
-                      : "The more details you provide, the more accurate our quote will be."}
+                  {prefilled ? t("formSubtitlePrefilled") : t("formSubtitleGuest")}
                 </p>
                 <QuoteRequestForm locale={locale} prefilled={prefilled} locked={Boolean(prefilled)} />
               </div>

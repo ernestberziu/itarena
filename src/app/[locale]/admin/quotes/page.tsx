@@ -27,6 +27,7 @@ import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
 import { adminListShellClassName } from "@/lib/admin-list-ui";
 import { adminQuotesListWhere, mapQuoteToAdminRow } from "@/lib/admin-quotes-list-dto";
+import { getAdminUiT } from "@/lib/i18n/ui-t-server";
 
 export default async function AdminQuotesPage({
   params,
@@ -45,8 +46,7 @@ export default async function AdminQuotesPage({
 
   const sp = await searchParams;
   const lp = locale === "sq" ? "" : `/${locale}`;
-  const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = await getAdminUiT(locale);
   const statusFilter = sp.status;
   const q = sp.q?.trim();
 
@@ -111,7 +111,7 @@ export default async function AdminQuotesPage({
     statusFilter && QUOTE_STATUSES.includes(statusFilter) ? statusFilter : null;
 
   const quoteFilterChips = [
-    { href: filterHref(null), label: t("Të gjitha", "All"), value: null as string | null },
+    { href: filterHref(null), label: tUi("all"), value: null as string | null },
     ...QUOTE_STATUSES.map((s) => ({
       href: filterHref(s),
       label: STATUS_LABELS[s]?.[locale as "sq" | "en"] ?? s,
@@ -133,16 +133,16 @@ export default async function AdminQuotesPage({
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title={t("Ofertat", "Quotes")}
-        description={t(
-          `${filteredTotal} oferta në këtë pamje · ${totalQuotes} gjithsej`,
-          `${filteredTotal} quotes in this view · ${totalQuotes} total`
-        )}
+        title={tUi("quotes")}
+        description={tUi("quotes_page_desc", {
+          filtered: filteredTotal,
+          total: totalQuotes,
+        })}
         actions={
           <Button size="sm" asChild>
             <Link href={`${lp}/kerko-oferte`}>
               <Plus className="mr-1.5 h-4 w-4" strokeWidth={2} />
-              {t("Ofertë e re", "New quote")}
+              {tUi("new_quote")}
             </Link>
           </Button>
         }
@@ -151,7 +151,7 @@ export default async function AdminQuotesPage({
             <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <AdminListToolbarSearch
                 action={`${lp}/admin/quotes`}
-                placeholder={t("Kërko sipas numrit ose titullit…", "Search by number or title…")}
+                placeholder={tUi("search_by_number_or_title")}
                 defaultQuery={q}
                 hiddenFields={
                   statusFilter && QUOTE_STATUSES.includes(statusFilter)
@@ -171,10 +171,10 @@ export default async function AdminQuotesPage({
               />
             </div>
             <AdminQuickFilterChips
-              title={t("Statusi", "Status")}
+              title={tUi("status")}
               chips={quoteFilterChips}
               activeValue={activeStatus}
-              ariaLabel={t("Filtro sipas statusit të ofertës", "Filter quotes by status")}
+              ariaLabel={tUi("filter_quotes_by_status")}
             />
           </AdminListToolbar>
         }
@@ -182,32 +182,32 @@ export default async function AdminQuotesPage({
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <AdminStatCard
-          label={t("Gjithsej", "Total")}
+          label={tUi("total_2")}
           value={totalQuotes}
           icon={FileText}
         />
         <AdminStatCard
-          label={t("Në pritje", "Pending")}
+          label={tUi("pending")}
           value={pendingQuotes}
           icon={Clock}
         />
         <AdminStatCard
-          label={t("Të pranuara", "Approved")}
+          label={tUi("approved_4")}
           value={approvedQuotes}
           icon={TrendingUp}
         />
         <AdminStatCard
-          label={t("Potenciali", "Revenue potential")}
+          label={tUi("revenue_potential")}
           value={formatPrice(revenuePotential)}
           icon={BarChart2}
         />
         <AdminStatCard
-          label={t("Skaduar", "Expired")}
+          label={tUi("expired")}
           value={expiredQuotes}
           icon={AlertCircle}
         />
         <AdminStatCard
-          label={t("Konvertimi", "Conversion")}
+          label={tUi("conversion")}
           value={conversionPct != null ? `${conversionPct}%` : "—"}
           icon={Percent}
         />
@@ -219,18 +219,18 @@ export default async function AdminQuotesPage({
           className="rounded-2xl border border-border/50 bg-card/40 py-16"
           title={
             hasActiveFilters
-              ? t("Nuk u gjetën oferta", "No quotes match")
-              : t("Nuk ka oferta ende", "No quotes yet")
+              ? tUi("no_quotes_match")
+              : tUi("no_quotes_yet")
           }
           description={
             hasActiveFilters
-              ? t("Provo të ndryshosh kërkimin ose filtrat.", "Try adjusting search or filters.")
-              : t("Krijo ofertën e parë nga butoni më sipër.", "Create the first quote using the button above.")
+              ? tUi("try_adjusting_search_or_filters")
+              : tUi("create_the_first_quote_using_the_button_above")
           }
           action={
             hasActiveFilters
-              ? { label: t("Pastro filtrat", "Clear filters"), href: baseListHref }
-              : { label: t("Ofertë e re", "New quote"), href: `${lp}/kerko-oferte` }
+              ? { label: tUi("clear_filters_2"), href: baseListHref }
+              : { label: tUi("new_quote"), href: `${lp}/kerko-oferte` }
           }
         />
       ) : (

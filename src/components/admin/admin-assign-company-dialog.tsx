@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -33,7 +34,7 @@ export function AdminAssignCompanyDialog({
   onAssigned: () => void;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [q, setQ] = useState("");
   const [items, setItems] = useState<CompanyLookupItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,11 +66,11 @@ export function AdminAssignCompanyDialog({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error((json as { error?: string }).error ?? "Request failed");
-      toast.success(t("Kompania u caktua", "Company assigned"));
+      toast.success(tUi("company_assigned"));
       onOpenChange(false);
       onAssigned();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setAssigning(null);
     }
@@ -79,12 +80,12 @@ export function AdminAssignCompanyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`sm:max-w-md ${adminWhiteDialogClassName}`}>
         <DialogHeader>
-          <DialogTitle>{t("Cakto kompani", "Assign company")}</DialogTitle>
+          <DialogTitle>{tUi("assign_company")}</DialogTitle>
         </DialogHeader>
 
         {registrationSnapshot?.name && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            {t("Regjistrimi:", "Registration:")} {registrationSnapshot.name}
+            {tUi("registration")} {registrationSnapshot.name}
             {registrationSnapshot.vatNumber ? ` · ${registrationSnapshot.vatNumber}` : ""}
           </div>
         )}
@@ -93,16 +94,16 @@ export function AdminAssignCompanyDialog({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className={`pl-9 ${adminWhiteInputClassName}`}
-            placeholder={t("Kërko kompani...", "Search company...")}
+            placeholder={tUi("search_company")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
 
         <div className="max-h-64 space-y-2 overflow-y-auto">
-          {loading && <p className="text-sm text-muted-foreground">{t("Duke kërkuar...", "Searching...")}</p>}
+          {loading && <p className="text-sm text-muted-foreground">{tUi("searching")}</p>}
           {!loading && items.length === 0 && (
-            <p className="text-sm text-muted-foreground">{t("Asnjë kompani", "No companies")}</p>
+            <p className="text-sm text-muted-foreground">{tUi("no_companies")}</p>
           )}
           {items.map((item) => (
             <div
@@ -118,7 +119,7 @@ export function AdminAssignCompanyDialog({
                 disabled={assigning === item.id || item.id === currentCompanyId}
                 onClick={() => void assign(item.id)}
               >
-                {item.id === currentCompanyId ? t("Aktive", "Active") : t("Zgjidh", "Select")}
+                {item.id === currentCompanyId ? tUi("active") : tUi("select")}
               </Button>
             </div>
           ))}

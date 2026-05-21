@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -9,7 +10,7 @@ type Params = { params: Promise<{ id: string; shareId: string }> };
 
 export async function POST(_req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(_req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "tickets", "write");
   if (denied) return denied;
 
@@ -19,14 +20,14 @@ export async function POST(_req: NextRequest, { params }: Params) {
     select: { id: true, assignedToId: true },
   });
   if (!ticket || !(await canStaffAccessTicket(session.user.id, ticket))) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(_req, "notFound", 404);
   }
 
   const share = await db.clientResourceShare.findFirst({
     where: { id: shareId, ticketId, resourceType: "TICKET" },
     select: { id: true },
   });
-  if (!share) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!share) return apiErr(_req, "notFound", 404);
 
   const result = await sendShareAccessEmail(shareId);
   if (result.reason === "NO_EMAIL") {

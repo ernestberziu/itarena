@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -18,7 +19,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const { id } = await params;
   const body = await req.json();
@@ -26,13 +27,13 @@ export async function POST(
   if (!parsed.success) return NextResponse.json({ error: "Invalid" }, { status: 400 });
 
   const ticket = await db.ticket.findUnique({ where: { id } });
-  if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!ticket) return apiErr(req, "notFound", 404);
 
   const isStaff = ["ADMIN", "ENGINEER", "SALES", "OPS"].includes(session.user.role);
   const clientUser = portalUser(session);
 
   if (!isStaff && !canCommentOnPortalTicket(clientUser, ticket)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   if (isStaff) {
@@ -42,7 +43,7 @@ export async function POST(
 
   if (ticket.status === "CLOSED") {
     if (!isStaff) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return apiErr(req, "forbidden", 403);
     }
     if (!parsed.data.isInternal) {
       return NextResponse.json(

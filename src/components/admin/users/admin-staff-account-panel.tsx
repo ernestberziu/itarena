@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -42,7 +43,7 @@ export function AdminStaffAccountPanel({
 }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
   const [email, setEmail] = useState<string>(initialEmail ?? "");
@@ -76,11 +77,11 @@ export function AdminStaffAccountPanel({
 
   async function save() {
     if (newPassword.trim().length > 0 && newPassword.trim().length < 8) {
-      toast.error(t("Fjalëkalimi duhet të jetë të paktën 8 karaktere", "Password must be at least 8 characters"));
+      toast.error(tUi("password_must_be_at_least_8_characters"));
       return;
     }
     if (newPassword.trim().length > 0 && newPassword !== confirmPassword) {
-      toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
+      toast.error(tUi("passwords_do_not_match"));
       return;
     }
 
@@ -117,17 +118,14 @@ export function AdminStaffAccountPanel({
       if (!res.ok) throw new Error(json.error ?? "Request failed");
 
       if (json.notifyEmailAttempted && json.credentialsEmailSent) {
-        toast.success(t("U njoftua me email", "Notified by email"));
+        toast.success(tUi("notified_by_email"));
       } else if (json.temporaryPassword) {
         toast.success(
-          t(
-            `Fjalëkalimi i përkohshëm: ${json.temporaryPassword} (kopjoje tani)`,
-            `Temporary password: ${json.temporaryPassword} (copy it now)`
-          ),
+          tUi("staff_temp_password_toast", { password: json.temporaryPassword }),
           { duration: 20000 }
         );
       } else {
-        toast.success(t("U ruajt", "Saved"));
+        toast.success(tUi("saved_2"));
       }
 
       setNewPassword("");
@@ -135,7 +133,7 @@ export function AdminStaffAccountPanel({
       setGenerateTemp(false);
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -144,9 +142,9 @@ export function AdminStaffAccountPanel({
   if (!canWrite) {
     return (
       <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
-        <h2 className="text-sm font-semibold tracking-tight">{t("Llogaria", "Account")}</h2>
+        <h2 className="text-sm font-semibold tracking-tight">{tUi("account")}</h2>
         <p className="text-sm text-muted-foreground">
-          {t("Nuk ke leje për të ndryshuar stafin.", "You do not have permission to edit staff.")}
+          {tUi("you_do_not_have_permission_to_edit_staff")}
         </p>
       </div>
     );
@@ -155,15 +153,15 @@ export function AdminStaffAccountPanel({
   return (
     <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
       <h2 className="text-sm font-semibold tracking-tight" id="staff-account">
-        {t("Llogaria", "Account")}
+        {tUi("account")}
       </h2>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="asf">{t("Emri", "First name")}</Label>
+          <Label htmlFor="asf">{tUi("first_name")}</Label>
           <Input id="asf" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="asl">{t("Mbiemri", "Last name")}</Label>
+          <Label htmlFor="asl">{tUi("last_name")}</Label>
           <Input id="asl" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-2 sm:col-span-2">
@@ -171,7 +169,7 @@ export function AdminStaffAccountPanel({
           <Input id="ase" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label>{t("Roli", "Role")}</Label>
+          <Label>{tUi("role")}</Label>
           <Select value={role} onValueChange={(v) => v != null && setRole(v)} disabled={!canChangeRole}>
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -192,7 +190,7 @@ export function AdminStaffAccountPanel({
             onCheckedChange={(v) => setIsActive(v === true)}
           />
           <Label htmlFor="as-active" className="cursor-pointer text-sm font-normal">
-            {t("Llogaria aktive", "Account active")}
+            {tUi("account_active")}
           </Label>
         </div>
       </div>
@@ -201,11 +199,11 @@ export function AdminStaffAccountPanel({
 
       <div className="space-y-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("Fjalëkalimi", "Password")}
+          {tUi("password")}
         </h3>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="asp-new">{t("Fjalëkalim i ri (opsional)", "New password (optional)")}</Label>
+            <Label htmlFor="asp-new">{tUi("new_password_optional")}</Label>
             <Input
               id="asp-new"
               type="password"
@@ -213,11 +211,11 @@ export function AdminStaffAccountPanel({
               value={newPassword}
               disabled={generateTemp}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder={t("minimum 8 karaktere", "at least 8 characters")}
+              placeholder={tUi("at_least_8_characters")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="asp-confirm">{t("Konfirmo fjalëkalimin", "Confirm password")}</Label>
+            <Label htmlFor="asp-confirm">{tUi("confirm_password")}</Label>
             <Input
               id="asp-confirm"
               type="password"
@@ -243,10 +241,7 @@ export function AdminStaffAccountPanel({
             }}
           />
           <Label htmlFor="asp-gen" className="cursor-pointer text-sm font-normal leading-snug">
-            {t(
-              "Gjenero fjalëkalim të përkohshëm të rastësishëm",
-              "Generate a random temporary password"
-            )}
+            {tUi("generate_a_random_temporary_password")}
           </Label>
         </div>
         {(newPassword.trim().length >= 8 || generateTemp) && (
@@ -257,14 +252,14 @@ export function AdminStaffAccountPanel({
               onCheckedChange={(v) => setNotifyCustomer(v === true)}
             />
             <Label htmlFor="asp-notify" className="cursor-pointer text-sm font-normal leading-snug">
-              {t("Dërgo email me fjalëkalim të përkohshëm", "Send email with temporary password")}
+              {tUi("send_email_with_temporary_password")}
             </Label>
           </div>
         )}
       </div>
 
       <Button type="button" onClick={() => void save()} disabled={loading || !canSave}>
-        {t("Ruaj ndryshimet", "Save changes")}
+        {tUi("save_changes")}
       </Button>
     </div>
   );

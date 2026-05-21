@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import Link from "next/link";
 import { Search } from "lucide-react";
@@ -15,7 +16,7 @@ export function AdminCompaniesToolbar({
   q?: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const qTrim = q?.trim();
   const filtersActive = Boolean(qTrim);
 
@@ -31,7 +32,7 @@ export function AdminCompaniesToolbar({
           <Input
             name="q"
             defaultValue={q}
-            placeholder={t("Kërko emër, NIPT, qytet…", "Search name, VAT, city…")}
+            placeholder={tUi("search_name_vat_city")}
             className="h-10 border-0 bg-transparent pl-10 pr-3 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 md:text-sm"
             autoComplete="off"
           />
@@ -39,14 +40,14 @@ export function AdminCompaniesToolbar({
       </div>
       <Button type="submit" className="h-10 shrink-0 gap-2 rounded-xl px-5 shadow-sm sm:w-auto w-full">
         <Search className="h-4 w-4" strokeWidth={2} aria-hidden />
-        {t("Kërko", "Search")}
+        {tUi("search")}
       </Button>
       {filtersActive ? (
         <Link
           href={`${lp}/admin/companies`}
           className="inline-flex h-10 items-center justify-center rounded-xl border border-border/60 px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
         >
-          {t("Hiq kërkimin", "Clear search")}
+          {tUi("clear_search")}
         </Link>
       ) : null}
     </form>

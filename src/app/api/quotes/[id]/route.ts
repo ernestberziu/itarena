@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -24,7 +25,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const { id } = await params;
   const body = await req.json();
@@ -41,15 +42,15 @@ export async function PATCH(
   }
 
   const quote = await db.quote.findUnique({ where: { id } });
-  if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!quote) return apiErr(req, "notFound", 404);
 
   const isStaff = ["ADMIN", "SALES"].includes(session.user.role);
   const clientUser = portalUser(session);
   const canAccess = isStaff || canAccessPortalQuote(clientUser, quote);
 
-  if (!canAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!canAccess) return apiErr(req, "forbidden", 403);
   if (!isStaff && parsed.data.status && !["ACCEPTED", "REJECTED"].includes(parsed.data.status)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   if (isStaff) {
@@ -103,16 +104,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const { id } = await params;
   const quote = await db.quote.findUnique({ where: { id } });
-  if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!quote) return apiErr(req, "notFound", 404);
 
   const isStaff = ["ADMIN", "SALES"].includes(session.user.role);
   const clientUser = portalUser(session);
   if (!isStaff && !canAccessPortalQuote(clientUser, quote)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   if (isStaff) {

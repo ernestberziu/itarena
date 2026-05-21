@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 /**
  * Staff-facing quote workspace. Editable fields map to `PATCH /api/quotes/[id]` only
@@ -164,7 +165,7 @@ export function AdminQuoteDetailView({
   lp: string;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const router = useRouter();
   const reduceMotion = useReducedMotion();
 
@@ -193,7 +194,7 @@ export function AdminQuoteDetailView({
 
   const validUntilLabel = useMemo(() => {
     if (!effectiveValidUntilIso) return "—";
-    if (expired) return t("Skaduar", "Expired");
+    if (expired) return tUi("expired");
     return formatDateTime(new Date(effectiveValidUntilIso));
   }, [effectiveValidUntilIso, expired, en]);
 
@@ -210,12 +211,12 @@ export function AdminQuoteDetailView({
     };
 
     const rows: ActivityRow[] = [
-      { label: t("Krijuar", "Created"), at: quote.createdAt, tone: "default" },
+      { label: tUi("created"), at: quote.createdAt, tone: "default" },
     ];
 
     if (quote.respondedAt) {
       rows.push({
-        label: t("U përgjigj", "Responded"),
+        label: tUi("responded"),
         detail: quoteStatusLabel(quote.status, locale),
         at: quote.respondedAt,
         tone: "success",
@@ -224,7 +225,7 @@ export function AdminQuoteDetailView({
 
     if (quote.followUpSentAt) {
       rows.push({
-        label: t("Follow-up i dërguar", "Follow-up sent"),
+        label: tUi("follow_up_sent"),
         at: quote.followUpSentAt,
         tone: "accent",
       });
@@ -253,10 +254,9 @@ export function AdminQuoteDetailView({
       const totalNum = parseQuoteMoneyInput(totalStr);
       if (totalStr.trim() !== "" && totalNum === null) {
         toast.error(
-          t(
-            `Shuma e pavlefshme (max ${QUOTE_MONEY_MAX.toLocaleString("sq-AL")})`,
-            `Invalid amount (max ${QUOTE_MONEY_MAX.toLocaleString("en-US")})`
-          )
+          tUi("invalid_quote_amount", {
+            max: QUOTE_MONEY_MAX.toLocaleString(locale === "en" ? "en-US" : "sq-AL"),
+          })
         );
         return;
       }
@@ -269,10 +269,10 @@ export function AdminQuoteDetailView({
         payload.validUntil = new Date(validLocal).toISOString();
       }
       await patch(payload);
-      toast.success(t("Oferta u përditësua", "Quote updated"));
+      toast.success(tUi("quote_updated"));
       router.refresh();
     } catch {
-      toast.error(t("Ruajtja dështoi", "Save failed"));
+      toast.error(tUi("save_failed_2"));
     } finally {
       setSaving(false);
     }
@@ -301,8 +301,8 @@ export function AdminQuoteDetailView({
                   }
                 >
                   {expired
-                    ? t("Oferta ka skaduar.", "This quote has expired.")
-                    : `${t("Skadon më", "Valid until")} ${formatDateTime(new Date(effectiveValidUntilIso))}`}
+                    ? tUi("this_quote_has_expired")
+                    : `${tUi("valid_until")} ${formatDateTime(new Date(effectiveValidUntilIso))}`}
                 </span>
               ) : null}
             </div>
@@ -310,7 +310,7 @@ export function AdminQuoteDetailView({
           <div className="flex shrink-0 items-center gap-1.5 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
             <span>
-              {t("Krijuar", "Created")} {formatDate(new Date(quote.createdAt))}
+              {tUi("created")} {formatDate(new Date(quote.createdAt))}
             </span>
           </div>
         </div>
@@ -318,17 +318,17 @@ export function AdminQuoteDetailView({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <AdminStatCard
-          label={t("Totali", "Total")}
+          label={tUi("total")}
           value={formatMoneyOrDash(displayTotal)}
           icon={Package}
           className="ring-primary/15"
         />
-        <AdminStatCard label={t("Vlefshmëria", "Valid until")} value={validUntilLabel} icon={Calendar} />
+        <AdminStatCard label={tUi("valid_until_2")} value={validUntilLabel} icon={Calendar} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-5">
-          <DetailCard title={t("Klienti", "Customer")} icon={User}>
+          <DetailCard title={tUi("customer")} icon={User}>
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <UserAvatar
                 firstName={contactParts.firstName}
@@ -337,7 +337,7 @@ export function AdminQuoteDetailView({
               />
               <dl className="grid min-w-0 flex-1 gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-xs text-muted-foreground">{t("Emri", "Name")}</dt>
+                  <dt className="text-xs text-muted-foreground">{tUi("name")}</dt>
                   <dd className="font-medium">{quote.contactName}</dd>
                 </div>
                 <div>
@@ -350,7 +350,7 @@ export function AdminQuoteDetailView({
                 </div>
                 {quote.contactPhone ? (
                   <div>
-                    <dt className="text-xs text-muted-foreground">{t("Telefoni", "Phone")}</dt>
+                    <dt className="text-xs text-muted-foreground">{tUi("phone")}</dt>
                     <dd className="flex items-center gap-1.5">
                       <Phone className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} aria-hidden />
                       {quote.contactPhone}
@@ -359,12 +359,12 @@ export function AdminQuoteDetailView({
                 ) : null}
                 {quote.vatNumber ? (
                   <div>
-                    <dt className="text-xs text-muted-foreground">{t("NIPT / TVSH", "VAT")}</dt>
+                    <dt className="text-xs text-muted-foreground">{tUi("vat")}</dt>
                     <dd>{quote.vatNumber}</dd>
                   </div>
                 ) : null}
                 <div className="sm:col-span-2">
-                  <dt className="text-xs text-muted-foreground">{t("Kompania", "Company")}</dt>
+                  <dt className="text-xs text-muted-foreground">{tUi("company")}</dt>
                   <dd className="flex flex-wrap items-center gap-1.5">
                     <Building2 className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} aria-hidden />
                     {quote.companyName}
@@ -374,7 +374,7 @@ export function AdminQuoteDetailView({
                   </dd>
                 </div>
                 <div className="sm:col-span-2 rounded-lg border border-border/50 bg-muted/15 px-3 py-2">
-                  <dt className="text-xs text-muted-foreground">{t("Kërkuesi (llogaria)", "Requesting user")}</dt>
+                  <dt className="text-xs text-muted-foreground">{tUi("requesting_user")}</dt>
                   <dd className="mt-0.5">
                     {quote.requestedBy.firstName} {quote.requestedBy.lastName}{" "}
                     <span className="text-muted-foreground">({quote.requestedBy.email})</span>
@@ -384,7 +384,7 @@ export function AdminQuoteDetailView({
             </div>
           </DetailCard>
 
-          <DetailCard title={t("Kërkesa", "Request")} icon={Package}>
+          <DetailCard title={tUi("request")} icon={Package}>
             {services.length > 0 ? (
               <div className="mb-4 flex flex-wrap gap-1.5">
                 {services.map((service) => (
@@ -399,20 +399,20 @@ export function AdminQuoteDetailView({
               <>
                 <Separator className="my-4" />
                 <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {t("Afati kohor", "Timeline")}
+                  {tUi("timeline")}
                 </h4>
                 <p className="text-sm text-muted-foreground">{quote.timeline}</p>
               </>
             ) : null}
           </DetailCard>
 
-          <DetailCard title={t("Shënime klienti", "Client note")} icon={MessageSquare}>
+          <DetailCard title={tUi("client_note")} icon={MessageSquare}>
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
               {quote.clientNote ?? "—"}
             </p>
           </DetailCard>
 
-          <DetailCard title={t("Aktiviteti", "Activity")} icon={Clock}>
+          <DetailCard title={tUi("activity")} icon={Clock}>
             <ul className="space-y-4 border-l border-border pl-4">
               {activityRows.map((row, i) => (
                 <li key={`${row.label}-${i}`} className="relative text-sm">
@@ -444,13 +444,13 @@ export function AdminQuoteDetailView({
             className="overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-b from-card to-muted/10 shadow-sm ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
           >
             <header className="border-b border-border/50 px-4 py-4">
-              <h3 className="text-sm font-semibold tracking-tight">{t("Veprime stafi", "Staff actions")}</h3>
+              <h3 className="text-sm font-semibold tracking-tight">{tUi("staff_actions")}</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                {t("Përditësoni statusin, çmimin dhe dokumentin.", "Update status, pricing, and document.")}
+                {tUi("update_status_pricing_and_document")}
               </p>
             </header>
 
-            <RailSection title={t("Statusi", "Status")} icon={Tag}>
+            <RailSection title={tUi("status")} icon={Tag}>
               <Select value={status} onValueChange={(v) => v != null && setStatus(v)}>
                 <SelectTrigger id="quote-status" className="w-full">
                   <SelectValue>{statusLabel}</SelectValue>
@@ -465,11 +465,11 @@ export function AdminQuoteDetailView({
               </Select>
             </RailSection>
 
-            <RailSection title={t("Çmimi", "Pricing")} icon={Receipt}>
+            <RailSection title={tUi("pricing")} icon={Receipt}>
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="quote-total" className="text-xs text-muted-foreground">
-                    {t("Totali", "Total")}
+                    {tUi("total")}
                   </Label>
                   <Input
                     id="quote-total"
@@ -483,7 +483,7 @@ export function AdminQuoteDetailView({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="quote-valid" className="text-xs text-muted-foreground">
-                    {t("Vlefshmëria deri", "Valid until")}
+                    {tUi("valid_until_3")}
                   </Label>
                   <Input
                     id="quote-valid"
@@ -496,33 +496,33 @@ export function AdminQuoteDetailView({
               </div>
             </RailSection>
 
-            <RailSection title={t("Shënim i brendshëm", "Internal note")} icon={MessageSquare}>
+            <RailSection title={tUi("internal_note")} icon={MessageSquare}>
               <Textarea
                 id="quote-internal"
                 rows={4}
                 className="bg-background text-sm"
                 value={internalNote}
                 onChange={(e) => setInternalNote(e.target.value)}
-                placeholder={t("Vetëm për stafin…", "Staff only…")}
+                placeholder={tUi("staff_only")}
               />
             </RailSection>
 
             <div className="space-y-2 border-t border-border/50 p-4">
               <Button type="button" className="w-full gap-2" disabled={saving} onClick={() => void saveStaffFields()}>
                 <Save className="h-4 w-4" strokeWidth={2} aria-hidden />
-                {saving ? "…" : t("Ruaj", "Save")}
+                {saving ? "…" : tUi("save")}
               </Button>
               {quote.pdfUrl ? (
                 <Button variant="secondary" className="w-full gap-2" asChild>
                   <a href={quote.pdfUrl} target="_blank" rel="noreferrer">
                     <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    {t("Hap PDF", "Open PDF")}
+                    {tUi("open_pdf")}
                   </a>
                 </Button>
               ) : null}
               <EmailClientButton
                 apiUrl={`/api/admin/quotes/${quote.id}/email-client`}
-                label={t("Email klientit", "Email client")}
+                label={tUi("email_client")}
                 variant="secondary"
                 className="w-full"
                 size="default"

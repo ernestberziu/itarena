@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -29,7 +30,7 @@ function generateTemporaryPassword(): string {
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr("sq", "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "staff", "read");
   if (denied) return denied;
 
@@ -58,9 +59,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   if (session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
   const denied = await assertAdminApiAcl(session.user.id, "staff", "write");
   if (denied) return denied;
@@ -69,12 +70,12 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = postSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+    return apiErr(req, "invalidBody", 400, { details: parsed.error.flatten() });
   }
 
   const data = parsed.data;
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
   const email = data.email.trim().toLowerCase();
   const dup = await db.user.findFirst({ where: { email }, select: { id: true } });
   if (dup) {
-    return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+    return apiErr(req, "emailInUse", 409);
   }
 
   const passwordHash = await bcrypt.hash(plainPassword, 10);
@@ -148,6 +149,6 @@ export async function POST(req: NextRequest) {
         data.notifyCustomer && credentialsEmailSent ? undefined : plainPassword,
     });
   } catch {
-    return NextResponse.json({ error: "Create failed" }, { status: 500 });
+    return apiErr(req, "createFailed", 500);
   }
 }

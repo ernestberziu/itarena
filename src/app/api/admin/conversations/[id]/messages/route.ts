@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
@@ -17,7 +18,7 @@ const PAGE_SIZE = 50;
 
 export async function GET(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "messages", "read");
   if (denied) return denied;
 
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
   const denied = await assertAdminApiAcl(session.user.id, "messages", "write");
   if (denied) return denied;
 
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return apiErr(req, "invalidJson", 400);
   }
 
   const parsed = sendMessageSchema.safeParse(body);
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     select: { type: true, projectId: true },
   });
   if (!conversation) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return apiErr(req, "notFound", 404);
   }
 
   const viewer = await db.user.findUnique({
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     conversation.type === "PROJECT" && Boolean(parsed.data.isInternal);
 
   if (isInternal && !isStaffRole(viewer?.role ?? "")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return apiErr(req, "forbidden", 403);
   }
 
   const message = await db.conversationMessage.create({

@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import { toast } from "sonner";
@@ -38,7 +39,7 @@ export function ReportsCustomBuilderDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
@@ -47,7 +48,7 @@ export function ReportsCustomBuilderDialog({
 
   async function save() {
     if (!name.trim() && !presetId) {
-      toast.error(t("Vendos një emër", "Enter a name"));
+      toast.error(tUi("enter_a_name"));
       return;
     }
     try {
@@ -58,11 +59,11 @@ export function ReportsCustomBuilderDialog({
         body: JSON.stringify({ name: name.trim() || "Report", configJson: config }),
       });
       if (!res.ok) throw new Error("Failed");
-      toast.success(t("U ruajt", "Saved"));
+      toast.success(tUi("saved_2"));
       setOpen(false);
       onSaved?.();
     } catch {
-      toast.error(t("Gabim", "Error"));
+      toast.error(tUi("error"));
     }
   }
 
@@ -80,11 +81,11 @@ export function ReportsCustomBuilderDialog({
       ) : null}
       <DialogContent className="reports-custom-dialog max-w-md border-border/60 bg-white text-slate-900 shadow-xl backdrop-blur-none dark:bg-white dark:text-slate-900">
         <DialogHeader>
-          <DialogTitle>{t("Raport i personalizuar", "Custom report")}</DialogTitle>
+          <DialogTitle>{tUi("custom_report")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>{t("Emri", "Name")}</Label>
+            <Label>{tUi("name")}</Label>
             <Input
               className="border-input bg-white text-slate-900 dark:bg-white dark:text-slate-900"
               value={name}
@@ -92,7 +93,7 @@ export function ReportsCustomBuilderDialog({
             />
           </div>
           <div>
-            <Label className="mb-2 block">{t("Metrikat", "Metrics")}</Label>
+            <Label className="mb-2 block">{tUi("metrics")}</Label>
             <div className="grid grid-cols-2 gap-2">
               {REPORT_METRICS.map((m) => (
                 <label key={m.id} className="flex items-center gap-2 text-sm">
@@ -106,7 +107,7 @@ export function ReportsCustomBuilderDialog({
             </div>
           </div>
           <div>
-            <Label className="mb-2 block">{t("Lloji i grafikut", "Chart type")}</Label>
+            <Label className="mb-2 block">{tUi("chart_type")}</Label>
             <select
               className="h-9 w-full rounded-lg border border-input bg-white px-2 text-sm text-slate-900 dark:bg-white dark:text-slate-900"
               value={config.chartType}
@@ -122,7 +123,7 @@ export function ReportsCustomBuilderDialog({
             </select>
           </div>
           <Button type="button" className="w-full" onClick={() => void save()}>
-            {t("Ruaj", "Save")}
+            {tUi("save")}
           </Button>
         </div>
       </DialogContent>

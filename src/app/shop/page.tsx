@@ -154,7 +154,7 @@ export default async function ShopPage({
           </div>
         </div>
         <div className="container relative mx-auto px-4 border-t border-white/10 mt-8 md:mt-10">
-          <ShopTrustStrip lang={shopLocale} compact />
+          <ShopTrustStrip compact />
         </div>
       </section>
 

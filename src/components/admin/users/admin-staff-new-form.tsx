@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -21,7 +22,7 @@ const STAFF_ROLE_OPTIONS: Role[] = ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNE
 export function AdminStaffNewForm({ locale }: { locale: string }) {
   const router = useRouter();
   const en = locale === "en";
-  const t = (sq: string, e: string) => (en ? e : sq);
+  const tUi = useUiT();
   const lp = locale === "sq" ? "" : `/${locale}`;
 
   const [firstName, setFirstName] = useState("");
@@ -36,23 +37,20 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
 
   async function submit() {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-      toast.error(t("Plotëso emrin, mbiemrin dhe emailin.", "Fill in first name, last name, and email."));
+      toast.error(tUi("fill_in_first_name_last_name_and_email"));
       return;
     }
     if (newPassword.trim().length > 0 && newPassword.trim().length < 8) {
-      toast.error(t("Fjalëkalimi duhet të jetë të paktën 8 karaktere", "Password must be at least 8 characters"));
+      toast.error(tUi("password_must_be_at_least_8_characters"));
       return;
     }
     if (newPassword.trim().length > 0 && newPassword !== confirmPassword) {
-      toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
+      toast.error(tUi("passwords_do_not_match"));
       return;
     }
     if (!generateTemp && newPassword.trim().length < 8) {
       toast.error(
-        t(
-          "Vendos një fjalëkalim (≥8) ose zgjidh gjenerimin e përkohshëm.",
-          "Set a password (≥8 characters) or enable temporary password generation."
-        )
+        tUi("set_a_password_8_characters_or_enable_temporary_")
       );
       return;
     }
@@ -88,17 +86,14 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
       if (!res.ok) throw new Error(json.error ?? "Request failed");
 
       if (json.notifyEmailAttempted && json.credentialsEmailSent) {
-        toast.success(t("Stafi u krijua dhe u njoftua me email", "Staff created and notified by email"));
+        toast.success(tUi("staff_created_and_notified_by_email"));
       } else if (json.temporaryPassword) {
         toast.success(
-          t(
-            `U krijua. Fjalëkalimi i përkohshëm: ${json.temporaryPassword}`,
-            `Created. Temporary password: ${json.temporaryPassword}`
-          ),
+          tUi("staff_created_with_password", { password: json.temporaryPassword }),
           { duration: 20000 }
         );
       } else {
-        toast.success(t("Stafi u krijua", "Staff member created"));
+        toast.success(tUi("staff_member_created"));
       }
 
       if (json.user?.id) {
@@ -109,7 +104,7 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
         router.refresh();
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("Gabim", "Error"));
+      toast.error(e instanceof Error ? e.message : tUi("error"));
     } finally {
       setLoading(false);
     }
@@ -119,11 +114,11 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
     <div className="mx-auto max-w-lg space-y-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="nsf">{t("Emri", "First name")}</Label>
+          <Label htmlFor="nsf">{tUi("first_name")}</Label>
           <Input id="nsf" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="nsl">{t("Mbiemri", "Last name")}</Label>
+          <Label htmlFor="nsl">{tUi("last_name")}</Label>
           <Input id="nsl" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-2 sm:col-span-2">
@@ -131,7 +126,7 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
           <Input id="nse" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label>{t("Roli", "Role")}</Label>
+          <Label>{tUi("role")}</Label>
           <Select value={role} onValueChange={(v) => v != null && setRole(v)}>
             <SelectTrigger className="w-full">
               <SelectValue />
@@ -149,7 +144,7 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="nsp">{t("Fjalëkalim", "Password")}</Label>
+          <Label htmlFor="nsp">{tUi("password_2")}</Label>
           <Input
             id="nsp"
             type="password"
@@ -160,7 +155,7 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="nsc">{t("Konfirmo", "Confirm")}</Label>
+          <Label htmlFor="nsc">{tUi("confirm")}</Label>
           <Input
             id="nsc"
             type="password"
@@ -185,7 +180,7 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
           }}
         />
         <Label htmlFor="nsg" className="cursor-pointer text-sm font-normal leading-snug">
-          {t("Gjenero fjalëkalim të përkohshëm", "Generate a temporary password")}
+          {tUi("generate_a_temporary_password")}
         </Label>
       </div>
       <div className="flex items-start gap-2">
@@ -195,12 +190,12 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
           onCheckedChange={(v) => setNotifyCustomer(v === true)}
         />
         <Label htmlFor="nsn" className="cursor-pointer text-sm font-normal leading-snug">
-          {t("Dërgo email me fjalëkalim të përkohshëm", "Send email with temporary password")}
+          {tUi("send_email_with_temporary_password")}
         </Label>
       </div>
 
       <Button type="button" onClick={() => void submit()} disabled={loading}>
-        {t("Krijo", "Create")}
+        {tUi("create")}
       </Button>
     </div>
   );

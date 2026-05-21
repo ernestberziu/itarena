@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import {  NextRequest, NextResponse  } from "next/server";
+import { apiErr } from "@/lib/i18n/err";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -38,10 +39,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) return apiErr(req, "unauthorized", 401);
 
   const isStaff = ["ADMIN", "OPS"].includes(session.user.role);
-  if (!isStaff) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isStaff) return apiErr(req, "forbidden", 403);
 
   const denied = await assertAdminApiAcl(session.user.id, "orders", "write");
   if (denied) return denied;
@@ -52,7 +53,7 @@ export async function PATCH(
   if (!parsed.success) return NextResponse.json({ error: "Invalid" }, { status: 400 });
 
   const order = await db.order.findUnique({ where: { id } });
-  if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!order) return apiErr(req, "notFound", 404);
 
   const updateData: Record<string, unknown> = {};
   if (parsed.data.status !== undefined) {

@@ -1,4 +1,5 @@
 "use client";
+import { useUiT } from "@/hooks/use-ui-t";
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
@@ -41,7 +42,7 @@ export function ProjectsTable({
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const en = locale === "en";
-  const th = (sq: string, enLabel: string) => (en ? enLabel : sq);
+  const thUi = useUiT();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const { rows, hasMore, loadingMore, error, scrollRef, sentinelRef, loadedCount, loadNext } =
@@ -161,7 +162,7 @@ export function ProjectsTable({
     getSortedRowModel: getSortedRowModel(),
   });
 
-  const emptyMessage = th("Nuk ka projekte", "No projects");
+  const emptyMessage = thUi("no_projects");
 
   return (
     <>
@@ -197,7 +198,7 @@ export function ProjectsTable({
           <span className="tabular-nums">{totalCount}</span>
           {hasMore ? (
             <span className="ml-2 text-muted-foreground/70">
-              · {th("lëviz për më shumë", "scroll for more")}
+              · {thUi("scroll_for_more")}
             </span>
           ) : null}
         </p>
@@ -232,7 +233,7 @@ export function ProjectsTable({
                     {project.createdBy.firstName} {project.createdBy.lastName}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                    {th("Klientë", "Clients")}: {project._count.clients} · {th("Bileta", "Tickets")}:{" "}
+                    {thUi("clients")}: {project._count.clients} · {thUi("tickets_2")}:{" "}
                     {project._count.tickets}
                   </p>
                   <p className="mt-2 text-xs text-muted-foreground">
@@ -263,7 +264,7 @@ export function ProjectsTable({
         )}
         {loadingMore ? (
           <p className="py-2 text-center text-xs text-muted-foreground">
-            {th("Duke ngarkuar…", "Loading…")}
+            {thUi("loading")}
           </p>
         ) : null}
         {error ? <p className="text-center text-xs text-destructive">{error}</p> : null}
