@@ -60,10 +60,20 @@ export default async function ShopPage({
 
   try {
     const client = getFinanca5Client();
-    const [erpProducts, erpCategories] = await Promise.all([
+    const [productsResult, categoriesResult] = await Promise.allSettled([
       client.getAllProducts(),
       client.getAllCategories(),
     ]);
+
+    if (productsResult.status === "rejected") {
+      throw productsResult.reason;
+    }
+    if (categoriesResult.status === "rejected") {
+      throw categoriesResult.reason;
+    }
+
+    const erpProducts = productsResult.value;
+    const erpCategories = categoriesResult.value;
 
     ({ products, categories } = adaptProducts(erpProducts, erpCategories, {
       categorySlug,
