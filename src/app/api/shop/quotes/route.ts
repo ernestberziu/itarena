@@ -104,13 +104,28 @@ export async function POST(req: NextRequest) {
       type: "SHOP_QUOTE_SUBMITTED",
       actorId: requestedById ?? null,
       entity: { type: "quote", id: quote.id },
+      dedupeKey: `quote-submitted:${quote.id}`,
       payload: {
         quoteId: quote.id,
         quoteNumber: quote.quoteNumber,
         title: quote.title,
         companyName: company,
       },
+      skipEmail: true,
     });
+
+    const { sendQuoteSubmittedOpsEmail } = await import("@/lib/email/send-ops-admin-email");
+    void sendQuoteSubmittedOpsEmail({
+      quoteId: quote.id,
+      quoteNumber: quote.quoteNumber,
+      title: quote.title,
+      companyName: company,
+      contactName: name,
+      contactEmail: email,
+      contactPhone: phone,
+      services: [],
+      description: quote.description,
+    }).catch((err) => console.error("[shop-quotes] ops notify email", err));
 
     return NextResponse.json({ id: quote.id, quoteNumber: quote.quoteNumber }, { status: 201 });
   } catch (error) {

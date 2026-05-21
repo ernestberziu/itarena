@@ -38,7 +38,7 @@ export default async function QuoteRequestPage({
     });
     if (user) {
       prefilled = {
-        companyName: user.company?.name ?? `${user.firstName} ${user.lastName}`.trim(),
+        companyName: user.company?.name ?? "",
         vatNumber: user.company?.vatNumber ?? undefined,
         contactName: `${user.firstName} ${user.lastName}`.trim(),
         contactEmail: user.email ?? "",

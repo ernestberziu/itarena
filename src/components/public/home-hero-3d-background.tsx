@@ -166,6 +166,17 @@ function getOrbitLayout(w: number, h: number) {
   return { cx, cy, innerRx, innerRy, ringRx, ringRy, mobile, tablet, nodeR };
 }
 
+/** Animation speed multipliers — desktop is deliberately slower. */
+function getAnimRates(layout: ReturnType<typeof getOrbitLayout>) {
+  if (layout.mobile) {
+    return { timeStep: 0.014, spin: 0.32, bobFreq: 1.35, pulse: 0.85 };
+  }
+  if (layout.tablet) {
+    return { timeStep: 0.012, spin: 0.36, bobFreq: 1.1, pulse: 0.72 };
+  }
+  return { timeStep: 0.008, spin: 0.17, bobFreq: 0.6, pulse: 0.32 };
+}
+
 type OrbitNode = {
   svc: ServiceVisual;
   angle: number;
@@ -276,15 +287,16 @@ export function HomeHero3dBackground({
       const h = rect.height;
       const layout = getOrbitLayout(w, h);
       const { cx, cy, innerRx, innerRy, ringRx, ringRy, mobile, nodeR } = layout;
+      const rates = getAnimRates(layout);
       const t = reducedMotion ? 0 : time;
 
       ctx.clearRect(0, 0, w, h);
 
-      const spin = t * (mobile ? 0.32 : 0.42);
+      const spin = t * rates.spin;
 
       const nodes: OrbitNode[] = HERO_ORBIT_SERVICES.map((svc, i) => {
         const angle = (i / HERO_ORBIT_SERVICES.length) * Math.PI * 2 - Math.PI / 2 + spin;
-        const bob = reducedMotion ? 0 : Math.sin(t * 1.35 + i * 0.85) * (mobile ? 2 : 3);
+        const bob = reducedMotion ? 0 : Math.sin(t * rates.bobFreq + i * 0.85) * (mobile ? 2 : 3);
         const bx = Math.cos(angle) * bob;
         const by = Math.sin(angle) * bob;
         return {
@@ -318,7 +330,7 @@ export function HomeHero3dBackground({
           ctx.stroke();
 
           if (!reducedMotion) {
-            const pulse = (t * 0.85 + i * 0.125) % 1;
+            const pulse = (t * rates.pulse + i * 0.125) % 1;
             const px = node.x + (endX - node.x) * pulse;
             const py = node.y + (endY - node.y) * pulse;
             ctx.fillStyle = node.svc.color;
@@ -333,7 +345,7 @@ export function HomeHero3dBackground({
         drawNode(ctx, node, { r: nodeR, mobile, cx, cy, alpha: getAlpha(node) });
       });
 
-      time += reducedMotion ? 0 : 0.014;
+      time += reducedMotion ? 0 : rates.timeStep;
       rafRef.current = requestAnimationFrame(draw);
     };
 

@@ -4,9 +4,10 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { generateQuoteNumber } from "@/lib/utils";
+import { sendQuoteSubmittedOpsEmail } from "@/lib/email/send-ops-admin-email";
 
 const createSchema = z.object({
-  companyName: z.string().min(2),
+  companyName: z.string().max(200).optional(),
   vatNumber: z.string().optional(),
   contactName: z.string().min(2),
   contactEmail: z.string().email(),
@@ -27,13 +28,14 @@ export async function POST(req: NextRequest) {
   }
 
   const data = parsed.data;
+  const resolvedCompanyName = data.companyName?.trim() || data.contactName.trim();
 
   const quote = await db.quote.create({
     data: {
       quoteNumber: generateQuoteNumber(),
       requestedById: session?.user.id ?? (await getOrCreateGuestUserId(data.contactEmail, data.contactName)),
       companyId: session?.user.companyId ?? undefined,
-      companyName: data.companyName,
+      companyName: resolvedCompanyName,
       vatNumber: data.vatNumber ?? null,
       contactName: data.contactName,
       contactEmail: data.contactEmail,
@@ -46,18 +48,36 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const services = data.services;
+
   const { emitNotificationSafe } = await import("@/lib/notifications");
   emitNotificationSafe({
     type: "QUOTE_SUBMITTED",
     actorId: session?.user?.id ?? null,
     entity: { type: "quote", id: quote.id },
+    dedupeKey: `quote-submitted:${quote.id}`,
     payload: {
       quoteId: quote.id,
       quoteNumber: quote.quoteNumber,
       title: data.title,
-      companyName: data.companyName,
+      companyName: resolvedCompanyName,
     },
+    skipEmail: true,
   });
+
+  void sendQuoteSubmittedOpsEmail({
+    quoteId: quote.id,
+    quoteNumber: quote.quoteNumber,
+    title: data.title,
+    companyName: data.companyName?.trim() || null,
+    contactName: data.contactName,
+    contactEmail: data.contactEmail,
+    contactPhone: data.contactPhone,
+    vatNumber: data.vatNumber,
+    services,
+    description: data.description,
+    timeline: data.timeline,
+  }).catch((err) => console.error("[quotes] ops notify email", err));
 
   return NextResponse.json({ id: quote.id, number: quote.quoteNumber }, { status: 201 });
 }

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { DIVISION_LABELS } from "@/lib/sla";
 
 const schema = z.object({
-  companyName: z.string().min(2),
+  companyName: z.string().max(200).optional(),
   vatNumber: z.string().optional(),
   contactName: z.string().min(2),
   contactEmail: z.string().email(),
@@ -61,7 +61,7 @@ export function QuoteRequestForm({
           contactPhone: prefilled.contactPhone ?? "",
           services: [],
         }
-      : { services: [] },
+      : { companyName: "", services: [] },
   });
 
   const { isSubmitting, errors } = form.formState;
@@ -115,9 +115,18 @@ export function QuoteRequestForm({
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{locale === "sq" ? "Emri i Kompanisë" : "Company Name"} *</Label>
+                <Label>
+                  {locale === "sq" ? "Emri i Kompanisë" : "Company Name"}
+                  <span className="font-normal text-muted-foreground">
+                    {locale === "sq" ? " (opsional)" : " (optional)"}
+                  </span>
+                </Label>
                 <Input
-                  placeholder={locale === "sq" ? "P.sh. TechBuild SH.A." : "E.g. TechBuild LLC"}
+                  placeholder={
+                    locale === "sq"
+                      ? "P.sh. TechBuild SH.A. (opsional)"
+                      : "E.g. TechBuild LLC (optional)"
+                  }
                   readOnly={locked}
                   disabled={locked}
                   className={locked ? "bg-muted/50" : undefined}
