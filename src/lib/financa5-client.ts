@@ -45,6 +45,73 @@ export interface PagedResult<T> {
   totalPages: number;
 }
 
+type ApiPagedResult<T> = {
+  items?: T[];
+  data?: T[];
+  Data?: T[];
+  totalCount?: number;
+  TotalCount?: number;
+  page?: number;
+  Page?: number;
+  pageSize?: number;
+  PageSize?: number;
+  totalPages?: number;
+  TotalPages?: number;
+};
+
+function normalizePagedResult<T>(raw: ApiPagedResult<T>): PagedResult<T> {
+  const items = raw.items ?? raw.data ?? raw.Data;
+  if (!Array.isArray(items)) {
+    throw new Error(
+      "Financa5Api paged response missing items/data array — check API URL and auth"
+    );
+  }
+
+  const page = Number(raw.page ?? raw.Page ?? 1);
+  const pageSize = Number(raw.pageSize ?? raw.PageSize ?? items.length);
+  const totalCount = Number(raw.totalCount ?? raw.TotalCount ?? items.length);
+  const totalPages = Number(
+    raw.totalPages ?? raw.TotalPages ?? Math.max(1, Math.ceil(totalCount / pageSize))
+  );
+
+  return { items, page, pageSize, totalCount, totalPages };
+}
+
+function normalizeProduct(raw: Record<string, unknown>): Financa5Product {
+  const categoryName = String(raw.categoryName ?? raw.CategoryName ?? "");
+  const categoryId = String(
+    raw.categoryId ?? raw.CategoryId ?? categoryName
+  );
+
+  return {
+    id: Number(raw.id ?? raw.Id ?? 0),
+    kod: String(raw.kod ?? raw.Kod ?? ""),
+    name: String(raw.name ?? raw.Name ?? ""),
+    barcode: (raw.barcode ?? raw.Barcode ?? null) as string | null,
+    price: Number(raw.price ?? raw.Price ?? 0),
+    priceWithVat: Number(raw.priceWithVat ?? raw.PriceWithVat ?? 0),
+    vatRate: Number(raw.vatRate ?? raw.VatRate ?? 0),
+    costPrice: Number(raw.costPrice ?? raw.CostPrice ?? 0),
+    unit: String(raw.unit ?? raw.Unit ?? ""),
+    categoryId,
+    categoryName,
+    supplierCode: String(raw.supplierCode ?? raw.SupplierCode ?? ""),
+    stock: Number(raw.stock ?? raw.Stock ?? 0),
+    isActive: (raw.isActive ?? raw.IsActive ?? true) as boolean,
+  };
+}
+
+function normalizeCategory(raw: Record<string, unknown>): Financa5Category {
+  return {
+    id: String(raw.id ?? raw.Id ?? ""),
+    name: String(raw.name ?? raw.Name ?? ""),
+    parentId: (raw.parentId ?? raw.ParentId ?? null) as string | null,
+    level: Number(raw.level ?? raw.Level ?? 0),
+    sortOrder: Number(raw.sortOrder ?? raw.SortOrder ?? 0),
+    isActive: (raw.isActive ?? raw.IsActive ?? true) as boolean,
+  };
+}
+
 function isConnectionRefused(e: unknown): boolean {
   if (!e || typeof e !== "object") return false;
   const err = e as Error & { cause?: unknown; code?: string };
@@ -126,9 +193,14 @@ export class Financa5Client {
 
   /** Fetch a single page of products (1-indexed). */
   async getProductsPage(page: number, pageSize = 100): Promise<PagedResult<Financa5Product>> {
-    return this.get<PagedResult<Financa5Product>>(
+    const raw = await this.get<ApiPagedResult<Record<string, unknown>>>(
       `/api/products?page=${page}&pageSize=${pageSize}`
     );
+    const paged = normalizePagedResult(raw);
+    return {
+      ...paged,
+      items: paged.items.map(normalizeProduct),
+    };
   }
 
   /** Fetch ALL products across all pages and return a flat array. */
@@ -146,7 +218,10 @@ export class Financa5Client {
 
   /** Fetch a single product by its ERP article code (KOD). */
   async getProductByKod(kod: string): Promise<Financa5Product> {
-    return this.get<Financa5Product>(`/api/products/kod/${encodeURIComponent(kod)}`);
+    const raw = await this.get<Record<string, unknown>>(
+      `/api/products/kod/${encodeURIComponent(kod)}`
+    );
+    return normalizeProduct(raw);
   }
 
   /** Server-side product search (paginated; does not load the full catalog). */
@@ -161,26 +236,38 @@ export class Financa5Client {
     params.set("pageSize", String(opts.pageSize ?? 50));
     params.set("search", opts.search);
     if (opts.inStock) params.set("inStock", "true");
-    return this.get<PagedResult<Financa5Product>>(`/api/products?${params.toString()}`);
+    const raw = await this.get<ApiPagedResult<Record<string, unknown>>>(
+      `/api/products?${params.toString()}`
+    );
+    const paged = normalizePagedResult(raw);
+    return {
+      ...paged,
+      items: paged.items.map(normalizeProduct),
+    };
   }
 
   /** Lookup by exact barcode (EAN). */
   async getProductByBarcode(barcode: string): Promise<Financa5Product> {
-    return this.get<Financa5Product>(
+    const raw = await this.get<Record<string, unknown>>(
       `/api/products/barcode/${encodeURIComponent(barcode)}`
     );
+    return normalizeProduct(raw);
   }
 
   // ── Categories ────────────────────────────────────────────────────────────
 
   /** Fetch all categories (the API returns them all in one call). */
   async getAllCategories(): Promise<Financa5Category[]> {
-    const result = await this.get<PagedResult<Financa5Category> | Financa5Category[]>(
-      `/api/categories`
-    );
-    // Handle both paged and flat array responses
-    if (Array.isArray(result)) return result;
-    return (result as PagedResult<Financa5Category>).items;
+    const result = await this.get<
+      PagedResult<Record<string, unknown>> | Record<string, unknown>[]
+    >(`/api/categories`);
+
+    if (Array.isArray(result)) {
+      return result.map((row) => normalizeCategory(row));
+    }
+
+    const paged = normalizePagedResult(result as ApiPagedResult<Record<string, unknown>>);
+    return paged.items.map(normalizeCategory);
   }
 
   // ── Health ────────────────────────────────────────────────────────────────
