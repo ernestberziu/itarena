@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 import Link from "next/link";
 import {
   ShoppingBag, Landmark, HeartPulse, GraduationCap,
@@ -12,13 +14,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: locale === "sq" ? "Industritë — IT Arena" : "Industries — IT Arena",
-    description:
-      locale === "sq"
-        ? "IT Arena ofron zgjidhje IT të specializuara për retail, financa, kujdes shëndetësor, arsim, horeca dhe industri."
-        : "IT Arena offers specialized IT solutions for retail, finance, healthcare, education, hospitality and industry.",
-  };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "industries",
+  });
 }
 
 const industries = [

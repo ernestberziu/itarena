@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCart } from "./cart-context";
 import { formatPrice } from "@/lib/utils";
-import { shopUrl } from "@/lib/shop-url";
+import { useShopLocale, useShopPath } from "@/hooks/use-shop-locale";
 
 interface ProductCardProps {
   product: {
@@ -33,8 +33,11 @@ interface ProductCardProps {
 // They are accepted here for forward-compatibility but not displayed on the card.
 // The detail page (product-detail-view.tsx) shows the barcode below the SKU.
 
-export function ProductCard({ product, isB2b, lang = "sq" }: ProductCardProps) {
+export function ProductCard({ product, isB2b, lang: langProp }: ProductCardProps) {
   const { addItem } = useCart();
+  const locale = useShopLocale();
+  const lang = langProp ?? locale;
+  const productHref = useShopPath(`products/${product.id}`);
 
   const name = lang === "sq" ? product.nameSq : product.nameEn;
   const price = isB2b ? product.priceB2b : product.priceRetail;
@@ -68,7 +71,7 @@ export function ProductCard({ product, isB2b, lang = "sq" }: ProductCardProps) {
   }
 
   return (
-    <Link href={shopUrl(`products/${product.id}`)} className="group block">
+    <Link href={productHref} className="group block">
       <div className="relative rounded-2xl bg-white border border-border/50 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 hover:-translate-y-1.5">
         {/* Image */}
         <div className="relative aspect-square bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
@@ -171,7 +174,7 @@ export function ProductCard({ product, isB2b, lang = "sq" }: ProductCardProps) {
                 className="shrink-0 border-violet-900 bg-violet-700 text-white text-xs hover:bg-violet-600 hover:border-violet-700 hover:shadow-md active:bg-violet-800 active:border-violet-950 active:shadow-sm"
                 onClick={(e) => {
                   e.preventDefault();
-                  window.location.href = `${shopUrl(`products/${product.id}`)}#b2b-quote`;
+                  window.location.href = `${productHref}#b2b-quote`;
                 }}
               >
                 <Building2 className="h-3.5 w-3.5" />

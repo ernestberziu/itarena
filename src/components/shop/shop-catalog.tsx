@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-
 import { ProductCard } from "./product-card";
 import { cn } from "@/lib/utils";
 import { shopCatalogHref } from "@/lib/shop-url";
+import { useShopLocale } from "@/hooks/use-shop-locale";
 import { Button } from "@/components/ui/button";
 import { SHOP_CATEGORY_SELECTED_TEXT } from "@/lib/shop-category-selected-color";
 
@@ -55,6 +56,7 @@ export function ShopCatalog({
   searchQuery,
 }: ShopCatalogProps) {
   const router = useRouter();
+  const shopLocale = useShopLocale();
   const [search, setSearch] = useState(searchQuery ?? "");
   const [isPending, startTransition] = useTransition();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -79,11 +81,14 @@ export function ShopCatalog({
 
   function catalogPageHref(nextPage: number) {
     const p = Math.min(Math.max(1, nextPage), totalPages);
-    return shopCatalogHref({
-      ...(searchQuery ? { q: searchQuery } : {}),
-      ...(activeSlug ? { category: activeSlug } : {}),
-      ...(p > 1 ? { page: String(p) } : {}),
-    });
+    return shopCatalogHref(
+      {
+        ...(searchQuery ? { q: searchQuery } : {}),
+        ...(activeSlug ? { category: activeSlug } : {}),
+        ...(p > 1 ? { page: String(p) } : {}),
+      },
+      shopLocale
+    );
   }
 
   function applySearch(value: string) {
@@ -91,7 +96,7 @@ export function ShopCatalog({
     if (value) params.q = value;
     if (activeSlug) params.category = activeSlug;
     startTransition(() => {
-      router.push(shopCatalogHref(params));
+      router.push(shopCatalogHref(params, shopLocale));
     });
   }
 
@@ -101,7 +106,7 @@ export function ShopCatalog({
     const qVal = search || searchQuery;
     if (qVal) params.q = qVal;
     startTransition(() => {
-      router.push(shopCatalogHref(params));
+      router.push(shopCatalogHref(params, shopLocale));
     });
     setSidebarOpen(false);
   }
@@ -232,7 +237,6 @@ export function ShopCatalog({
                     key={product.id}
                     product={product}
                     isB2b={isB2b}
-                    lang="sq"
                   />
                 ))}
               </div>

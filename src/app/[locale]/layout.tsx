@@ -7,7 +7,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { SetHtmlLang } from "@/components/public/set-html-lang";
 
+import { SITE_URL, resolveOgImageUrl } from "@/lib/seo/config";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     template: "%s | IT Arena",
     default: "IT Arena — Zgjidhje Teknologjike për Biznesin Tuaj",
@@ -15,13 +18,20 @@ export const metadata: Metadata = {
   description:
     "IT Arena sjell zgjidhje teknologjike të plota për bizneset shqiptare. IT Support, Cloud, Web, CCTV dhe më shumë.",
   keywords: ["IT Arena", "IT Support Albania", "Cloud Albania", "CCTV Albania"],
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://itarena.al"
-  ),
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon", type: "image/png" }],
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     siteName: "IT Arena",
     locale: "sq_AL",
-    alternateLocale: "en_US",
+    alternateLocale: ["en_US"],
+    images: [{ url: resolveOgImageUrl(null), width: 1200, height: 630, alt: "IT Arena" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [resolveOgImageUrl(null)],
   },
 };
 

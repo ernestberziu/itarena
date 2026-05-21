@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { LegalDocument } from "@/components/public/legal-document";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 
 export async function generateMetadata({
   params,
@@ -6,9 +9,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: locale === "sq" ? "Politika e Privatësisë — IT Arena" : "Privacy Policy — IT Arena",
-  };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "legalPrivacy",
+  });
 }
 
 export default async function PrivatesiaPage({
@@ -17,109 +21,227 @@ export default async function PrivatesiaPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const sq = locale === "sq";
+
+  const sections = sq
+    ? [
+        {
+          title: "1. Kontrolluesi i të dhënave",
+          content: (
+            <p>
+              IT Arena sh.p.k., NIPT M11905015A, Rr. Loni Ligori, Astir, Tiranë, Shqipëri
+              (&ldquo;IT Arena&rdquo;, &ldquo;ne&rdquo;). Email:{" "}
+              <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">
+                privacy@itarena.al
+              </a>
+              .
+            </p>
+          ),
+        },
+        {
+          title: "2. Të dhënat që mbledhim",
+          content: (
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Identifikim: emër, email, telefon, kompani, NIPT (kur aplikohet)</li>
+              <li>Kontratë &amp; faturim: adresa, të dhëna pagese, historik porosish</li>
+              <li>Portali klientit: kredenciale, ticket-e, dokumente të ngarkuara</li>
+              <li>Formularë publikë: kontakt, kërkesa oferte, abonime</li>
+              <li>Teknike: IP, log serveri, pajisje/browser (cookies sipas politikës së cookies)</li>
+            </ul>
+          ),
+        },
+        {
+          title: "3. Qëllimet dhe baza ligjore",
+          content: (
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Kontratë / ofertë — ekzekutimi i kontratës (neni 6(1)(b) GDPR)</li>
+              <li>Mbështetje IT — interes legjitim për shërbim dhe siguri</li>
+              <li>Marketing — pëlqim i qartë (newsletter, mund të tërhiqet)</li>
+              <li>Detyrime ligjore — faturim, kontabilitet, autoritete</li>
+              <li>Analitikë web — vetëm me pëlqim (shih politika cookies)</li>
+            </ul>
+          ),
+        },
+        {
+          title: "4. Ndarja me palë të treta",
+          content: (
+            <p>
+              Mund të përdorim procesues (hosting, email SMTP, pagesa, CRM) me kontrata përpunimi
+              (DPA). Nuk shesim të dhëna personale. Transferime jashtë BE-së vetëm me garanci të
+              përshtatshme (SCC, vendim mjaftueshmërie, etj.).
+            </p>
+          ),
+        },
+        {
+          title: "5. Ruajtja",
+          content: (
+            <p>
+              Ruajmë të dhënat sa kohë nevojiten për qëllimin e mbledhjes: kontratat deri 10 vjet
+              pas mbarimit (ligj fiskal), ticket-e deri 3 vjet, marketing deri tërheqja e pëlqimit,
+              log teknike deri 12 muaj (në varësi të nevojës së sigurisë).
+            </p>
+          ),
+        },
+        {
+          title: "6. Siguria",
+          content: (
+            <p>
+              Masat teknike dhe organizative sipas ISO 27001: kontroll aksesi, enkriptim në tranzit,
+              backup, trajnime stafi, menaxhim incidentesh. Njoftojmë autoritetin dhe ju brenda 72
+              orëve kur një shkelje rrezikon të drejtat tuaja.
+            </p>
+          ),
+        },
+        {
+          title: "7. Të drejtat tuaja",
+          content: (
+            <p>
+              Akses, korrigjim, fshirje, kufizim, portabilitet, kundërshtim, tërheqje pëlqimi.
+              Kërkesa në{" "}
+              <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">
+                privacy@itarena.al
+              </a>
+              . Përgjigje brenda 30 ditëve. Ankesë te Komisioneri për Mbrojtjen e të Dhënave
+              Personale (Shqipëri).
+            </p>
+          ),
+        },
+        {
+          title: "8. Cookies",
+          content: (
+            <p>
+              Përdorim cookies thelbësore dhe, me pëlqim, analitike. Detaje në{" "}
+              <a href="/politika-cookies" className="text-primary hover:underline">
+                Politikën e Cookies
+              </a>
+              . Menaxhoni preferencat nga banner-i ose fundi i faqes.
+            </p>
+          ),
+        },
+        {
+          title: "9. Ndryshime",
+          content: (
+            <p>
+              Mund të përditësojmë këtë politikë; data e fundit shfaqet në krye. Ndryshime materiale
+              njoftohen në faqe ose me email për klientët aktivë.
+            </p>
+          ),
+        },
+      ]
+    : [
+        {
+          title: "1. Data controller",
+          content: (
+            <p>
+              IT Arena sh.p.k., VAT M11905015A, Rr. Loni Ligori, Astir, Tirana, Albania
+              (&ldquo;IT Arena&rdquo;, &ldquo;we&rdquo;). Email:{" "}
+              <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">
+                privacy@itarena.al
+              </a>
+              .
+            </p>
+          ),
+        },
+        {
+          title: "2. Data we collect",
+          content: (
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Identity: name, email, phone, company, VAT ID (where applicable)</li>
+              <li>Contract &amp; billing: address, payment data, order history</li>
+              <li>Client portal: credentials, tickets, uploaded documents</li>
+              <li>Public forms: contact, quote requests, subscriptions</li>
+              <li>Technical: IP, server logs, device/browser (cookies per cookie policy)</li>
+            </ul>
+          ),
+        },
+        {
+          title: "3. Purposes and legal bases",
+          content: (
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Contract / quote — performance of contract (GDPR Art. 6(1)(b))</li>
+              <li>IT support — legitimate interest in service and security</li>
+              <li>Marketing — explicit consent (newsletter, withdraw anytime)</li>
+              <li>Legal obligations — invoicing, accounting, authorities</li>
+              <li>Web analytics — consent only (see cookie policy)</li>
+            </ul>
+          ),
+        },
+        {
+          title: "4. Sharing with third parties",
+          content: (
+            <p>
+              We use processors (hosting, SMTP email, payments, CRM) under data processing
+              agreements. We do not sell personal data. Transfers outside the EU only with appropriate
+              safeguards (SCCs, adequacy decisions, etc.).
+            </p>
+          ),
+        },
+        {
+          title: "5. Retention",
+          content: (
+            <p>
+              We keep data as long as needed for the purpose: contracts up to 10 years after end
+              (tax law), tickets up to 3 years, marketing until consent withdrawal, technical logs up
+              to 12 months (depending on security needs).
+            </p>
+          ),
+        },
+        {
+          title: "6. Security",
+          content: (
+            <p>
+              Technical and organizational measures aligned with ISO 27001: access control,
+              encryption in transit, backups, staff training, incident management. We notify the
+              authority and you within 72 hours when a breach risks your rights.
+            </p>
+          ),
+        },
+        {
+          title: "7. Your rights",
+          content: (
+            <p>
+              Access, rectification, erasure, restriction, portability, objection, withdraw consent.
+              Requests to{" "}
+              <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">
+                privacy@itarena.al
+              </a>
+              . Response within 30 days. Complaint to the Albanian Data Protection Commissioner.
+            </p>
+          ),
+        },
+        {
+          title: "8. Cookies",
+          content: (
+            <p>
+              We use essential cookies and, with consent, analytics. Details in our{" "}
+              <a href={sq ? "/politika-cookies" : `/${locale}/politika-cookies`} className="text-primary hover:underline">
+                Cookie Policy
+              </a>
+              . Manage preferences via the banner or site footer.
+            </p>
+          ),
+        },
+        {
+          title: "9. Changes",
+          content: (
+            <p>
+              We may update this policy; the latest date is shown at the top. Material changes are
+              announced on the site or by email to active clients.
+            </p>
+          ),
+        },
+      ];
 
   return (
-    <div className="flex flex-col">
-      <section className="bg-[hsl(222,47%,9%)] text-white py-14">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h1 className="text-3xl md:text-4xl font-extrabold">
-            {locale === "sq" ? "Politika e Privatësisë" : "Privacy Policy"}
-          </h1>
-          <p className="text-white/50 text-sm mt-2">
-            {locale === "sq" ? "Përditësuar: 1 Janar 2026" : "Updated: January 1, 2026"}
-          </p>
-        </div>
-      </section>
-
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="prose prose-slate max-w-none space-y-8">
-            {locale === "sq" ? (
-              <>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">1. Kush jemi ne</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena sh.p.k, NIPT M11905015A, me seli në Rr. Loni Ligori, Astir, Tiranë, Shqipëri, është kontrollues i të dhënave personale të mbledhura nëpërmjet faqes sonë të internetit dhe shërbimeve tona.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">2. Çfarë të dhënash mbledhim</h2>
-                  <p className="text-muted-foreground leading-relaxed">Mbledhim të dhëna që ju jepni drejtpërdrejt: emër, email, numër telefoni, emër kompanie dhe mesazhe kur plotësoni formularët tanë. Gjithashtu mbledhim automatikisht të dhëna teknike si adresa IP, tipi i browser-it dhe faqet e vizituara.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">3. Si i përdorim të dhënat</h2>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• Për t'iu kthyer përgjigje kërkesave dhe ofertave tuaja</li>
-                    <li>• Për të menaxhuar kontratën dhe shërbimet e miratuara</li>
-                    <li>• Për t'iu dërguar njoftime teknike dhe updates</li>
-                    <li>• Për të përmirësuar faqen dhe shërbimet tona</li>
-                    <li>• Për të plotësuar detyrimet ligjore dhe rregullatore</li>
-                  </ul>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">4. Baza ligjore e përpunimit</h2>
-                  <p className="text-muted-foreground leading-relaxed">Përpunojmë të dhënat tuaja bazuar në: (a) ekzekutimin e kontratës kur jeni klient i IT Arena; (b) interesin tonë legjitim për të ofruar shërbime cilësore; (c) pëlqimin tuaj për marketingun; (d) detyrimet ligjore.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">5. Mbrojtja e të dhënave</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena aplikon masa teknike dhe organizative sipas ISO 27001 për mbrojtjen e të dhënave tuaja. Të dhënat ruhen në serverë brenda BE-së ose me garanci të nivelit të ekuivalent të mbrojtjes.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">6. Të drejtat tuaja</h2>
-                  <p className="text-muted-foreground leading-relaxed">Keni të drejtë të: aksesoni, korrigjoni, fshini të dhënat tuaja; kufizoni ose kundërshtoni përpunimin; portatilitetit të të dhënave; tërhiqni pëlqimin. Dërgoni kërkesën tek <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">privacy@itarena.al</a>.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">7. Cookies</h2>
-                  <p className="text-muted-foreground leading-relaxed">Faqja jonë përdor cookies thelbësore për funksionimin e saj dhe cookies analitike (Google Analytics) me pëlqimin tuaj. Mund të kontrolloni cookies nëpërmjet cilësimeve të browser-it tuaj.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">8. Na kontaktoni</h2>
-                  <p className="text-muted-foreground leading-relaxed">Për çdo pyetje mbi privatësinë: <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">privacy@itarena.al</a> ose Rr. Loni Ligori, Astir, Tiranë.</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">1. Who we are</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena sh.p.k, VAT M11905015A, headquartered at Rr. Loni Ligori, Astir, Tirana, Albania, is the controller of personal data collected through our website and services.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">2. What data we collect</h2>
-                  <p className="text-muted-foreground leading-relaxed">We collect data you provide directly: name, email, phone number, company name and messages when you fill in our forms. We also automatically collect technical data such as IP address, browser type and pages visited.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">3. How we use your data</h2>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• To respond to your requests and quotes</li>
-                    <li>• To manage the agreed contract and services</li>
-                    <li>• To send you technical notifications and updates</li>
-                    <li>• To improve our website and services</li>
-                    <li>• To fulfill legal and regulatory obligations</li>
-                  </ul>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">4. Legal basis for processing</h2>
-                  <p className="text-muted-foreground leading-relaxed">We process your data based on: (a) contract performance when you are an IT Arena client; (b) our legitimate interest in providing quality services; (c) your consent for marketing; (d) legal obligations.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">5. Data protection</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena applies technical and organizational measures in accordance with ISO 27001 to protect your data. Data is stored on servers within the EU or with equivalent level protection guarantees.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">6. Your rights</h2>
-                  <p className="text-muted-foreground leading-relaxed">You have the right to: access, correct, delete your data; restrict or object to processing; data portability; withdraw consent. Send your request to <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">privacy@itarena.al</a>.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">7. Cookies</h2>
-                  <p className="text-muted-foreground leading-relaxed">Our website uses essential cookies for its operation and analytical cookies (Google Analytics) with your consent. You can control cookies through your browser settings.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">8. Contact us</h2>
-                  <p className="text-muted-foreground leading-relaxed">For any privacy questions: <a href="mailto:privacy@itarena.al" className="text-primary hover:underline">privacy@itarena.al</a> or Rr. Loni Ligori, Astir, Tirana.</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-    </div>
+    <LegalDocument
+      locale={locale}
+      title={sq ? "Politika e Privatësisë" : "Privacy Policy"}
+      updated={sq ? "Përditësuar: 21 Maj 2026" : "Updated: May 21, 2026"}
+      relatedLinks={[
+        { href: "/politika-cookies", label: sq ? "Cookies" : "Cookies" },
+        { href: "/kushtet", label: sq ? "Kushtet" : "Terms" },
+      ]}
+      sections={sections}
+    />
   );
 }

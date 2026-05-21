@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import {
@@ -15,8 +17,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "market" });
-  return { title: t("title") };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "market",
+  });
 }
 
 export default async function TreguPage({
@@ -28,7 +32,7 @@ export default async function TreguPage({
   const lp = locale === "sq" ? "" : `/${locale}`;
 
   const shopCtx = await getShopUrlRequestContext();
-  const shopDomainLabel = shopCtx
+  const shopDomainLabel = shopCtx?.requestHost
     ? shopHostLabel(shopCtx.requestHost)
     : (() => {
         try {

@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
   getMarketingServiceBySlug,
+  getPublishedSiteContent,
   listMarketingServices,
 } from "@/lib/site-content/db";
-import { getLucideIcon } from "@/lib/site-content/icons";
 import {
-  pickLocale,
-  serviceFeatures,
   serviceName,
   serviceShortDesc,
+  serviceFullDesc,
 } from "@/lib/site-content/locale";
 import { DEFAULT_MARKETING_SERVICES } from "@/lib/site-content/defaults";
+import { ServiceDetailView } from "@/components/public/services/service-detail-view";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
+import { BreadcrumbJsonLd, ServiceJsonLd } from "@/lib/seo/json-ld";
+import { breadcrumbsFor } from "@/lib/seo/breadcrumbs";
 
 const PRINTER_SLUG = "printere" as const;
 const LEGACY_PRINTER_SLUG = "printerë";
@@ -37,7 +37,7 @@ export async function generateStaticParams() {
       return services.map((s) => ({ slug: s.slug }));
     }
   } catch {
-    /* build without DB — fall through to defaults */
+    /* build without DB */
   }
   return DEFAULT_MARKETING_SERVICES.map((s) => ({ slug: s.slug }));
 }
@@ -48,6 +48,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { locale, slug } = await params;
+  const loc = (locale === "en" ? "en" : "sq") as SeoLocale;
   const resolved = resolveServiceSlug(slug);
   const svc = await getMarketingServiceBySlug(resolved);
   if (!svc) return { title: "IT Arena" };
@@ -55,7 +56,16 @@ export async function generateMetadata({
     (locale === "en" ? svc.metaTitleEn : svc.metaTitleSq) || serviceName(svc, locale);
   const description =
     (locale === "en" ? svc.metaDescEn : svc.metaDescSq) || serviceShortDesc(svc, locale);
-  return { title, description };
+  const keywords = locale === "en" ? svc.keywordsEn : svc.keywordsSq;
+  return buildPageMetadata({
+    locale: loc,
+    path: `/sherbime/${resolved}`,
+    alternatePath: `/sherbime/${resolved}`,
+    title,
+    description,
+    keywords: keywords ?? undefined,
+    ogImageUrl: svc.imageUrl || svc.bannerUrl,
+  });
 }
 
 export default async function ServiceDetailPage({
@@ -72,54 +82,32 @@ export default async function ServiceDetailPage({
   const svc = await getMarketingServiceBySlug(resolved);
   if (!svc) notFound();
 
+  const content = await getPublishedSiteContent();
   const lp = locale === "sq" ? "" : `/${locale}`;
-  const Icon = getLucideIcon(svc.iconKey);
-  const features = serviceFeatures(svc, locale);
-  const fullDesc =
-    (locale === "en" ? svc.fullDescEn : svc.fullDescSq) || serviceShortDesc(svc, locale);
+  const related = content.services
+    .filter((s) => s.enabled && s.slug !== svc.slug)
+    .slice(0, 4);
+
+  const loc = (locale === "en" ? "en" : "sq") as SeoLocale;
+  const name = serviceName(svc, locale);
+  const description = serviceShortDesc(svc, locale);
 
   return (
-    <div className="flex flex-col">
-      <section
-        className={cn(
-          "relative overflow-hidden py-20 md:py-28 text-white",
-          "bg-gradient-to-br",
-          svc.accentClass ?? "from-primary to-blue-700"
-        )}
-      >
-        <div className="container relative mx-auto px-4">
-          <div className={cn("mb-6 inline-flex rounded-2xl border border-white/20 bg-white/10 p-4")}>
-            <Icon className="h-10 w-10" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{serviceName(svc, locale)}</h1>
-          <p className="text-lg text-white/85 max-w-2xl">{serviceShortDesc(svc, locale)}</p>
-          <Button className="mt-8" variant="secondary" asChild>
-            <Link href={`${lp}/kerko-oferte`}>
-              {locale === "sq" ? "Kërko ofertë" : "Get a quote"}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </section>
-
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <p className="text-lg text-muted-foreground leading-relaxed mb-10 whitespace-pre-line">
-            {fullDesc}
-          </p>
-          <h2 className="text-2xl font-bold mb-6">
-            {locale === "sq" ? "Çfarë përfshin" : "What's included"}
-          </h2>
-          <ul className="grid sm:grid-cols-2 gap-3">
-            {features.map((f) => (
-              <li key={f} className="flex items-start gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-    </div>
+    <>
+      <BreadcrumbJsonLd
+        locale={loc}
+        items={breadcrumbsFor(loc, [
+          { key: "services", path: "/sherbime" },
+          { name, path: `/sherbime/${svc.slug}` },
+        ])}
+      />
+      <ServiceJsonLd
+        locale={loc}
+        name={name}
+        description={serviceFullDesc(svc, locale)}
+        slug={svc.slug}
+      />
+      <ServiceDetailView svc={svc} related={related} locale={locale} lp={lp} />
+    </>
   );
 }

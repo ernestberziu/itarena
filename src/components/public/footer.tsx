@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { Phone, Mail, MapPin, Clock, Shield, Award, ArrowUpRight } from "lucide-react";
@@ -6,6 +8,7 @@ import { shopUrl } from "@/lib/shop-url";
 import type { MarketingServiceRecord, SiteSettingsBundle } from "@/lib/site-content/types";
 import { pickLocale, serviceName } from "@/lib/site-content/locale";
 import { SocialLinks } from "@/components/public/social-links";
+import { ManageCookiePreferencesButton } from "@/components/public/cookie-consent";
 
 export function Footer({
   siteSettings,
@@ -177,15 +180,21 @@ export function Footer({
       <div className="border-t border-white/8">
         <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} IT Arena SH.P.K. · NIPT M11905015A · {t("footer.rights")}.</p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:justify-end">
             <Link href={navLink("/privatesia")} className="hover:text-slate-300 transition-colors">
               {t("footer.privacy")}
             </Link>
             <Link href={navLink("/kushtet")} className="hover:text-slate-300 transition-colors">
               {t("footer.terms")}
             </Link>
-            <span className="text-slate-700">·</span>
-            <span className="text-slate-600">Designed in Albania</span>
+            <Link href={navLink("/politika-cookies")} className="hover:text-slate-300 transition-colors">
+              {t("footer.cookies")}
+            </Link>
+            <ManageCookiePreferencesButton className="hover:text-slate-300 transition-colors text-left" />
+            <span className="hidden sm:inline text-slate-700">·</span>
+            <span className="text-slate-600 w-full sm:w-auto text-center sm:text-right">
+              Designed in Albania
+            </span>
           </div>
         </div>
       </div>

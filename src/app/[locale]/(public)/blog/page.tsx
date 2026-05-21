@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock, ArrowRight, Tag } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 
 export async function generateMetadata({
   params,
@@ -8,13 +10,11 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: locale === "sq" ? "Blog IT — IT Arena" : "IT Blog — IT Arena",
-    description:
-      locale === "sq"
-        ? "Artikuj, këshilla dhe analiza mbi teknologjitë e reja, rrjetin, cloud-in dhe transformimin dixhital."
-        : "Articles, tips and analysis on new technologies, networking, cloud, and digital transformation.",
-  };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "blog",
+    ogType: "website",
+  });
 }
 
 const articles = [

@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "./cart-context";
 import { ProductCard } from "./product-card";
 import { formatPrice } from "@/lib/utils";
-import { shopCategoryUrl, shopUrl } from "@/lib/shop-url";
+import { shopCatalogHref } from "@/lib/shop-url";
+import { useShopLocale, useShopPath } from "@/hooks/use-shop-locale";
 
 interface Product {
   id: string;
@@ -43,6 +44,9 @@ interface ProductDetailViewProps {
 
 export function ProductDetailView({ product, related, isB2b, isLoggedIn }: ProductDetailViewProps) {
   const { addItem } = useCart();
+  const shopLocale = useShopLocale();
+  const shopHome = useShopPath();
+  const shopCart = useShopPath("cart");
   const [selectedImage, setSelectedImage] = useState(0);
   const [qty, setQty] = useState(1);
   const [quoteQty, setQuoteQty] = useState(10);
@@ -101,12 +105,15 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link href={shopUrl()} className="flex items-center gap-1 hover:text-primary transition-colors">
+          <Link href={shopHome} className="flex items-center gap-1 hover:text-primary transition-colors">
             <ChevronLeft className="h-4 w-4" />
             Kthehu tek produktet
           </Link>
           <span>/</span>
-          <Link href={shopCategoryUrl(product.category.slug)} className="hover:text-primary transition-colors">
+          <Link
+            href={shopCatalogHref({ category: product.category.slug }, shopLocale)}
+            className="hover:text-primary transition-colors"
+          >
             {product.category.nameSq}
           </Link>
           <span>/</span>
@@ -162,7 +169,7 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
             {/* Category & Brand */}
             <div className="flex items-center gap-2 flex-wrap">
               <Link
-                href={shopCategoryUrl(product.category.slug)}
+                href={shopCatalogHref({ category: product.category.slug }, shopLocale)}
                 className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
               >
                 {product.category.nameSq}
@@ -251,7 +258,7 @@ export function ProductDetailView({ product, related, isB2b, isLoggedIn }: Produ
                 </Button>
               </div>
               <Button variant="outline" asChild className="w-full h-auto min-h-12 py-4">
-                <Link href={shopUrl("cart")}>
+                <Link href={shopCart}>
                   Shko tek Shporta →
                 </Link>
               </Button>

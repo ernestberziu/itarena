@@ -7,6 +7,8 @@ import { ShopFooter } from "@/components/shop/shop-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { isStaff } from "@/types/domain";
 import type { Session } from "next-auth";
+import { getShopLocaleFromPathname } from "@/lib/shop-url";
+import { sessionDisplayName } from "@/lib/session-display-name";
 
 export function ShopLayoutChrome({
   children,
@@ -16,13 +18,13 @@ export function ShopLayoutChrome({
   session: Session | null;
 }) {
   const pathname = usePathname() ?? "";
+  const lang = getShopLocaleFromPathname(pathname);
   const isShopAdmin =
     pathname.includes("/admin/") || pathname.startsWith("/shop/admin");
   const isLoggedIn = !!session;
   const isB2b =
     session?.user?.role === "COMPANY_ADMIN" ||
     session?.user?.companyId != null;
-  const isAdmin = ["ADMIN", "OPS"].includes(session?.user?.role ?? "");
   const mainDashboardPath =
     session?.user && isStaff(session.user.role)
       ? "admin"
@@ -43,14 +45,16 @@ export function ShopLayoutChrome({
     <CartProvider>
       <div className="flex min-h-screen flex-col">
         <ShopNavbar
-          lang="sq"
+          lang={lang}
           isLoggedIn={isLoggedIn}
           isB2b={isB2b}
-          isAdmin={isAdmin}
           mainDashboardPath={mainDashboardPath}
+          userDisplayName={
+            session?.user ? sessionDisplayName(session.user) : null
+          }
         />
         <main className="flex-1">{children}</main>
-        <ShopFooter lang="sq" />
+        <ShopFooter lang={lang} />
       </div>
       <Toaster position="top-right" richColors />
     </CartProvider>

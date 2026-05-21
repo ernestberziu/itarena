@@ -6,14 +6,19 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PORTAL_ROLES } from "@/lib/portal/access";
 
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale });
-  return { title: t("nav.quoteRequest") };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "quote",
+  });
 }
 
 export default async function QuoteRequestPage({

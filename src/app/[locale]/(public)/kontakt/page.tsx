@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Phone, Mail, MapPin, Clock, MessageSquare, Zap, Shield } from "lucide-react";
 import { ContactForm } from "@/components/public/contact-form";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 
 export async function generateMetadata({
   params,
@@ -9,8 +11,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "contact" });
-  return { title: t("title") };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "contact",
+  });
 }
 
 export default async function ContactPage({

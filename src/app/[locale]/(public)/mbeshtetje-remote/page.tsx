@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 import Link from "next/link";
 import {
   Monitor, Zap, Shield, Clock, CheckCircle2,
@@ -12,13 +14,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: locale === "sq" ? "Mbështetje Remote — IT Arena" : "Remote Support — IT Arena",
-    description:
-      locale === "sq"
-        ? "Mbështetje teknike remote me lidhje të sigurt. Zgjidhim problemet tuaja IT pa nevojë të vini fizikisht."
-        : "Remote technical support with secure connection. We solve your IT problems without needing to be physically present.",
-  };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "remoteSupport",
+  });
 }
 
 const steps = [

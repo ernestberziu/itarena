@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { LegalDocument } from "@/components/public/legal-document";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 
 export async function generateMetadata({
   params,
@@ -6,9 +9,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: locale === "sq" ? "Kushtet e Shërbimit — IT Arena" : "Terms of Service — IT Arena",
-  };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "legalTerms",
+  });
 }
 
 export default async function KushtetPage({
@@ -17,113 +21,275 @@ export default async function KushtetPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const sq = locale === "sq";
+
+  const sections = sq
+    ? [
+        {
+          title: "1. Zbatimi",
+          content: (
+            <p>
+              Këto kushte rregullojnë përdorimin e faqes itarena.al, dyqanit online, portaleve dhe
+              shërbimeve të ofruara nga IT Arena sh.p.k. (NIPT M11905015A). Duke porositur shërbime
+              ose duke përdorur platformën, pranoni këto kushte dhe ofertën/kontratën individuale
+              që ka prioritet për detajet komerciale.
+            </p>
+          ),
+        },
+        {
+          title: "2. Shërbimet",
+          content: (
+            <p>
+              Ofruam shërbime IT (mbështetje, cloud, rrjet, siguri, zhvillim softuerësh, etj.) sipas
+              përshkrimit në faqe, ofertë ose kontratë. Përmasat, SLA-të, çmimet dhe afatet janë ato
+              të dakorduara me shkrim — jo informacione të përgjithshme në marketing.
+            </p>
+          ),
+        },
+        {
+          title: "3. Porositë dhe ofertat",
+          content: (
+            <p>
+              Ofertat janë të vlefshme për periudhën e shënuar. Porositë online në dyqan i nënshtrohen
+              konfirmimit të stokut dhe çmimit. IT Arena mund të refuzojë porosi që duken abuzive ose
+              në kundërshtim me ligjin.
+            </p>
+          ),
+        },
+        {
+          title: "4. Çmimet dhe pagesa",
+          content: (
+            <p>
+              Çmimet në faturë/ofertë janë përfundimtare përkushtuese (përveç gabimeve evidente).
+              Pagesa sipas kushteve të kontratës. Vonesa &gt;30 ditë mund të sjellë interes ligjor dhe
+              pezullim shërbimi. Çmimet e abonimeve mund të ndryshojnë me njoftim 30-ditor.
+            </p>
+          ),
+        },
+        {
+          title: "5. SLA dhe garanci",
+          content: (
+            <p>
+              SLA specifike vlen vetëm kur janë në kontratë të nënshkruar. Kohët e reagimit
+              zbatohen në orarin e punës të përcaktuar, përveç paketave 24/7. Forca madhore pezullon
+              detyrimet. Garanci për hardware/software sipas prodhuesit ose kontratës.
+            </p>
+          ),
+        },
+        {
+          title: "6. Detyrimet e klientit",
+          content: (
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Të sigurojë akses dhe informacion të nevojshëm</li>
+              <li>Të ruajë konfidencialitetin e kredencialeve të portaleve</li>
+              <li>Të paguajë në kohë dhe të respektojë politikën e përdorimit të drejtë</li>
+              <li>Të mos përdorë shërbimet për aktivitete të paligjshme</li>
+            </ul>
+          ),
+        },
+        {
+          title: "7. Pronësia intelektuale",
+          content: (
+            <p>
+              Softueri, dokumentacioni dhe metodologjitë e IT Arena mbeten pronë e IT Arena-s, përveç
+              kur kontrata parashikon transferim. Klientit i jepet licencë përdorimi për qëllimin e
+              kontratës. Materialet e klientit mbeten pronë e klientit.
+            </p>
+          ),
+        },
+        {
+          title: "8. Konfidencialiteti",
+          content: (
+            <p>
+              Të dyja palët mbrojnë informacionin konfidencial për 3 vjet pas përfundimit të
+              marrëdhënies, përveç kur zbulimi kërkohet me ligj.
+            </p>
+          ),
+        },
+        {
+          title: "9. Kufizimi i përgjegjësisë",
+          content: (
+            <p>
+              Përgjegjësia totale e IT Arena për dëme direkte nuk tejkalon shumën e paguar nga
+              klienti për shërbimin specifik në 12 muajt e fundit, përveç rasteve ku ligji ndalon
+              kufizimin (dëme me qëllim, etj.). Nuk përgjigjemi për dëme indirekte, humbje fitimi
+              ose të dhënash për shkak të forcës madhore ose përdorimit të gabuar nga klienti.
+            </p>
+          ),
+        },
+        {
+          title: "10. Privatësia dhe cookies",
+          content: (
+            <p>
+              Përpunimi i të dhënave rregullohet nga{" "}
+              <a href="/privatesia" className="text-primary hover:underline">
+                Politika e Privatësisë
+              </a>{" "}
+              dhe{" "}
+              <a href="/politika-cookies" className="text-primary hover:underline">
+                Politika e Cookies
+              </a>
+              .
+            </p>
+          ),
+        },
+        {
+          title: "11. Zgjidhja e mosmarrëveshjeve",
+          content: (
+            <p>
+              Ligji shqiptar. Tentativë zgjidhje miqësore 30 ditë. Pas kësaj, gjykatat kompetente të
+              Tiranës.
+            </p>
+          ),
+        },
+        {
+          title: "12. Ndryshime",
+          content: (
+            <p>
+              IT Arena mund të përditësojë kushtet me njoftim në faqe. Vazhdimi i përdorimit pas
+              datës së efektit konsiderohet pranim, përveç kur ligji kërkon pëlqim të veçantë.
+            </p>
+          ),
+        },
+      ]
+    : [
+        {
+          title: "1. Scope",
+          content: (
+            <p>
+              These terms govern use of itarena.al, the online shop, portals, and services provided
+              by IT Arena sh.p.k. (VAT M11905015A). By ordering services or using the platform, you
+              accept these terms and the individual offer/contract that prevails for commercial
+              details.
+            </p>
+          ),
+        },
+        {
+          title: "2. Services",
+          content: (
+            <p>
+              We provide IT services (support, cloud, network, security, software development, etc.)
+              as described on the site, in quotes, or contracts. Scope, SLAs, pricing, and timelines
+              are those agreed in writing — not general marketing information.
+            </p>
+          ),
+        },
+        {
+          title: "3. Orders and quotes",
+          content: (
+            <p>
+              Quotes are valid for the stated period. Online shop orders are subject to stock and
+              price confirmation. IT Arena may refuse orders that appear abusive or unlawful.
+            </p>
+          ),
+        },
+        {
+          title: "4. Pricing and payment",
+          content: (
+            <p>
+              Prices on invoice/quote are binding (except obvious errors). Payment per contract terms.
+              Delays over 30 days may incur legal interest and service suspension. Subscription prices
+              may change with 30 days notice.
+            </p>
+          ),
+        },
+        {
+          title: "5. SLA and warranties",
+          content: (
+            <p>
+              Specific SLAs apply only when in a signed contract. Response times apply during agreed
+              business hours except on 24/7 packages. Force majeure suspends obligations. Hardware/software
+              warranties per manufacturer or contract.
+            </p>
+          ),
+        },
+        {
+          title: "6. Client obligations",
+          content: (
+            <ul className="list-disc pl-5 space-y-2">
+              <li>Provide necessary access and information</li>
+              <li>Keep portal credentials confidential</li>
+              <li>Pay on time and respect fair use policy</li>
+              <li>Not use services for unlawful activities</li>
+            </ul>
+          ),
+        },
+        {
+          title: "7. Intellectual property",
+          content: (
+            <p>
+              IT Arena software, documentation, and methodologies remain IT Arena property unless
+              the contract provides transfer. The client receives a use license for the contract
+              purpose. Client materials remain client property.
+            </p>
+          ),
+        },
+        {
+          title: "8. Confidentiality",
+          content: (
+            <p>
+              Both parties protect confidential information for 3 years after the relationship ends,
+              except where disclosure is required by law.
+            </p>
+          ),
+        },
+        {
+          title: "9. Limitation of liability",
+          content: (
+            <p>
+              IT Arena&apos;s total liability for direct damages shall not exceed amounts paid by the
+              client for the specific service in the last 12 months, except where law prohibits
+              limitation. We are not liable for indirect damages, lost profits, or data loss due to
+              force majeure or client misuse.
+            </p>
+          ),
+        },
+        {
+          title: "10. Privacy and cookies",
+          content: (
+            <p>
+              Data processing is governed by our{" "}
+              <a href={sq ? "/privatesia" : `/${locale}/privatesia`} className="text-primary hover:underline">
+                Privacy Policy
+              </a>{" "}
+              and{" "}
+              <a href={sq ? "/politika-cookies" : `/${locale}/politika-cookies`} className="text-primary hover:underline">
+                Cookie Policy
+              </a>
+              .
+            </p>
+          ),
+        },
+        {
+          title: "11. Disputes",
+          content: (
+            <p>
+              Albanian law. 30-day friendly resolution attempt. Thereafter, competent courts of
+              Tirana.
+            </p>
+          ),
+        },
+        {
+          title: "12. Changes",
+          content: (
+            <p>
+              IT Arena may update terms with notice on the site. Continued use after the effective
+              date constitutes acceptance, except where law requires separate consent.
+            </p>
+          ),
+        },
+      ];
 
   return (
-    <div className="flex flex-col">
-      <section className="bg-[hsl(222,47%,9%)] text-white py-14">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <h1 className="text-3xl md:text-4xl font-extrabold">
-            {locale === "sq" ? "Kushtet e Shërbimit" : "Terms of Service"}
-          </h1>
-          <p className="text-white/50 text-sm mt-2">
-            {locale === "sq" ? "Efektive nga: 1 Janar 2026" : "Effective from: January 1, 2026"}
-          </p>
-        </div>
-      </section>
-
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div className="space-y-8">
-            {locale === "sq" ? (
-              <>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">1. Palët e Kontratës</h2>
-                  <p className="text-muted-foreground leading-relaxed">Këto kushte rregullojnë marrëdhënien midis IT Arena sh.p.k. (NIPT M11905015A, "Ofruesi") dhe personit fizik ose juridik që porositë shërbime ("Klienti"). Duke porositur shërbime, Klienti pranon këto kushte.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">2. Shërbimet e Ofruara</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena ofron shërbime IT sipas ofertës së miratuar me shkrim. Detajet e shërbimit, SLA-të dhe çmimet specifikohen në kontratën individuale ose ofertën e pranuar nga Klienti.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">3. Çmimet dhe Pagesa</h2>
-                  <p className="text-muted-foreground leading-relaxed">Çmimet janë ato të specifikuara në ofertë ose kontratë. Faturat lëshohen sipas kushteve të dakorduara. Vonesa në pagesë prej &gt;30 ditësh sjell penalitet 0.5%/ditë. Çmimet mund të ndryshohen me njoftim 30-ditor.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">4. SLA dhe Garancitë</h2>
-                  <p className="text-muted-foreground leading-relaxed">SLA-të specifike janë të definuara në kontratën individuale. Kohët e reagimit dhe zgjidhjes zbatohen vetëm gjatë orarit të specifikuar në kontratë. Forcat madhore (emergjenca kombëtare, fatkeqësi natyrore) pezullojnë SLA-të.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">5. Detyrimet e Klientit</h2>
-                  <p className="text-muted-foreground leading-relaxed">Klienti merr përsipër të: ofrojë akses të nevojshëm për ekipin IT Arena; informojë për ndryshime teknike relevante; paguajë faturat sipas kushteve; mos përdorë shërbimet në kundërshtim me ligjin.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">6. Konfidencialiteti</h2>
-                  <p className="text-muted-foreground leading-relaxed">Të dyja palët marrin përsipër të ruajnë konfidencialitetin e informacionit tregtar dhe teknik të njëra-tjetrës. Ky detyrim mbetet aktiv edhe pas përfundimit të kontratës për 3 vjet.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">7. Pronësia Intelektuale</h2>
-                  <p className="text-muted-foreground leading-relaxed">Softueret dhe zgjidhjet e zhvilluara nga IT Arena mbeten pronë e IT Arena-s, me përjashtim të rasteve kur kontrata parashikon ndryshe. Licenca e përdorimit i jepet Klientit gjatë periudhës së kontratës.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">8. Kufizimi i Përgjegjësisë</h2>
-                  <p className="text-muted-foreground leading-relaxed">Përgjegjësia totale e IT Arena nuk mund të tejkalojë shumën e paguar nga Klienti në 3 muajt e fundit. IT Arena nuk është përgjegjëse për dëme indirekte, humbje profiti ose të dhënash për shkak të forcës madhore.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">9. Zgjidhja e Mosmarrëveshjeve</h2>
-                  <p className="text-muted-foreground leading-relaxed">Palët do të tentojnë zgjidhjen miqësore të çdo mosmarrëveshje. Nëse kjo dështon brenda 30 ditësh, mosmarrëveshjet zgjidhen nga gjykatat kompetente të Tiranës, Shqipëri, sipas ligjit shqiptar.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">10. Ndryshimi i Kushteve</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena rezervon të drejtën të ndryshojë këto kushte me njoftim 30-ditor. Vazhdimi i shërbimit pas njoftimit konsiderohet pranim i kushteve të reja.</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">1. Parties to the Contract</h2>
-                  <p className="text-muted-foreground leading-relaxed">These terms govern the relationship between IT Arena sh.p.k. (VAT M11905015A, "Provider") and the individual or legal entity ordering services ("Client"). By ordering services, the Client accepts these terms.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">2. Services Provided</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena provides IT services according to the written approved offer. Service details, SLAs and pricing are specified in the individual contract or offer accepted by the Client.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">3. Pricing and Payment</h2>
-                  <p className="text-muted-foreground leading-relaxed">Prices are those specified in the offer or contract. Invoices are issued according to agreed terms. Payment delays of &gt;30 days incur a penalty of 0.5%/day. Prices may change with 30 days notice.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">4. SLAs and Warranties</h2>
-                  <p className="text-muted-foreground leading-relaxed">Specific SLAs are defined in the individual contract. Response and resolution times apply only during the hours specified in the contract. Force majeure (national emergencies, natural disasters) suspends SLAs.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">5. Client Obligations</h2>
-                  <p className="text-muted-foreground leading-relaxed">The Client undertakes to: provide necessary access for the IT Arena team; inform of relevant technical changes; pay invoices per terms; not use services contrary to law.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">6. Confidentiality</h2>
-                  <p className="text-muted-foreground leading-relaxed">Both parties undertake to maintain confidentiality of each other's commercial and technical information. This obligation remains active after contract termination for 3 years.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">7. Intellectual Property</h2>
-                  <p className="text-muted-foreground leading-relaxed">Software and solutions developed by IT Arena remain the property of IT Arena, unless the contract provides otherwise. A use license is granted to the Client during the contract period.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">8. Limitation of Liability</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena's total liability cannot exceed the amount paid by the Client in the last 3 months. IT Arena is not responsible for indirect damages, lost profits or data loss due to force majeure.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">9. Dispute Resolution</h2>
-                  <p className="text-muted-foreground leading-relaxed">Parties will attempt friendly resolution of any dispute. If this fails within 30 days, disputes are resolved by the competent courts of Tirana, Albania, under Albanian law.</p>
-                </div>
-                <div>
-                  <h2 className="text-xl font-extrabold mb-3">10. Changes to Terms</h2>
-                  <p className="text-muted-foreground leading-relaxed">IT Arena reserves the right to change these terms with 30 days notice. Continuation of service after notification is considered acceptance of the new terms.</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-    </div>
+    <LegalDocument
+      locale={locale}
+      title={sq ? "Kushtet e Shërbimit" : "Terms of Service"}
+      updated={sq ? "Efektive nga: 21 Maj 2026" : "Effective from: May 21, 2026"}
+      relatedLinks={[
+        { href: "/privatesia", label: sq ? "Privatësia" : "Privacy" },
+        { href: "/politika-cookies", label: sq ? "Cookies" : "Cookies" },
+      ]}
+      sections={sections}
+    />
   );
 }

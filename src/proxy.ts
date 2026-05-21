@@ -43,9 +43,30 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(u, 308);
   }
 
-  // Shop paths: bypass locale (intl) middleware entirely
+  // English shop: `/en/shop` → internal `/shop` (URL stays `/en/shop` for the user)
+  if (pathname === "/en/shop" || pathname.startsWith("/en/shop/")) {
+    const internalPath = pathname.replace(/^\/en/, "") || "/shop";
+    const url = req.nextUrl.clone();
+    url.pathname = internalPath;
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-shop-locale", "en");
+    return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+  }
+
+  // Shop paths: bypass intl middleware; strip legacy `?lang=` query
   if (pathname.startsWith("/shop")) {
-    return NextResponse.next();
+    const lang = req.nextUrl.searchParams.get("lang");
+    if (lang === "en" || lang === "sq") {
+      const redirectUrl = req.nextUrl.clone();
+      redirectUrl.searchParams.delete("lang");
+      if (lang === "en") {
+        redirectUrl.pathname = `/en${pathname}`;
+      }
+      return NextResponse.redirect(redirectUrl, 301);
+    }
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-shop-locale", "sq");
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // Strip locale prefix for path matching

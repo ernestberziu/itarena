@@ -2,7 +2,6 @@ import {
   Body,
   Container,
   Head,
-  Heading,
   Hr,
   Html,
   Link,
@@ -13,21 +12,13 @@ import {
 import type { ReactNode } from "react";
 import { BRAND_NAME, emailColors, type EmailLocale } from "@/lib/email/brand";
 import { getPublicAppBaseUrl } from "@/lib/shop-url";
+import { EmailBrandLogo } from "@/emails/components/email-brand-logo";
 
 type EmailLayoutProps = {
   locale: EmailLocale;
   previewText?: string;
   children: ReactNode;
 };
-
-function BrandMark() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 30 30" style={{ display: "block" }}>
-      <circle cx="15" cy="4" r="3.9" fill={emailColors.brand} />
-      <rect x="11.4" y="10" width="7.2" height="15.6" rx="3.6" fill={emailColors.brand} />
-    </svg>
-  );
-}
 
 export function EmailLayout({ locale, previewText, children }: EmailLayoutProps) {
   const en = locale === "en";
@@ -53,29 +44,7 @@ export function EmailLayout({ locale, previewText, children }: EmailLayoutProps)
           >
             <Section style={{ height: "4px", backgroundColor: emailColors.brand, lineHeight: "4px" }} />
             <Section style={{ padding: "24px 28px 8px" }}>
-              <table cellPadding={0} cellSpacing={0}>
-                <tbody>
-                  <tr>
-                    <td style={{ verticalAlign: "middle", paddingRight: "10px" }}>
-                      <BrandMark />
-                    </td>
-                    <td style={{ verticalAlign: "middle" }}>
-                      <Heading
-                        as="h2"
-                        style={{
-                          margin: 0,
-                          fontSize: "18px",
-                          fontWeight: 700,
-                          color: emailColors.brand,
-                          letterSpacing: "-0.02em",
-                        }}
-                      >
-                        {BRAND_NAME}
-                      </Heading>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <EmailBrandLogo />
             </Section>
             <Section style={{ padding: "8px 28px 28px", color: emailColors.text, fontSize: "15px", lineHeight: "1.55" }}>
               {children}

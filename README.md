@@ -42,6 +42,21 @@ Catalog data for `/shop` and admin read-only grids requires Financa5. Use **`npm
 
 See [`prisma/databases.md`](prisma/databases.md) for Postgres notes and upgrade notes if you migrated from an older dual-database (`SHOP_DATABASE_URL` / SQL Server) setup.
 
+## SEO & Google branding
+
+Public marketing and shop pages use a centralized SEO layer in [`src/lib/seo/`](src/lib/seo/) (`buildPageMetadata`, hreflang alternates, JSON-LD). **One sitemap** at [`src/app/sitemap.ts`](src/app/sitemap.ts) lists all indexable marketing URLs plus shop catalog and product pages ([`src/lib/seo/sitemap-data.ts`](src/lib/seo/sitemap-data.ts)); [`src/app/robots.ts`](src/app/robots.ts) points crawlers to `https://itarena.al/sitemap.xml` only.
+
+**Production:** set `PUBLIC_URL` or `NEXT_PUBLIC_APP_URL` to `https://itarena.al` (not a `*.vercel.app` preview URL) so canonicals, `Organization.logo`, and Open Graph images resolve correctly.
+
+**Brand assets for search:** [`public/logo-512.png`](public/logo-512.png), [`src/app/icon.svg`](src/app/icon.svg), [`src/app/opengraph-image.tsx`](src/app/opengraph-image.tsx). Passcode share links (`/share/...`) and auth pages are `noindex`.
+
+**After deploy — refresh Google favicon / logo:**
+
+1. Open [Google Search Console](https://search.google.com/search-console) for `itarena.al`.
+2. Confirm `https://itarena.al/robots.txt` and `https://itarena.al/sitemap.xml` load.
+3. URL Inspection → test `https://itarena.al/` → **Request indexing**.
+4. If an old Vercel icon still appears: use **Remove outdated favicon** (or clear cached favicon after 48–72h once `logo-512.png` and JSON-LD `Organization.logo` are live).
+
 ## Build
 
 ```bash

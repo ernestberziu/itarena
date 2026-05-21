@@ -7,11 +7,26 @@ import { getFinanca5Client } from "@/lib/financa5-client";
 import { adaptProducts } from "@/lib/erp-adapters";
 import { getShopProductOverlaysByKods, mergeShopProducts } from "@/lib/shop-product-overlay";
 import { SHOP_CATALOG_PAGE_SIZE, shopCatalogHref } from "@/lib/shop-url";
+import { getShopLocaleServer } from "@/lib/shop-locale-server";
 import { Zap, Package, AlertTriangle } from "lucide-react";
+import { ShopTrustStrip } from "@/components/shop/shop-trust-strip";
 
-export const metadata = {
-  title: "Të Gjitha Produktet",
-};
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const shopLocale = await getShopLocaleServer();
+  return buildPageMetadata({
+    locale: shopLocale,
+    page: "shop",
+    path: "/shop",
+    title:
+      shopLocale === "en"
+        ? "All Products — IT Arena Shop"
+        : "Të Gjitha Produktet — IT Arena Shop",
+    shop: true,
+  });
+}
 
 // Revalidate every 60 seconds so the CDN edge cache stays reasonably fresh
 // without hammering the ERP API on every visitor request.
@@ -26,6 +41,7 @@ export default async function ShopPage({
     page?: string | string[];
   }>;
 }) {
+  const shopLocale = await getShopLocaleServer();
   const raw = await searchParams;
   const categorySlug = Array.isArray(raw.category) ? raw.category[0] : raw.category;
   const qParam = Array.isArray(raw.q) ? raw.q[0] : raw.q;
@@ -79,11 +95,14 @@ export default async function ShopPage({
 
   if (requestedPage !== page) {
     redirect(
-      shopCatalogHref({
-        q: search,
-        category: categorySlug,
-        ...(page > 1 ? { page: String(page) } : {}),
-      })
+      shopCatalogHref(
+        {
+          q: search,
+          category: categorySlug,
+          ...(page > 1 ? { page: String(page) } : {}),
+        },
+        shopLocale
+      )
     );
   }
 
@@ -118,9 +137,8 @@ export default async function ShopPage({
                 : "Hardware, Software & Periferikë"}
             </h1>
             <p className="text-slate-400 text-sm mt-2">
-              <span className="text-white font-bold">{totalFiltered}</span> produkte ·{" "}
-              <span className="text-emerald-400 font-semibold">Pagesa me dorëzim (COD)</span> ·{" "}
-              <span className="text-white/50">Dërgim 24–48h</span>
+              <span className="text-white font-bold">{totalFiltered}</span>{" "}
+              {shopLocale === "en" ? "products" : "produkte"}
             </p>
           </div>
           <div className="flex flex-col items-end gap-3">
@@ -134,6 +152,9 @@ export default async function ShopPage({
               </div>
             )}
           </div>
+        </div>
+        <div className="container relative mx-auto px-4 border-t border-white/10 mt-8 md:mt-10">
+          <ShopTrustStrip lang={shopLocale} compact />
         </div>
       </section>
 

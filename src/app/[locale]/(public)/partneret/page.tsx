@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,13 +11,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: locale === "sq" ? "Partnerët Tanë — IT Arena" : "Our Partners — IT Arena",
-    description:
-      locale === "sq"
-        ? "IT Arena bashkëpunon me markat kryesore botërore të teknologjisë: Microsoft, Cisco, Ubiquiti, Hikvision dhe shumë të tjerë."
-        : "IT Arena partners with the world's leading technology brands: Microsoft, Cisco, Ubiquiti, Hikvision and many more.",
-  };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "partners",
+  });
 }
 
 const partners = [

@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCart } from "./cart-context";
 import { formatPrice } from "@/lib/utils";
-import { shopUrl } from "@/lib/shop-url";
+import { shopPath } from "@/lib/shop-url";
+import { useShopLocale, useShopPath } from "@/hooks/use-shop-locale";
 import { cn } from "@/lib/utils";
 
 export type ShopCheckoutPrefill = {
@@ -34,6 +35,8 @@ export function CartView({
   fieldsLocked = false,
 }: CartViewProps) {
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart();
+  const shopLocale = useShopLocale();
+  const shopHome = useShopPath();
   const [form, setForm] = useState({
     name: checkoutPrefill?.name ?? "",
     phone: checkoutPrefill?.phone ?? "",
@@ -85,7 +88,9 @@ export function CartView({
       if (res.ok) {
         const data = await res.json();
         clearCart();
-        window.location.assign(shopUrl(`checkout/success/${data.orderNumber}`));
+        window.location.assign(
+          shopPath(shopLocale, `checkout/success/${data.orderNumber}`)
+        );
       } else {
         const err = await res.json();
         toast.error(err.error ?? "Ndodhi një gabim. Provoni përsëri.");
@@ -108,7 +113,7 @@ export function CartView({
           Shikoni produktet tona dhe shtoni ato që dëshironi në shportë.
         </p>
         <Button asChild>
-          <Link href={shopUrl()}>
+          <Link href={shopHome}>
             <ChevronLeft className="mr-2 h-5 w-5" />
             Shiko Produktet
           </Link>

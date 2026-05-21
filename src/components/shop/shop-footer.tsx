@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Phone, Mail, MapPin, Truck, CreditCard, Shield } from "lucide-react";
+import { Phone, Mail, MapPin } from "lucide-react";
 import { ItArenaLogo } from "@/components/brand/logo";
-import { mainSiteUrl, shopUrl, mainSiteHostname } from "@/lib/shop-url";
+import { mainSiteUrl, shopPath, mainSiteHostname } from "@/lib/shop-url";
+import { ShopTrustStrip } from "@/components/shop/shop-trust-strip";
 
 interface ShopFooterProps {
   lang: "sq" | "en";
@@ -10,24 +11,9 @@ interface ShopFooterProps {
 export function ShopFooter({ lang }: ShopFooterProps) {
   return (
     <footer className="bg-[hsl(222,47%,9%)] text-slate-300 mt-auto">
-      {/* Feature strip */}
-      <div className="border-y border-white/8">
+      <div className="border-y border-white/10 bg-[hsl(222,47%,11%)]">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/8 py-6">
-            {[
-              { icon: Truck, label: lang === "sq" ? "Dorëzim 24–48h" : "24–48h Delivery", desc: lang === "sq" ? "Në të gjithë Shqipërinë" : "Across Albania", color: "text-blue-400" },
-              { icon: CreditCard, label: lang === "sq" ? "Pagesë me Dorëzim" : "Cash on Delivery", desc: lang === "sq" ? "Pagoni vetëm kur merrni" : "Pay only when you receive", color: "text-amber-400" },
-              { icon: Shield, label: lang === "sq" ? "Garanci Zyrtare" : "Official Warranty", desc: lang === "sq" ? "Produkte origjinale" : "Original products", color: "text-emerald-400" },
-            ].map((f) => (
-              <div key={f.label} className="flex items-center gap-4 px-6 py-2">
-                <f.icon className={`h-7 w-7 shrink-0 ${f.color}`} />
-                <div>
-                  <p className="font-bold text-sm text-white">{f.label}</p>
-                  <p className="text-xs text-slate-500">{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ShopTrustStrip lang={lang} />
         </div>
       </div>
 
@@ -55,19 +41,19 @@ export function ShopFooter({ lang }: ShopFooterProps) {
                 {
                   key: "products",
                   label: lang === "sq" ? "Të gjitha produktet" : "All products",
-                  href: shopUrl(),
+                  href: shopPath(lang, ""),
                 },
                 {
                   key: "cart",
                   label: lang === "sq" ? "Shporta" : "Cart",
-                  href: shopUrl("cart"),
+                  href: shopPath(lang, "cart"),
                 },
                 {
                   key: "portal",
                   label: lang === "sq" ? "Portali im" : "My portal",
-                  href: mainSiteUrl("portal/dashboard"),
+                  href: mainSiteUrl("portal/dashboard", lang),
                 },
-                { key: "main", label: mainSiteHostname(), href: mainSiteUrl() },
+                { key: "main", label: mainSiteHostname(), href: mainSiteUrl("", lang) },
               ].map((l) => (
                 <li key={l.key}>
                   <Link href={l.href} className="text-sm text-slate-400 hover:text-white transition-colors">
@@ -103,8 +89,8 @@ export function ShopFooter({ lang }: ShopFooterProps) {
         <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-600">
           <p>© {new Date().getFullYear()} IT Arena SH.P.K. {lang === "sq" ? "Të gjitha të drejtat e rezervuara." : "All rights reserved."}</p>
           <div className="flex gap-4">
-            <Link href={mainSiteUrl("privatesia")} className="hover:text-slate-400 transition-colors">{lang === "sq" ? "Privatësia" : "Privacy"}</Link>
-            <Link href={mainSiteUrl("kushtet")} className="hover:text-slate-400 transition-colors">{lang === "sq" ? "Kushtet" : "Terms"}</Link>
+            <Link href={mainSiteUrl("privatesia", lang)} className="hover:text-slate-400 transition-colors">{lang === "sq" ? "Privatësia" : "Privacy"}</Link>
+            <Link href={mainSiteUrl("kushtet", lang)} className="hover:text-slate-400 transition-colors">{lang === "sq" ? "Kushtet" : "Terms"}</Link>
           </div>
         </div>
       </div>

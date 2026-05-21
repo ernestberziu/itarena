@@ -5,14 +5,20 @@ import { RegisterForm } from "@/components/auth/register-form";
 import { Shield, User, Building2, CheckCircle2 } from "lucide-react";
 import { ItArenaLogo } from "@/components/brand/logo";
 
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "auth" });
-  return { title: t("register") + " — IT Arena" };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "register",
+    robots: { index: false, follow: false },
+  });
 }
 
 export default async function RegisterPage({

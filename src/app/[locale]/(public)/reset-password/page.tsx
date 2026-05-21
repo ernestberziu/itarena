@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { ItArenaLogo } from "@/components/brand/logo";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 
 export async function generateMetadata({
   params,
@@ -10,8 +12,11 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "auth" });
-  return { title: `${t("reset_password")} — IT Arena` };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "resetPassword",
+    robots: { index: false, follow: false },
+  });
 }
 
 export default async function ResetPasswordPage({

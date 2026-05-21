@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import type { SeoLocale } from "@/lib/seo/config";
 import Link from "next/link";
 import {
   Users, Award, Clock, Shield, Target, Heart,
@@ -12,13 +14,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  return {
-    title: locale === "sq" ? "Rreth Nesh — IT Arena" : "About Us — IT Arena",
-    description:
-      locale === "sq"
-        ? "IT Arena — 12+ vite eksperiencë në IT, 500+ klientë të kënaqur, 50+ inxhinierë të çertifikuar në Shqipëri."
-        : "IT Arena — 12+ years of IT experience, 500+ satisfied clients, 50+ certified engineers in Albania.",
-  };
+  return buildPageMetadata({
+    locale: (locale === "en" ? "en" : "sq") as SeoLocale,
+    page: "about",
+  });
 }
 
 export default async function RrethNeshPage({
