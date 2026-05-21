@@ -4,7 +4,8 @@ export type AdminClientRow = {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
+  hasPortalAccess: boolean;
   isActive: boolean;
   emailVerified: string | null;
   role: string;

@@ -1,7 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { sendVerifyEmail } from "@/lib/email/transactional";
 import {
   parseRegistrationCompanySnapshot,
   registrationCompanySnapshotSchema,
@@ -35,9 +37,10 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
+  const verifyToken = randomBytes(32).toString("hex");
   const snapshot = company ? parseRegistrationCompanySnapshot(company) : null;
 
-  await db.user.create({
+  const user = await db.user.create({
     data: {
       firstName,
       lastName,
@@ -46,7 +49,26 @@ export async function POST(req: NextRequest) {
       passwordHash,
       role: "CLIENT",
       language: "sq",
+      verifyToken,
       registrationCompanySnapshot: snapshot ?? undefined,
+    },
+  });
+
+  void sendVerifyEmail({
+    to: email,
+    firstName,
+    locale: "sq",
+    verifyToken,
+  }).catch((err) => console.error("[register] verify email", err));
+
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  emitNotificationSafe({
+    type: "USER_REGISTERED",
+    actorId: user.id,
+    payload: {
+      userId: user.id,
+      actorName: `${firstName} ${lastName}`.trim(),
+      subject: email,
     },
   });
 

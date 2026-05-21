@@ -99,6 +99,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "SHOP_QUOTE_SUBMITTED",
+      actorId: requestedById ?? null,
+      entity: { type: "quote", id: quote.id },
+      payload: {
+        quoteId: quote.id,
+        quoteNumber: quote.quoteNumber,
+        title: quote.title,
+        companyName: company,
+      },
+    });
+
     return NextResponse.json({ id: quote.id, quoteNumber: quote.quoteNumber }, { status: 201 });
   } catch (error) {
     console.error("Shop quote error:", error);

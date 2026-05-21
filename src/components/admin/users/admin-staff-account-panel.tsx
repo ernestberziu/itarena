@@ -34,7 +34,7 @@ export function AdminStaffAccountPanel({
   locale: string;
   initialFirstName: string;
   initialLastName: string;
-  initialEmail: string;
+  initialEmail: string | null;
   initialRole: string;
   initialIsActive: boolean;
   canWrite: boolean;
@@ -45,18 +45,19 @@ export function AdminStaffAccountPanel({
   const t = (sq: string, e: string) => (en ? e : sq);
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
-  const [email, setEmail] = useState(initialEmail);
+  const [email, setEmail] = useState<string>(initialEmail ?? "");
   const [role, setRole] = useState(initialRole);
   const [isActive, setIsActive] = useState(initialIsActive);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [generateTemp, setGenerateTemp] = useState(false);
+  const [notifyCustomer, setNotifyCustomer] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setFirstName(initialFirstName);
     setLastName(initialLastName);
-    setEmail(initialEmail);
+    setEmail(initialEmail ?? "");
     setRole(initialRole);
     setIsActive(initialIsActive);
   }, [initialFirstName, initialLastName, initialEmail, initialRole, initialIsActive]);
@@ -64,7 +65,7 @@ export function AdminStaffAccountPanel({
   const profileDirty =
     firstName !== initialFirstName ||
     lastName !== initialLastName ||
-    email !== initialEmail ||
+    email !== (initialEmail ?? "") ||
     role !== initialRole ||
     isActive !== initialIsActive;
   const passwordDirty =
@@ -98,6 +99,9 @@ export function AdminStaffAccountPanel({
       } else if (generateTemp) {
         body.generateTemporaryPassword = true;
       }
+      if (notifyCustomer && (newPassword.trim().length >= 8 || generateTemp)) {
+        body.notifyCustomer = true;
+      }
 
       const res = await fetch(`/api/admin/staff/${userId}`, {
         method: "PATCH",
@@ -107,10 +111,14 @@ export function AdminStaffAccountPanel({
       const json = (await res.json().catch(() => ({}))) as {
         error?: string;
         temporaryPassword?: string;
+        credentialsEmailSent?: boolean;
+        notifyEmailAttempted?: boolean;
       };
       if (!res.ok) throw new Error(json.error ?? "Request failed");
 
-      if (json.temporaryPassword) {
+      if (json.notifyEmailAttempted && json.credentialsEmailSent) {
+        toast.success(t("U njoftua me email", "Notified by email"));
+      } else if (json.temporaryPassword) {
         toast.success(
           t(
             `Fjalëkalimi i përkohshëm: ${json.temporaryPassword} (kopjoje tani)`,
@@ -241,6 +249,18 @@ export function AdminStaffAccountPanel({
             )}
           </Label>
         </div>
+        {(newPassword.trim().length >= 8 || generateTemp) && (
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="asp-notify"
+              checked={notifyCustomer}
+              onCheckedChange={(v) => setNotifyCustomer(v === true)}
+            />
+            <Label htmlFor="asp-notify" className="cursor-pointer text-sm font-normal leading-snug">
+              {t("Dërgo email me fjalëkalim të përkohshëm", "Send email with temporary password")}
+            </Label>
+          </div>
+        )}
       </div>
 
       <Button type="button" onClick={() => void save()} disabled={loading || !canSave}>

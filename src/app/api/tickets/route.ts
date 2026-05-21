@@ -15,6 +15,8 @@ import { sendPortalAccountInviteEmail } from "@/lib/portal-invite-email";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { canAccessProject } from "@/lib/projects";
 import { TICKET_PROJECT_STAFF_CONFLICT } from "@/lib/ticket-project";
+import { emitNotificationSafe } from "@/lib/notifications";
+import { actorDisplayName } from "@/lib/notifications/helpers";
 
 const baseSchema = z
   .object({
@@ -243,6 +245,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const actorName = await actorDisplayName(session.user.id);
+    emitNotificationSafe({
+      type: "TICKET_CREATED",
+      actorId: session.user.id,
+      entity: { type: "ticket", id: ticket.id },
+      payload: {
+        ticketId: ticket.id,
+        ticketNumber: ticket.number,
+        title: ticket.title,
+        actorName,
+      },
+    });
+
     const locale = session.user.language === "en" ? "en" : "sq";
     const emailResult = await sendPortalAccountInviteEmail({
       to: email,
@@ -327,6 +342,19 @@ export async function POST(req: NextRequest) {
       resource: "Ticket",
       resourceId: ticket.id,
       ip: req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? undefined,
+    },
+  });
+
+  const actorName = await actorDisplayName(session.user.id);
+  emitNotificationSafe({
+    type: "TICKET_CREATED",
+    actorId: session.user.id,
+    entity: { type: "ticket", id: ticket.id },
+    payload: {
+      ticketId: ticket.id,
+      ticketNumber: ticket.number,
+      title: ticket.title,
+      actorName,
     },
   });
 

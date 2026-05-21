@@ -7,7 +7,7 @@ type ParticipantUser = {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
   role: string;
 };
 
@@ -57,12 +57,14 @@ export function toPortalConversationListRow(
       ? {
           body: last.body.slice(0, 120),
           authorName:
-            last.author.role != null && isStaffRole(last.author.role)
+            last.author != null && last.author.role != null && isStaffRole(last.author.role)
               ? PORTAL_BRAND_NAME
-              : maskLastMessageAuthor(
-                  `${last.author.firstName} ${last.author.lastName}`.trim(),
-                  users
-                ),
+              : last.author
+                ? maskLastMessageAuthor(
+                    `${last.author.firstName} ${last.author.lastName}`.trim(),
+                    users
+                  )
+                : (last.guestAuthorName?.trim() ?? (locale === "sq" ? "Klient" : "Client")),
           isInternal: last.isInternal,
           createdAt: last.createdAt.toISOString(),
         }
@@ -101,7 +103,7 @@ export function toPortalMessageRow(
   m: Parameters<typeof toMessageRow>[0]
 ): ConversationMessageRow {
   const row = toMessageRow(m);
-  if (!isStaffRole(row.author.role)) return row;
+  if (!row.author || !isStaffRole(row.author.role)) return row;
   return {
     ...row,
     author: {

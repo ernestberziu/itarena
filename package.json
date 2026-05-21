@@ -17,6 +17,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:acl": "tsx scripts/test-admin-acl-resolve.ts",
+    "test:notifications": "tsx scripts/test-notification-recipients.ts",
     "test:reports-range": "tsx scripts/test-reports-date-range.ts"
   },
   "dependencies": {
@@ -42,6 +43,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.8",
     "@react-pdf/renderer": "^4.5.1",
     "@tanstack/react-table": "^8.21.3",
     "@types/bcryptjs": "^2.4.6",

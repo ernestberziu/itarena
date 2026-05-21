@@ -41,7 +41,7 @@ export default async function QuoteRequestPage({
         companyName: user.company?.name ?? `${user.firstName} ${user.lastName}`.trim(),
         vatNumber: user.company?.vatNumber ?? undefined,
         contactName: `${user.firstName} ${user.lastName}`.trim(),
-        contactEmail: user.email,
+        contactEmail: user.email ?? "",
         contactPhone: user.phone ?? undefined,
       };
     }

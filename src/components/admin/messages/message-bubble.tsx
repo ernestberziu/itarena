@@ -4,9 +4,10 @@ import { cn, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { ConversationMessageRow } from "@/lib/messages/types";
 import { isStaffRole } from "@/lib/messages/access";
+import { resolveCommentAuthor } from "@/lib/public-share/guest-author";
 
 function authorDisplayName(message: ConversationMessageRow) {
-  return `${message.author.firstName} ${message.author.lastName}`.trim();
+  return resolveCommentAuthor(message.author, message.guestAuthorName, "sq").displayName;
 }
 
 export function MessageBubble({
@@ -23,7 +24,7 @@ export function MessageBubble({
 }) {
   const name = authorDisplayName(message);
   const showName = Boolean(name) && (!isOwn || showSenderName);
-  const staff = isStaffRole(message.author.role);
+  const staff = message.author != null && isStaffRole(message.author.role);
 
   return (
     <div className={cn("flex w-full flex-col", isOwn ? "items-end" : "items-start")}>

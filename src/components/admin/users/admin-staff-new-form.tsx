@@ -31,6 +31,7 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [generateTemp, setGenerateTemp] = useState(false);
+  const [notifyCustomer, setNotifyCustomer] = useState(true);
   const [loading, setLoading] = useState(false);
 
   async function submit() {
@@ -70,6 +71,7 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
       } else if (generateTemp) {
         body.generateTemporaryPassword = true;
       }
+      if (notifyCustomer) body.notifyCustomer = true;
 
       const res = await fetch("/api/admin/staff", {
         method: "POST",
@@ -80,10 +82,14 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
         error?: string;
         user?: { id: string };
         temporaryPassword?: string;
+        credentialsEmailSent?: boolean;
+        notifyEmailAttempted?: boolean;
       };
       if (!res.ok) throw new Error(json.error ?? "Request failed");
 
-      if (json.temporaryPassword) {
+      if (json.notifyEmailAttempted && json.credentialsEmailSent) {
+        toast.success(t("Stafi u krijua dhe u njoftua me email", "Staff created and notified by email"));
+      } else if (json.temporaryPassword) {
         toast.success(
           t(
             `U krijua. Fjalëkalimi i përkohshëm: ${json.temporaryPassword}`,
@@ -180,6 +186,16 @@ export function AdminStaffNewForm({ locale }: { locale: string }) {
         />
         <Label htmlFor="nsg" className="cursor-pointer text-sm font-normal leading-snug">
           {t("Gjenero fjalëkalim të përkohshëm", "Generate a temporary password")}
+        </Label>
+      </div>
+      <div className="flex items-start gap-2">
+        <Checkbox
+          id="nsn"
+          checked={notifyCustomer}
+          onCheckedChange={(v) => setNotifyCustomer(v === true)}
+        />
+        <Label htmlFor="nsn" className="cursor-pointer text-sm font-normal leading-snug">
+          {t("Dërgo email me fjalëkalim të përkohshëm", "Send email with temporary password")}
         </Label>
       </div>
 

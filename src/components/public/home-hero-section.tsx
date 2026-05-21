@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MarketingPrimaryCta } from "@/components/public/marketing-primary-cta";
 import { pickLocale } from "@/lib/site-content/locale";
 import { resolveMarketingHref } from "@/lib/shop-url";
 import type { SiteHeroSettings } from "@/lib/site-content/types";
@@ -31,28 +32,6 @@ function scrollToHomeServices() {
 
 const heroCtaBase =
   "group relative inline-flex w-full cursor-pointer select-none items-center justify-center gap-3 overflow-hidden font-extrabold tracking-tight transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 motion-safe:active:scale-[0.98] sm:w-auto";
-
-function HeroPrimaryCta({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        heroCtaBase,
-        "min-h-[3.25rem] rounded-full px-6 py-3 text-sm text-white shadow-[0_8px_32px_-4px_hsl(var(--primary)/0.7),0_0_0_1px_hsl(var(--primary)/0.4)] focus-visible:ring-primary md:min-h-[3.5rem] md:px-8 md:text-base",
-        "bg-[linear-gradient(135deg,hsl(var(--primary))_0%,#2563eb_45%,#7c3aed_100%)]",
-        "motion-safe:hover:scale-[1.04] motion-safe:hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.8),0_0_0_2px_rgba(255,255,255,0.25)_inset]",
-        "before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.22)_50%,transparent_65%)] before:opacity-0 before:transition-opacity motion-safe:hover:before:opacity-100"
-      )}
-    >
-      <span className="relative z-10 flex items-center gap-3">
-        {children}
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/30 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5 md:h-9 md:w-9">
-          <ArrowRight className="h-4 w-4 md:h-5 md:w-5" strokeWidth={2.5} aria-hidden />
-        </span>
-      </span>
-    </Link>
-  );
-}
 
 function HeroShopCta({ href, children }: { href: string; children: ReactNode }) {
   return (
@@ -163,11 +142,24 @@ export function HomeHeroSection({
       <div className="container relative z-10 mx-auto flex flex-1 flex-col items-center justify-center px-4">
         <div className="relative w-full max-w-lg text-center md:max-w-2xl">
           <h1 className="mx-auto mb-3 max-w-4xl text-[2rem] font-black leading-[1.1] tracking-tight text-foreground sm:mb-5 sm:text-4xl md:text-5xl lg:text-6xl">
-            {pl(hero.titleLine1)}{" "}
-            <span className="bg-gradient-to-r from-primary via-blue-600 to-violet-600 bg-clip-text text-transparent">
-              {pl(hero.titleHighlight)}
-            </span>{" "}
-            {pl(hero.titleLine2)}
+            {locale === "sq" ? (
+              <>
+                <span className="block">
+                  {pl(hero.titleLine1)} {pl(hero.titleLine2)}
+                </span>
+                <span className="mt-1 block bg-gradient-to-r from-primary via-blue-600 to-violet-600 bg-clip-text text-transparent">
+                  {pl(hero.titleHighlight)}
+                </span>
+              </>
+            ) : (
+              <>
+                {pl(hero.titleLine1)}{" "}
+                <span className="bg-gradient-to-r from-primary via-blue-600 to-violet-600 bg-clip-text text-transparent">
+                  {pl(hero.titleHighlight)}
+                </span>{" "}
+                {pl(hero.titleLine2)}
+              </>
+            )}
           </h1>
 
           <p className="mx-auto mb-6 max-w-2xl text-[0.9375rem] font-medium leading-relaxed text-muted-foreground sm:mb-6 sm:text-base md:text-lg lg:text-xl">
@@ -175,9 +167,9 @@ export function HomeHeroSection({
           </p>
 
           <div className="mx-auto flex max-w-3xl flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
-            <HeroPrimaryCta href={`${lp}${hero.ctaPrimaryLink}`}>
+            <MarketingPrimaryCta href={`${lp}${hero.ctaPrimaryLink}`} size="hero">
               {pl(hero.ctaPrimaryText)}
-            </HeroPrimaryCta>
+            </MarketingPrimaryCta>
             <HeroShopCta href={resolveMarketingHref(hero.ctaSecondaryLink, lp)}>
               {pl(hero.ctaSecondaryText)}
             </HeroShopCta>

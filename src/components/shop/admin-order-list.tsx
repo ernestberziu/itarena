@@ -28,7 +28,7 @@ interface Order {
   staffNotes?: string | null;
   createdAt: Date;
   items: OrderItem[];
-  user: { firstName: string; lastName: string; email: string };
+  user: { firstName: string; lastName: string; email: string | null };
 }
 
 const statusConfig: Record<OrderStatus, { label: string; color: string }> = {

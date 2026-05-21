@@ -34,9 +34,11 @@ import {
   getYesterdayCalendarDate,
 } from "@/lib/calendar";
 import { DashboardStaffReportsSection } from "@/components/admin/dashboard-staff-reports-section";
+import { AdminDashboardNotifications } from "@/components/admin/admin-dashboard-notifications";
 import { countSlaCompliance, isSlaBreached, getMissedSlaTicketIds } from "@/lib/sla";
 import { shouldScopeTicketsToAssignee, ticketsAssignedToWhere } from "@/lib/admin-tickets-scope";
 import type { Prisma } from "@prisma/client";
+import { dbUnavailableDescription } from "@/lib/db-unavailable-message";
 
 async function fetchAdminDashboardData(
   thirtyDaysAgo: Date,
@@ -198,7 +200,11 @@ export default async function AdminDashboardPage({
   let data: Awaited<ReturnType<typeof fetchAdminDashboardData>>;
   try {
     data = await fetchAdminDashboardData(thirtyDaysAgo, todayStart, session.user.id, scopeTickets);
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[admin/dashboard] database error:", err);
+    }
+    const dbMsg = dbUnavailableDescription(locale, "dashboard");
     return (
       <div className="space-y-6">
         <AdminPageHeader
@@ -222,11 +228,7 @@ export default async function AdminDashboardPage({
         <EmptyState
           icon={AlertTriangle}
           title={locale === "sq" ? "Postgres nuk është i lidhur" : "PostgreSQL unavailable"}
-          description={
-            locale === "sq"
-              ? "Nuk mund të ngarkohet paneli. Nis Postgres: docker compose up -d postgres. Në .env përdor DATABASE_URL=postgresql://itarena:itarena@localhost:5432/itarena (sipas docker-compose), pastaj npx prisma migrate deploy."
-              : "Cannot load dashboard. Start Postgres (docker compose up -d postgres), set DATABASE_URL (e.g. postgresql://itarena:itarena@localhost:5432/itarena), then npx prisma migrate deploy."
-          }
+          description={locale === "sq" ? dbMsg.sq : dbMsg.en}
         />
       </div>
     );
@@ -273,6 +275,7 @@ export default async function AdminDashboardPage({
     label: statusLabels[s.status] ?? s.status,
   }));
 
+  const canNotifications = hasAclLevel(acl, "notifications", "read");
   const canTickets = hasAclLevel(acl, "tickets", "read");
   const canClients = hasAclLevel(acl, "clients", "read");
   const canQuotes = hasAclLevel(acl, "quotes", "read");
@@ -400,6 +403,15 @@ export default async function AdminDashboardPage({
             <StatCard key={kpi.title} {...kpi} />
           ))}
         </div>
+      )}
+
+      {canNotifications && (
+        <AdminDashboardNotifications
+          userId={session.user.id}
+          locale={locale}
+          lp={lp}
+          title={locale === "sq" ? "Njoftimet" : "Notifications"}
+        />
       )}
 
       {staffReports && (

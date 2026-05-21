@@ -6,7 +6,7 @@ type ParticipantUser = {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
   role: string;
 };
 
@@ -43,7 +43,8 @@ export function toMessageRow(
     body: string;
     isInternal: boolean;
     createdAt: Date;
-    author: { id: string; firstName: string; lastName: string; role: string };
+    guestAuthorName?: string | null;
+    author: { id: string; firstName: string; lastName: string; role: string } | null;
   }
 ): ConversationMessageRow {
   return {
@@ -51,12 +52,15 @@ export function toMessageRow(
     body: m.body,
     isInternal: m.isInternal,
     createdAt: m.createdAt.toISOString(),
-    author: {
-      id: m.author.id,
-      firstName: m.author.firstName,
-      lastName: m.author.lastName,
-      role: m.author.role as Role,
-    },
+    guestAuthorName: m.guestAuthorName,
+    author: m.author
+      ? {
+          id: m.author.id,
+          firstName: m.author.firstName,
+          lastName: m.author.lastName,
+          role: m.author.role as Role,
+        }
+      : null,
   };
 }
 
@@ -84,7 +88,8 @@ export function toConversationListRow(
       body: string;
       isInternal: boolean;
       createdAt: Date;
-      author: { firstName: string; lastName: string; role?: string };
+      guestAuthorName?: string | null;
+      author: { firstName: string; lastName: string; role?: string } | null;
     }>;
   },
   currentUserId: string,
@@ -104,7 +109,9 @@ export function toConversationListRow(
     lastMessage: last
       ? {
           body: last.body.slice(0, 120),
-          authorName: `${last.author.firstName} ${last.author.lastName}`,
+          authorName: last.author
+            ? `${last.author.firstName} ${last.author.lastName}`.trim()
+            : (last.guestAuthorName?.trim() ?? (locale === "sq" ? "Klient" : "Client")),
           isInternal: last.isInternal,
           createdAt: last.createdAt.toISOString(),
         }

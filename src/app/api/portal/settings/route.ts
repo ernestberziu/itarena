@@ -115,5 +115,14 @@ export async function PATCH(req: NextRequest) {
     }
   });
 
+  if (clearSessions) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "PASSWORD_CHANGED",
+      actorId: user.id,
+      payload: { userId: user.id },
+    });
+  }
+
   return NextResponse.json({ ok: true, passwordChanged: clearSessions });
 }

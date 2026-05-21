@@ -27,7 +27,7 @@ export type AdminCompanyDetail = {
     id: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     isActive: boolean;
     lastLoginAt: string | null;
     role: string;

@@ -7,15 +7,15 @@ import { Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/utils";
-import {
-  portalAuthorDisplayName,
-} from "@/lib/portal/client-branding";
+import { portalAuthorDisplayName, isPortalStaffRole } from "@/lib/portal/client-branding";
+import { resolveCommentAuthor } from "@/lib/public-share/guest-author";
 
 type MessageRow = {
   id: string;
   body: string;
   createdAt: string;
-  author: { id?: string; firstName: string; lastName: string; role: string };
+  guestAuthorName?: string | null;
+  author: { id?: string; firstName: string; lastName: string; role: string } | null;
 };
 
 export function PortalProjectMessages({
@@ -76,14 +76,20 @@ export function PortalProjectMessages({
             {t("Nuk ka mesazhe ende. Shkruani ekipit tonë.", "No messages yet. Write to our team.")}
           </p>
         ) : (
-          messages.map((msg) => (
+          messages.map((msg) => {
+            const label =
+              msg.author && isPortalStaffRole(msg.author.role)
+                ? portalAuthorDisplayName(msg.author, currentUserId, lang)
+                : resolveCommentAuthor(msg.author, msg.guestAuthorName, lang).displayName;
+            return (
             <div key={msg.id} className="space-y-1 px-5 py-4">
               <p className="text-xs font-medium text-muted-foreground">
-                {portalAuthorDisplayName(msg.author, currentUserId, lang)} · {formatDateTime(msg.createdAt)}
+                {label} · {formatDateTime(msg.createdAt)}
               </p>
               <p className="whitespace-pre-wrap text-sm">{msg.body}</p>
             </div>
-          ))
+            );
+          })
         )}
       </div>
       <div className="space-y-3 border-t border-border/60 bg-muted/15 p-4">

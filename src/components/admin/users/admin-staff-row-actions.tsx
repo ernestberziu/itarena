@@ -29,7 +29,7 @@ function copyText(text: string, okSq: string, okEn: string, locale: string) {
 
 export type AdminStaffActionRow = {
   id: string;
-  email: string;
+  email: string | null;
   firstName: string;
   lastName: string;
 };
@@ -113,12 +113,14 @@ export function AdminStaffRowActions({
         <Pencil className="mr-2 h-4 w-4" />
         {t("Ndrysho", "Edit")}
       </DropdownMenuItem>
-      <DropdownMenuItem
-        onClick={() => copyText(member.email, "Emaili u kopjua", "Email copied", locale)}
-      >
-        <Copy className="mr-2 h-4 w-4" />
-        {t("Kopjo emailin", "Copy email")}
-      </DropdownMenuItem>
+      {member.email ? (
+        <DropdownMenuItem
+          onClick={() => copyText(member.email!, "Emaili u kopjua", "Email copied", locale)}
+        >
+          <Copy className="mr-2 h-4 w-4" />
+          {t("Kopjo emailin", "Copy email")}
+        </DropdownMenuItem>
+      ) : null}
       <DropdownMenuItem onClick={() => copyText(member.id, "ID u kopjua", "ID copied", locale)}>
         <Copy className="mr-2 h-4 w-4" />
         {t("Kopjo ID", "Copy ID")}
@@ -153,17 +155,19 @@ export function AdminStaffRowActions({
           {t("Ndrysho", "Edit")}
         </Link>
       </Button>
-      <Button
-        variant="secondary"
-        className="h-auto w-full justify-start py-2.5 font-normal"
-        onClick={() => {
-          copyText(member.email, "Emaili u kopjua", "Email copied", locale);
-          setSheetOpen(false);
-        }}
-      >
-        <Copy className="mr-2 h-4 w-4 shrink-0" />
-        {t("Kopjo emailin", "Copy email")}
-      </Button>
+      {member.email ? (
+        <Button
+          variant="secondary"
+          className="h-auto w-full justify-start py-2.5 font-normal"
+          onClick={() => {
+            copyText(member.email!, "Emaili u kopjua", "Email copied", locale);
+            setSheetOpen(false);
+          }}
+        >
+          <Copy className="mr-2 h-4 w-4 shrink-0" />
+          {t("Kopjo emailin", "Copy email")}
+        </Button>
+      ) : null}
       <Button
         variant="secondary"
         className="h-auto w-full justify-start py-2.5 font-normal"

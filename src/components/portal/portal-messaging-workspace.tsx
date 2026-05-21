@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ArrowLeft } from "lucide-react";
 import type { ConversationDetail, ConversationListRow, ConversationMessageRow, ConversationType } from "@/lib/messages/types";
-import { portalAuthorDisplayName } from "@/lib/portal/client-branding";
+import { portalAuthorDisplayName, isPortalStaffRole } from "@/lib/portal/client-branding";
+import { resolveCommentAuthor } from "@/lib/public-share/guest-author";
 
 type Filter = "ALL" | ConversationType;
 const POLL_MS = 12_000;
@@ -139,7 +140,10 @@ function PortalMessageBubble({
   currentUserId: string;
   locale: "sq" | "en";
 }) {
-  const name = portalAuthorDisplayName(message.author, currentUserId, locale);
+  const name =
+    message.author && isPortalStaffRole(message.author.role)
+      ? portalAuthorDisplayName(message.author, currentUserId, locale)
+      : resolveCommentAuthor(message.author, message.guestAuthorName, locale).displayName;
 
   return (
     <div className={cn("flex w-full flex-col", isOwn ? "items-end" : "items-start")}>
@@ -311,7 +315,7 @@ function PortalConversationThread({
             <PortalMessageBubble
               key={msg.id}
               message={msg}
-              isOwn={msg.author.id === currentUserId}
+              isOwn={msg.author?.id === currentUserId}
               currentUserId={currentUserId}
               locale={locale}
             />

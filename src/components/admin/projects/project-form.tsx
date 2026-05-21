@@ -26,7 +26,7 @@ export type ProjectFormPayload = {
   status: ProjectStatus;
   description: string | null;
   updatedAt: string;
-  createdBy: { id: string; firstName: string; lastName: string; email: string };
+  createdBy: { id: string; firstName: string; lastName: string; email: string | null };
   members: ProjectMemberRow[];
   clients: ProjectClientRow[];
 };

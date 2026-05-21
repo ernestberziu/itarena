@@ -17,6 +17,7 @@ import {
 } from "@/components/admin/projects/project-form";
 import { ProjectChannelPanel } from "@/components/admin/messages/project-channel-panel";
 import { ProjectStepsSection } from "@/components/admin/projects/project-steps-section";
+import { PublicSharePanel } from "@/components/admin/public-share/public-share-panel";
 import type { ProjectStepRow } from "@/lib/projects/step-types";
 
 type Section = "overview" | "clients" | "tickets" | "messages" | "team" | "steps";
@@ -124,15 +125,25 @@ export function ProjectWorkspace({
 
         <div className="min-w-0">
           {(section === "overview" || section === "team" || section === "clients") && (
-            <ProjectForm
-              mode="edit"
-              locale={locale}
-              listPrefix={listPrefix}
-              canWrite={canWrite}
-              project={project}
-              activeSection={section}
-              onProjectUpdate={(patch) => setProject((p) => ({ ...p, ...patch }))}
-            />
+            <>
+              <ProjectForm
+                mode="edit"
+                locale={locale}
+                listPrefix={listPrefix}
+                canWrite={canWrite}
+                project={project}
+                activeSection={section}
+                onProjectUpdate={(patch) => setProject((p) => ({ ...p, ...patch }))}
+              />
+              {section === "overview" && (
+                <PublicSharePanel
+                  resourceType="PROJECT"
+                  resourceId={project.id}
+                  locale={locale}
+                  canWrite={canWrite}
+                />
+              )}
+            </>
           )}
 
           {section === "tickets" && (

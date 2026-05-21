@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { STAFF_ROLES } from "@/types/domain";
 import { activeStaffWhere } from "@/lib/staff/active-staff-where";
+import { sendStaffInviteEmail } from "@/lib/email/transactional";
+import { pickLocale } from "@/lib/email/brand";
 
 const postSchema = z
   .object({
@@ -17,6 +19,7 @@ const postSchema = z
     isActive: z.boolean().optional().default(true),
     newPassword: z.string().min(8).max(128).optional(),
     generateTemporaryPassword: z.boolean().optional(),
+    notifyCustomer: z.boolean().optional(),
   })
   .strict();
 
@@ -121,13 +124,28 @@ export async function POST(req: NextRequest) {
         email: true,
         role: true,
         isActive: true,
+        language: true,
         createdAt: true,
       },
     });
+    let credentialsEmailSent = false;
+    if (data.notifyCustomer && plainPassword) {
+      const mail = await sendStaffInviteEmail({
+        to: email,
+        firstName: user.firstName,
+        tempPassword: plainPassword,
+        locale: pickLocale(user.language),
+      });
+      credentialsEmailSent = mail.sent;
+    }
+
     return NextResponse.json({
       ok: true,
       user,
-      temporaryPassword: data.generateTemporaryPassword && !trimmedPassword ? plainPassword : undefined,
+      notifyEmailAttempted: Boolean(data.notifyCustomer),
+      credentialsEmailSent,
+      temporaryPassword:
+        data.notifyCustomer && credentialsEmailSent ? undefined : plainPassword,
     });
   } catch {
     return NextResponse.json({ error: "Create failed" }, { status: 500 });

@@ -17,6 +17,7 @@ import { canViewPortalTicket, portalUser } from "@/lib/portal/access";
 import { canAccessProject } from "@/lib/projects";
 import { STAFF_ROLES } from "@/types/domain";
 import { TICKET_PROJECT_STAFF_CONFLICT, ticketStaffAssigneeBlocked } from "@/lib/ticket-project";
+import { emitNotificationSafe } from "@/lib/notifications";
 
 const patchSchema = z.object({
   status: z
@@ -285,6 +286,37 @@ export async function PATCH(
       resourceId: id,
     },
   });
+
+  for (const h of historyEntries) {
+    if (h.field === "status" && h.newValue) {
+      emitNotificationSafe({
+        type: "TICKET_STATUS_CHANGED",
+        actorId: session.user.id,
+        entity: { type: "ticket", id },
+        dedupeKey: `ticket:${id}:status:${h.newValue}`,
+        payload: {
+          ticketId: id,
+          ticketNumber: ticket.number,
+          title: ticket.title,
+          oldStatus: h.oldValue,
+          newStatus: h.newValue,
+        },
+      });
+    }
+    if (h.field === "assignedTo") {
+      emitNotificationSafe({
+        type: "TICKET_ASSIGNED",
+        actorId: session.user.id,
+        entity: { type: "ticket", id },
+        payload: {
+          ticketId: id,
+          ticketNumber: ticket.number,
+          title: ticket.title,
+          previousAssigneeId: h.oldValue,
+        },
+      });
+    }
+  }
 
   return NextResponse.json({ success: true });
 }

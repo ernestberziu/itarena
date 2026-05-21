@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { Mail, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
+import { EmailClientButton } from "@/components/admin/email-client-button";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -77,13 +78,11 @@ export default async function AdminQuoteDetailPage({
         description={quote.contactEmail}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={`mailto:${quote.contactEmail}`}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border/60 bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50"
-            >
-              <Mail className="h-4 w-4" strokeWidth={2} aria-hidden />
-              {en ? "Email client" : "Email klientit"}
-            </a>
+            <EmailClientButton
+              apiUrl={`/api/admin/quotes/${quote.id}/email-client`}
+              label={en ? "Email client" : "Email klientit"}
+              className="h-9"
+            />
             {quote.pdfUrl ? (
               <a
                 href={quote.pdfUrl}

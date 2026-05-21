@@ -96,7 +96,8 @@ export type TicketCommentRow = {
   body: string;
   isInternal: boolean;
   createdAt: Date;
-  author: { id: string; firstName: string; lastName: string; role: Role };
+  guestAuthorName?: string | null;
+  author: { id: string; firstName: string; lastName: string; role: Role } | null;
 };
 
 export type TicketHistoryRow = {

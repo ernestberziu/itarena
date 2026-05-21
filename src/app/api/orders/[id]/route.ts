@@ -135,5 +135,21 @@ export async function PATCH(
     });
   }
 
+  if (parsed.data.status && parsed.data.status !== order.status) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "ORDER_STATUS_CHANGED",
+      actorId: session.user.id,
+      entity: { type: "order", id },
+      dedupeKey: `order:${id}:status:${parsed.data.status}`,
+      payload: {
+        orderId: id,
+        orderNumber: order.orderNumber,
+        status: parsed.data.status,
+        oldStatus: order.status,
+      },
+    });
+  }
+
   return NextResponse.json({ success: true });
 }

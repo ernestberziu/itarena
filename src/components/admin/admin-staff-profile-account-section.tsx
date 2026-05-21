@@ -18,7 +18,7 @@ import { staffRoleLabel } from "@/lib/staff-role-labels";
 export type AdminStaffProfileAccountUser = {
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   role: string;
   language: string;
@@ -171,7 +171,7 @@ export function AdminStaffProfileAccountSection({
           />
           <div className="grid min-w-0 flex-1 gap-4 sm:grid-cols-2">
             <DetailField label={t(locale, "Emri", "Name")} value={fullName} />
-            <DetailField label="Email" value={user.email} mono />
+            <DetailField label="Email" value={user.email ?? "—"} mono />
             <div className="grid gap-1 sm:col-span-2">
               <Label htmlFor="profile-phone" className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {t(locale, "Telefon", "Phone")}

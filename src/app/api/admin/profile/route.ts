@@ -134,5 +134,14 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
+  if (clearSessions) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "PASSWORD_CHANGED",
+      actorId: user.id,
+      payload: { userId: user.id },
+    });
+  }
+
   return NextResponse.json({ ok: true, passwordChanged: clearSessions });
 }

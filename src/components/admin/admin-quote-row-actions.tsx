@@ -30,6 +30,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { EmailClientButton } from "@/components/admin/email-client-button";
 import { ConfirmDangerDialog } from "@/components/admin/users/confirm-danger-dialog";
 import { QUOTE_STATUSES, STATUS_LABELS } from "@/lib/admin-quote-status";
 
@@ -128,7 +129,19 @@ export function AdminQuoteRowActions({
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuSeparator />
-      <DropdownMenuItem disabled title={backendSoon}>
+      <DropdownMenuItem
+        onClick={(e) => {
+          e.preventDefault();
+          void fetch(`/api/admin/quotes/${quoteId}/email-client`, { method: "POST" })
+            .then(async (res) => {
+              const json = (await res.json().catch(() => ({}))) as { error?: string; emailSent?: boolean };
+              if (!res.ok) throw new Error(json.error ?? "Failed");
+              if (json.emailSent) toast.success(t("Email u dërgua", "Email sent"));
+              else toast.warning(t("SMTP jo i konfiguruar", "SMTP not configured"));
+            })
+            .catch((err) => toast.error(err instanceof Error ? err.message : "Error"));
+        }}
+      >
         {t("Dërgo email", "Send email")}
       </DropdownMenuItem>
       <DropdownMenuItem disabled title={backendSoon}>

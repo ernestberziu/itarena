@@ -77,6 +77,24 @@ export async function PATCH(
     },
   });
 
+  if (parsed.data.status && parsed.data.status !== quote.status) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "QUOTE_STATUS_CHANGED",
+      actorId: session.user.id,
+      entity: { type: "quote", id },
+      dedupeKey: `quote:${id}:status:${parsed.data.status}`,
+      payload: {
+        quoteId: id,
+        quoteNumber: quote.quoteNumber,
+        title: quote.title,
+        newStatus: parsed.data.status,
+        oldStatus: quote.status,
+        status: parsed.data.status,
+      },
+    });
+  }
+
   return NextResponse.json({ success: true });
 }
 

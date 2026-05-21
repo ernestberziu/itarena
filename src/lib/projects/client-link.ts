@@ -10,7 +10,7 @@ export type ProjectClientLinkResult = {
   userId: string | null;
   label: string | null;
   company: { id: string; name: string } | null;
-  user: { id: string; firstName: string; lastName: string; email: string } | null;
+  user: { id: string; firstName: string; lastName: string; email: string | null } | null;
   invite?: { emailSent: boolean; tempPassword?: string };
 };
 

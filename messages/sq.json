@@ -9,6 +9,7 @@
     "contact": "Kontakt",
     "market": "Tregu",
     "quoteRequest": "Kërko Ofertë",
+    "createSupportTicket": "Support ticket",
     "remoteSupport": "Mbështetje Remote",
     "login": "Hyr",
     "register": "Regjistrohu",
@@ -781,11 +782,23 @@
     "verify_email_sent": "Një email verifikimi u dërgua. Kontrolloni kutinë tuaj.",
     "reset_password": "Rivendos Fjalëkalimin",
     "reset_sent": "Udhëzimet u dërguan në emailin tuaj.",
+    "reset_email_sent": "Nëse ekziston një llogari për këtë email, dërguam udhëzimet e rivendosjes.",
+    "send_reset_link": "Dërgo lidhjen e rivendosjes",
+    "back_to_login": "Kthehu te hyrja",
+    "reset_invalid_token": "Lidhja e rivendosjes është e pavlefshme ose ka skaduar.",
+    "reset_success": "Fjalëkalimi u përditësua. Mund të hyni tani.",
+    "new_password": "Fjalëkalim i ri",
+    "confirm_password": "Konfirmo fjalëkalimin",
+    "password_mismatch": "Fjalëkalimet nuk përputhen",
+    "verify_success": "Emaili u verifikua. Mund të hyni tani.",
+    "verify_failed": "Verifikimi dështoi. Lidhja mund të jetë e pavlefshme ose e skaduar.",
+    "forgot_password_title": "Harruat fjalëkalimin",
     "errors": {
       "invalid_credentials": "Email ose fjalëkalim i gabuar",
       "email_exists": "Ky email është i regjistruar tashmë",
       "account_inactive": "Llogaria juaj është joaktive",
-      "required": "Ky fushë është e detyrueshme"
+      "required": "Ky fushë është e detyrueshme",
+      "generic": "Diçka shkoi keq. Provoni përsëri."
     }
   },
   "contact": {
@@ -883,5 +896,38 @@
     "admin_low_stock": "Stok i Ulët",
     "admin_no_products": "Nuk ka produkte",
     "admin_no_orders": "Nuk ka porosi"
+  },
+  "publicShare": {
+    "gateTitle": "Hyrje e sigurt",
+    "gateGreeting": "Përshëndetje, {name}. Futni kodin që ju dha IT Arena.",
+    "passcodeLabel": "Kodi i aksesit",
+    "passcodePlaceholder": "Kodi 8-shifror",
+    "submit": "Hyr",
+    "viewingAs": "Po shikoni si {name}",
+    "description": "Përshkrimi",
+    "activity": "Aktiviteti",
+    "noActivity": "Nuk ka aktivitet ende.",
+    "addComment": "Shto koment",
+    "commentPlaceholder": "Shkruani komentin tuaj…",
+    "sendComment": "Dërgo komentin",
+    "commentSent": "Komenti u dërgua",
+    "projectSteps": "Hapat e projektit",
+    "noSteps": "Nuk ka hapa të dukshëm për ju ende.",
+    "messages": "Mesazhet",
+    "noMessages": "Nuk ka mesazhe ende.",
+    "writeMessage": "Shkruani mesazh",
+    "messagePlaceholder": "Mesazhi juaj për IT Arena…",
+    "sendMessage": "Dërgo mesazhin",
+    "messageSent": "Mesazhi u dërgua",
+    "unavailableTitle": "Lidhja nuk është e disponueshme",
+    "errors": {
+      "not_found": "Kjo lidhje nuk ekziston ose nuk është e vlefshme.",
+      "revoked": "Kjo lidhje është çaktivizuar.",
+      "expired": "Kjo lidhje ka skaduar.",
+      "locked": "Shumë përpjekje të gabuara. Provoni përsëri pas pak.",
+      "invalid_passcode": "Kodi është i gabuar.",
+      "unauthorized": "Futni kodin për të vazhduar.",
+      "generic": "Ndodhi një gabim. Provoni përsëri."
+    }
   }
 }

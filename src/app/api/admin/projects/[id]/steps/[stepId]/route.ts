@@ -92,6 +92,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     data: { updatedAt: new Date() },
   });
 
+  const clientVisible = step.clientVisible;
+  if (clientVisible || parsed.data.clientVisible !== undefined) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "PROJECT_STEP_UPDATED",
+      actorId: session.user.id,
+      entity: { type: "project", id: projectId },
+      payload: {
+        projectId,
+        stepTitle: step.title,
+        status: step.status,
+        clientVisible,
+      },
+    });
+  }
+
   revalidateProjectPaths(projectId);
   return NextResponse.json(serializeStep(step));
 }

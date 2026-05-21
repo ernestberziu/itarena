@@ -64,7 +64,7 @@ export async function createInvitedPortalClient(
   if (emailResult.sent) {
     return {
       userId: user.id,
-      email: user.email,
+      email: user.email ?? email,
       firstName: user.firstName,
       lastName: user.lastName,
       invite: { emailSent: true },
@@ -73,7 +73,7 @@ export async function createInvitedPortalClient(
 
   return {
     userId: user.id,
-    email: user.email,
+    email: user.email ?? email,
     firstName: user.firstName,
     lastName: user.lastName,
     invite: { emailSent: false, tempPassword },

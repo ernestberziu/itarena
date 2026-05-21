@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { AdminClientInviteDialog } from "@/components/admin/admin-client-invite-dialog";
 
 export function AdminClientAccountPanel({
   userId,
   locale,
   userLanguage,
+  hasPortalAccess,
   initialFirstName,
   initialLastName,
   initialEmail,
@@ -21,30 +23,34 @@ export function AdminClientAccountPanel({
   locale: string;
   /** User profile language — used for credential email template when notifying. */
   userLanguage: string;
+  hasPortalAccess: boolean;
   initialFirstName: string;
   initialLastName: string;
-  initialEmail: string;
+  initialEmail: string | null;
 }) {
   const router = useRouter();
   const en = locale === "en";
   const t = (sq: string, e: string) => (en ? e : sq);
   const [firstName, setFirstName] = useState(initialFirstName);
   const [lastName, setLastName] = useState(initialLastName);
-  const [email, setEmail] = useState(initialEmail);
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [generateTemp, setGenerateTemp] = useState(false);
   const [notifyCustomer, setNotifyCustomer] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useEffect(() => {
     setFirstName(initialFirstName);
     setLastName(initialLastName);
-    setEmail(initialEmail);
+    setEmail(initialEmail ?? "");
   }, [initialFirstName, initialLastName, initialEmail]);
 
   const profileDirty =
-    firstName !== initialFirstName || lastName !== initialLastName || email !== initialEmail;
+    firstName !== initialFirstName ||
+    lastName !== initialLastName ||
+    email !== (initialEmail ?? "");
   const passwordDirty =
     newPassword.trim().length > 0 ||
     confirmPassword.trim().length > 0 ||
@@ -61,14 +67,21 @@ export function AdminClientAccountPanel({
       toast.error(t("Fjalëkalimet nuk përputhen", "Passwords do not match"));
       return;
     }
+    if (notifyCustomer && !email.trim()) {
+      toast.error(t("Vendos emailin për njoftim", "Enter an email to notify"));
+      return;
+    }
 
     setLoading(true);
     try {
       const body: Record<string, unknown> = {
         firstName,
         lastName,
-        email: email.trim(),
       };
+
+      if (email.trim()) {
+        body.email = email.trim();
+      }
 
       if (notifyCustomer) {
         body.notifyCustomer = true;
@@ -126,6 +139,32 @@ export function AdminClientAccountPanel({
       <h2 className="text-sm font-semibold tracking-tight" id="account">
         {t("Llogaria", "Account")}
       </h2>
+
+      {!hasPortalAccess ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-950/30">
+          <p className="font-medium text-amber-900 dark:text-amber-200">
+            {t("Klienti nuk ka ende akses në portal", "Client does not have portal access yet")}
+          </p>
+          <p className="mt-1 text-amber-800 dark:text-amber-300/90">
+            {t(
+              "Përdorni ftesën me email për të caktuar adresën dhe fjalëkalimin e përkohshëm.",
+              "Use invite by email to set their address and temporary password."
+            )}
+          </p>
+          <AdminClientInviteDialog
+            userId={userId}
+            userName={`${firstName} ${lastName}`}
+            locale={locale}
+            open={inviteOpen}
+            onOpenChange={setInviteOpen}
+            hideTrigger
+          />
+          <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => setInviteOpen(true)}>
+            {t("Fto në portal", "Invite to portal")}
+          </Button>
+        </div>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="acf">{t("Emri", "First name")}</Label>
@@ -137,94 +176,109 @@ export function AdminClientAccountPanel({
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="ace">Email</Label>
-          <Input id="ace" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <p className="text-[11px] text-muted-foreground">
-            {t(
-              "Nëse ndryshon emailin dhe zgjedh njoftimin, klienti merr mesazh në adresën e re me fjalëkalimin e përkohshëm.",
-              "If you change the email and enable notification, the customer receives the message at the new address with the temporary password."
-            )}
-          </p>
+          <Input
+            id="ace"
+            type="email"
+            value={email}
+            disabled={!hasPortalAccess}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={!hasPortalAccess ? t("Pa email — përdorni ftesën", "No email — use invite") : undefined}
+          />
+          {hasPortalAccess ? (
+            <p className="text-[11px] text-muted-foreground">
+              {t(
+                "Nëse ndryshon emailin dhe zgjedh njoftimin, klienti merr mesazh në adresën e re me fjalëkalimin e përkohshëm.",
+                "If you change the email and enable notification, the customer receives the message at the new address with the temporary password."
+              )}
+            </p>
+          ) : null}
         </div>
       </div>
 
-      <Separator className="my-2" />
+      {hasPortalAccess ? (
+        <>
+          <Separator className="my-2" />
 
-      <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("Fjalëkalimi", "Password")}
-        </h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="acp-new">{t("Fjalëkalim i ri (opsional)", "New password (optional)")}</Label>
-            <Input
-              id="acp-new"
-              type="password"
-              autoComplete="new-password"
-              value={newPassword}
-              disabled={generateTemp}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder={t("minimum 8 karaktere", "at least 8 characters")}
-            />
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("Fjalëkalimi", "Password")}
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="acp-new">{t("Fjalëkalim i ri (opsional)", "New password (optional)")}</Label>
+                <Input
+                  id="acp-new"
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  disabled={generateTemp}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={t("minimum 8 karaktere", "at least 8 characters")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="acp-confirm">{t("Konfirmo fjalëkalimin", "Confirm password")}</Label>
+                <Input
+                  id="acp-confirm"
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  disabled={generateTemp}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="acp-gen"
+                checked={generateTemp}
+                onCheckedChange={(v) => {
+                  const on = v === true;
+                  setGenerateTemp(on);
+                  if (on) {
+                    setNewPassword("");
+                    setConfirmPassword("");
+                  }
+                }}
+              />
+              <Label htmlFor="acp-gen" className="cursor-pointer text-sm font-normal leading-snug">
+                {t(
+                  "Gjenero fjalëkalim të përkohshëm të rastësishëm (në vend të fjalëkalimit të shkruar më sipër)",
+                  "Generate a random temporary password (instead of the password fields above)"
+                )}
+              </Label>
+            </div>
+
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="acp-notify"
+                checked={notifyCustomer}
+                onCheckedChange={(v) => setNotifyCustomer(v === true)}
+              />
+              <Label htmlFor="acp-notify" className="cursor-pointer text-sm font-normal leading-snug">
+                {t(
+                  "Njofto klientin me email: adresë hyrjeje + fjalëkalim i përkohshëm (gjenerohet automatikisht nëse nuk vendos një fjalëkalim).",
+                  "Email the customer their sign-in address and a temporary password (one is generated automatically if you do not set a password)."
+                )}
+              </Label>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="acp-confirm">{t("Konfirmo fjalëkalimin", "Confirm password")}</Label>
-            <Input
-              id="acp-confirm"
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              disabled={generateTemp}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2">
-          <Checkbox
-            id="acp-gen"
-            checked={generateTemp}
-            onCheckedChange={(v) => {
-              const on = v === true;
-              setGenerateTemp(on);
-              if (on) {
-                setNewPassword("");
-                setConfirmPassword("");
-              }
-            }}
-          />
-          <Label htmlFor="acp-gen" className="cursor-pointer text-sm font-normal leading-snug">
-            {t(
-              "Gjenero fjalëkalim të përkohshëm të rastësishëm (në vend të fjalëkalimit të shkruar më sipër)",
-              "Generate a random temporary password (instead of the password fields above)"
-            )}
-          </Label>
-        </div>
-
-        <div className="flex items-start gap-2">
-          <Checkbox
-            id="acp-notify"
-            checked={notifyCustomer}
-            onCheckedChange={(v) => setNotifyCustomer(v === true)}
-          />
-          <Label htmlFor="acp-notify" className="cursor-pointer text-sm font-normal leading-snug">
-            {t(
-              "Njofto klientin me email: adresë hyrjeje + fjalëkalim i përkohshëm (gjenerohet automatikisht nëse nuk vendos një fjalëkalim).",
-              "Email the customer their sign-in address and a temporary password (one is generated automatically if you do not set a password)."
-            )}
-          </Label>
-        </div>
-      </div>
+        </>
+      ) : null}
 
       <Button type="button" onClick={() => void save()} disabled={loading || !canSave}>
         {t("Ruaj ndryshimet", "Save changes")}
       </Button>
-      <p className="text-[11px] text-muted-foreground" aria-live="polite">
-        {t(
-          "Emaili i njoftimit përdor gjuhën e profilit të klientit",
-          "Notification email uses the customer’s profile language"
-        )}
-        : <span className="font-mono">{userLanguage === "en" ? "en" : "sq"}</span>.
-      </p>
+      {hasPortalAccess ? (
+        <p className="text-[11px] text-muted-foreground" aria-live="polite">
+          {t(
+            "Emaili i njoftimit përdor gjuhën e profilit të klientit",
+            "Notification email uses the customer’s profile language"
+          )}
+          : <span className="font-mono">{userLanguage === "en" ? "en" : "sq"}</span>.
+        </p>
+      ) : null}
     </div>
   );
 }

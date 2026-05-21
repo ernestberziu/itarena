@@ -107,7 +107,7 @@ export function LoginForm() {
               {t("password")}
             </Label>
             <Link
-              href={`${lp}/reset-password`}
+              href={`${lp}/forgot-password`}
               className="text-xs text-primary hover:underline"
             >
               {t("forgot_password")}

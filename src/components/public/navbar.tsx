@@ -12,10 +12,13 @@ import {
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { isStaff } from "@/types/domain";
+import { PORTAL_ROLES } from "@/lib/portal/access";
 import { Button } from "@/components/ui/button";
+import { MarketingPrimaryCta } from "@/components/public/marketing-primary-cta";
 import { cn } from "@/lib/utils";
 import { ItArenaLogo } from "@/components/brand/logo";
 import { shopUrl } from "@/lib/shop-url";
+import { sessionDisplayName } from "@/lib/session-display-name";
 
 import type { MarketingServiceRecord, SiteSettingsBundle } from "@/lib/site-content/types";
 import { getLucideIcon } from "@/lib/site-content/icons";
@@ -98,10 +101,26 @@ export function Navbar({
       ? "/admin"
       : "/portal/dashboard";
   const dashboardHref = navLink(dashboardPath);
-  const dashboardLabel =
-    session?.user && isStaff(session.user.role)
-      ? t("nav.admin")
-      : t("nav.portal");
+  const dashboardFallback =
+    session?.user && isStaff(session.user.role) ? t("nav.admin") : t("nav.portal");
+  const dashboardLabel = session?.user
+    ? sessionDisplayName(session.user) ?? dashboardFallback
+    : dashboardFallback;
+
+  const isPortalClient =
+    session?.user != null &&
+    PORTAL_ROLES.includes(session.user.role as (typeof PORTAL_ROLES)[number]);
+
+  const showSupportTicketCta =
+    status !== "loading" && (!session?.user || isPortalClient);
+
+  const supportTicketHref = isPortalClient
+    ? navLink("/portal/tickets/new")
+    : navLink("/kerko-oferte");
+
+  /** Match width of “Support ticket” and “Hyr” header CTAs on desktop. */
+  const headerActionBtnClass =
+    "hidden md:inline-flex min-w-[8.5rem] justify-center text-sm font-medium";
 
   async function handleSignOut() {
     setMobileOpen(false);
@@ -139,9 +158,6 @@ export function Navbar({
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href={navLink("/mbeshtetje-remote")} className="hover:text-primary transition-colors">
-              Mbështetje Remote
-            </Link>
             <Link
               href={shopUrl()}
               className="flex items-center gap-1 hover:text-primary transition-colors font-medium"
@@ -270,16 +286,18 @@ export function Navbar({
             <span className="uppercase tracking-wide">{otherLocale === "en" ? "EN" : "SQ"}</span>
           </button>
 
-          <Button asChild className="hidden md:inline-flex">
-            <Link href={navLink("/kerko-oferte")}>{t("nav.quoteRequest")}</Link>
-          </Button>
+          {showSupportTicketCta ? (
+            <Button asChild size="sm" className={headerActionBtnClass}>
+              <Link href={supportTicketHref}>{t("nav.createSupportTicket")}</Link>
+            </Button>
+          ) : null}
 
           {status === "loading" ? (
             <Button
               variant="outline"
               size="sm"
               disabled
-              className="hidden md:inline-flex text-sm font-medium min-w-[7.5rem]"
+              className={headerActionBtnClass}
               aria-busy
             >
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -290,11 +308,11 @@ export function Navbar({
                 variant="outline"
                 size="sm"
                 asChild
-                className="text-sm font-medium gap-1.5"
+                className="max-w-[11rem] text-sm font-medium"
               >
-                <Link href={dashboardHref}>
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                  {dashboardLabel}
+                <Link href={dashboardHref} className="gap-1.5">
+                  <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{dashboardLabel}</span>
                 </Link>
               </Button>
               <Button
@@ -310,14 +328,9 @@ export function Navbar({
               </Button>
             </div>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="hidden md:inline-flex text-sm font-medium"
-            >
-              <Link href={navLink("/hyr")}>{t("nav.login")}</Link>
-            </Button>
+            <MarketingPrimaryCta href={navLink("/hyr")} size="header">
+              {t("nav.login")}
+            </MarketingPrimaryCta>
           )}
 
           <button
@@ -414,7 +427,6 @@ export function Navbar({
                   { href: "/industrite", label: t("nav.industries") },
                   { href: "/rreth-nesh", label: t("nav.about") },
                   { href: "/kontakt", label: t("nav.contact") },
-                  { href: "/mbeshtetje-remote", label: locale === "sq" ? "Mbështetje Remote" : "Remote Support" },
                 ].map((item) => (
                   <Link
                     key={item.href}
@@ -447,11 +459,13 @@ export function Navbar({
                 </button>
 
                 <div className="space-y-2 border-t border-border/60 pt-4">
-                  <Button asChild className="w-full min-h-11">
-                    <Link href={navLink("/kerko-oferte")} onClick={() => setMobileOpen(false)}>
-                      {t("nav.quoteRequest")}
-                    </Link>
-                  </Button>
+                  {showSupportTicketCta ? (
+                    <Button asChild className="w-full min-h-11">
+                      <Link href={supportTicketHref} onClick={() => setMobileOpen(false)}>
+                        {t("nav.createSupportTicket")}
+                      </Link>
+                    </Button>
+                  ) : null}
                   {status === "loading" ? (
                     <Button variant="outline" disabled className="w-full min-h-11 justify-center">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -462,10 +476,10 @@ export function Navbar({
                         <Link
                           href={dashboardHref}
                           onClick={() => setMobileOpen(false)}
-                          className="gap-2"
+                          className="gap-2 min-w-0"
                         >
-                          <LayoutDashboard className="h-4 w-4" />
-                          {dashboardLabel}
+                          <LayoutDashboard className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{dashboardLabel}</span>
                         </Link>
                       </Button>
                       <Button
@@ -479,11 +493,13 @@ export function Navbar({
                       </Button>
                     </>
                   ) : (
-                    <Button variant="outline" asChild className="w-full min-h-11">
-                      <Link href={navLink("/hyr")} onClick={() => setMobileOpen(false)}>
-                        {t("nav.login")}
-                      </Link>
-                    </Button>
+                    <MarketingPrimaryCta
+                      href={navLink("/hyr")}
+                      size="headerMobile"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {t("nav.login")}
+                    </MarketingPrimaryCta>
                   )}
                 </div>
               </div>

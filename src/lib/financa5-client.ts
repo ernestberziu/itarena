@@ -144,6 +144,28 @@ export class Financa5Client {
     return this.get<Financa5Product>(`/api/products/kod/${encodeURIComponent(kod)}`);
   }
 
+  /** Server-side product search (paginated; does not load the full catalog). */
+  async searchProducts(opts: {
+    search: string;
+    page?: number;
+    pageSize?: number;
+    inStock?: boolean;
+  }): Promise<PagedResult<Financa5Product>> {
+    const params = new URLSearchParams();
+    params.set("page", String(opts.page ?? 1));
+    params.set("pageSize", String(opts.pageSize ?? 50));
+    params.set("search", opts.search);
+    if (opts.inStock) params.set("inStock", "true");
+    return this.get<PagedResult<Financa5Product>>(`/api/products?${params.toString()}`);
+  }
+
+  /** Lookup by exact barcode (EAN). */
+  async getProductByBarcode(barcode: string): Promise<Financa5Product> {
+    return this.get<Financa5Product>(
+      `/api/products/barcode/${encodeURIComponent(barcode)}`
+    );
+  }
+
   // ── Categories ────────────────────────────────────────────────────────────
 
   /** Fetch all categories (the API returns them all in one call). */

@@ -54,5 +54,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     data: { companyId },
   });
 
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  emitNotificationSafe({
+    type: "COMPANY_MEMBER_ADDED",
+    actorId: session.user.id,
+    payload: { userId: user.id, companyId },
+  });
+
   return NextResponse.json({ ok: true });
 }

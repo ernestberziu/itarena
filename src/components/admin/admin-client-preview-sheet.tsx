@@ -100,7 +100,9 @@ export function AdminClientPreviewSheet({
                       <h2 className="text-xl font-bold tracking-tight">
                         {user.firstName} {user.lastName}
                       </h2>
-                      <p className="text-sm text-muted-foreground break-all">{user.email}</p>
+                      <p className={`text-sm break-all ${user.email ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"}`}>
+                        {user.email ?? (en ? "No email — not invited" : "Pa email — pa ftesë")}
+                      </p>
                       <UserStatusBadges user={badgeInput} locale={locale} />
                     </div>
                   </div>

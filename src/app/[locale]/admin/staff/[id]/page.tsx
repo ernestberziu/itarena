@@ -59,7 +59,7 @@ export default async function AdminStaffDetailPage({
     <div className="space-y-6">
       <AdminPageHeader
         title={`${user.firstName} ${user.lastName}`}
-        description={user.email}
+        description={user.email ?? (locale === "sq" ? "Pa email" : "No email")}
         actions={
           <AdminStaffDetailActions
             staffId={user.id}

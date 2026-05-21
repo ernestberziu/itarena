@@ -10,6 +10,8 @@ import { adminAclOverlaySchema } from "@/lib/admin-acl/schema";
 import { STAFF_ROLES } from "@/types/domain";
 import { activeStaffWhere } from "@/lib/staff/active-staff-where";
 import { removeStaffMember } from "@/lib/staff/remove-staff-member";
+import { sendStaffAccountUpdateEmail } from "@/lib/email/transactional";
+import { pickLocale } from "@/lib/email/brand";
 
 const staffRoleSchema = z.enum(["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"]);
 
@@ -22,6 +24,7 @@ const patchSchema = z
     role: staffRoleSchema.optional(),
     newPassword: z.string().min(8).max(128).optional(),
     generateTemporaryPassword: z.boolean().optional(),
+    notifyCustomer: z.boolean().optional(),
     adminAclJson: z.union([adminAclOverlaySchema, z.null()]).optional(),
   })
   .strict();
@@ -141,10 +144,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     plainPassword = generateTemporaryPassword();
   }
 
+  const currentEmailNorm = current.email?.trim().toLowerCase() ?? "";
   const nextEmail =
-    patch.email !== undefined ? patch.email.trim().toLowerCase() : current.email.toLowerCase();
+    patch.email !== undefined ? patch.email.trim().toLowerCase() : currentEmailNorm;
   const emailChanged =
-    patch.email !== undefined && nextEmail !== current.email.trim().toLowerCase();
+    patch.email !== undefined && nextEmail !== currentEmailNorm;
 
   if (patch.email !== undefined) {
     const dup = await db.user.findFirst({
@@ -192,6 +196,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const shouldClearSessions = Boolean(plainPassword || emailChanged);
 
+  const aclChanged = patch.adminAclJson !== undefined;
+
   try {
     await db.$transaction(async (tx) => {
       await tx.user.update({
@@ -206,10 +212,44 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
+  if (aclChanged) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "STAFF_ACL_CHANGED",
+      actorId: session.user.id,
+      payload: { userId: id },
+    });
+  }
+
+  let credentialsEmailSent = false;
+  if (patch.notifyCustomer && plainPassword && nextEmail) {
+    const updated = await db.user.findUnique({
+      where: { id },
+      select: { firstName: true, language: true },
+    });
+    const mail = await sendStaffAccountUpdateEmail({
+      to: nextEmail,
+      firstName: patch.firstName ?? updated?.firstName ?? "User",
+      mailLocale: pickLocale(updated?.language),
+      temporaryPassword: plainPassword,
+      signInEmail: nextEmail,
+      emailChanged,
+      previousEmail: emailChanged ? (current.email ?? undefined) : undefined,
+    });
+    credentialsEmailSent = mail.sent;
+  }
+
   return NextResponse.json(
-    plainPassword && patch.generateTemporaryPassword && !trimmedPassword
-      ? { ok: true, temporaryPassword: plainPassword }
-      : { ok: true }
+    patch.notifyCustomer
+      ? {
+          ok: true,
+          notifyEmailAttempted: true,
+          credentialsEmailSent,
+          temporaryPassword: credentialsEmailSent ? undefined : plainPassword,
+        }
+      : plainPassword && patch.generateTemporaryPassword && !trimmedPassword
+        ? { ok: true, temporaryPassword: plainPassword }
+        : { ok: true }
   );
 }
 
@@ -249,6 +289,13 @@ export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: str
     console.error(e);
     return NextResponse.json({ error: "Remove failed" }, { status: 500 });
   }
+
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  emitNotificationSafe({
+    type: "STAFF_REMOVED",
+    actorId: session.user.id,
+    payload: { userId: id },
+  });
 
   return NextResponse.json({ ok: true });
 }

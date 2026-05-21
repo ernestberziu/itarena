@@ -9,6 +9,7 @@
     "contact": "Contact",
     "market": "Marketplace",
     "quoteRequest": "Request a Quote",
+    "createSupportTicket": "Support ticket",
     "remoteSupport": "Remote Support",
     "login": "Log In",
     "register": "Register",
@@ -781,11 +782,23 @@
     "verify_email_sent": "A verification email was sent. Check your inbox.",
     "reset_password": "Reset Password",
     "reset_sent": "Instructions were sent to your email.",
+    "reset_email_sent": "If an account exists for this email, we sent reset instructions.",
+    "send_reset_link": "Send reset link",
+    "back_to_login": "Back to sign in",
+    "reset_invalid_token": "This reset link is invalid or has expired.",
+    "reset_success": "Your password was updated. You can sign in now.",
+    "new_password": "New password",
+    "confirm_password": "Confirm password",
+    "password_mismatch": "Passwords do not match",
+    "verify_success": "Your email is verified. You can sign in now.",
+    "verify_failed": "Verification failed. The link may be invalid or expired.",
+    "forgot_password_title": "Forgot password",
     "errors": {
       "invalid_credentials": "Invalid email or password",
       "email_exists": "This email is already registered",
       "account_inactive": "Your account is inactive",
-      "required": "This field is required"
+      "required": "This field is required",
+      "generic": "Something went wrong. Please try again."
     }
   },
   "contact": {
@@ -883,5 +896,38 @@
     "admin_low_stock": "Low Stock",
     "admin_no_products": "No products yet",
     "admin_no_orders": "No orders yet"
+  },
+  "publicShare": {
+    "gateTitle": "Secure access",
+    "gateGreeting": "Hello, {name}. Enter the passcode IT Arena gave you.",
+    "passcodeLabel": "Access passcode",
+    "passcodePlaceholder": "8-character code",
+    "submit": "Enter",
+    "viewingAs": "Viewing as {name}",
+    "description": "Description",
+    "activity": "Activity",
+    "noActivity": "No activity yet.",
+    "addComment": "Add comment",
+    "commentPlaceholder": "Write your comment…",
+    "sendComment": "Send comment",
+    "commentSent": "Comment sent",
+    "projectSteps": "Project steps",
+    "noSteps": "No steps visible to you yet.",
+    "messages": "Messages",
+    "noMessages": "No messages yet.",
+    "writeMessage": "Write a message",
+    "messagePlaceholder": "Your message to IT Arena…",
+    "sendMessage": "Send message",
+    "messageSent": "Message sent",
+    "unavailableTitle": "Link unavailable",
+    "errors": {
+      "not_found": "This link does not exist or is not valid.",
+      "revoked": "This link has been revoked.",
+      "expired": "This link has expired.",
+      "locked": "Too many wrong attempts. Try again shortly.",
+      "invalid_passcode": "Incorrect passcode.",
+      "unauthorized": "Enter the passcode to continue.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

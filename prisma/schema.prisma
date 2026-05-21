@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   id               String    @id @default(cuid())
-  email            String    @unique
+  email            String?   @unique
   passwordHash     String?
   firstName        String
   lastName         String
@@ -46,6 +46,7 @@ model User {
   comments        TicketComment[]
   ticketHistories TicketHistory[]
   orders          Order[]
+  posSales        Order[]          @relation("OrderSoldBy")
   quotes          Quote[]
   notifications   Notification[]
   auditLogs       AuditLog[]
@@ -165,6 +166,7 @@ model Ticket {
   project    Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   comments   TicketComment[]
   history    TicketHistory[]
+  publicShares ClientResourceShare[]
 
   @@index([projectId])
   @@map("tickets")
@@ -191,6 +193,7 @@ model Project {
   messages       ProjectMessage[]
   steps          ProjectStep[]
   conversation   Conversation?
+  publicShares   ClientResourceShare[]
 
   @@index([status])
   @@map("projects")
@@ -304,15 +307,19 @@ model ConversationParticipant {
 model ConversationMessage {
   id             String   @id @default(cuid())
   conversationId String
-  authorId       String
+  authorId       String?
+  /// Display name when posted via public share (no portal user).
+  guestAuthorName String?
+  publicShareId  String?
   body           String   @db.Text
   isInternal     Boolean  @default(false)
   attachments    String   @default("[]") @db.Text
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  author       User         @relation("ConversationMessageAuthor", fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  conversation Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User?               @relation("ConversationMessageAuthor", fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  publicShare  ClientResourceShare? @relation(fields: [publicShareId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([conversationId, createdAt])
   @@map("conversation_messages")
@@ -322,8 +329,12 @@ model TicketComment {
   id          String   @id @default(cuid())
   ticketId    String
   ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  authorId    String
-  author      User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  authorId    String?
+  /// Display name when posted via public share (no portal user).
+  guestAuthorName String?
+  publicShareId   String?
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  publicShare ClientResourceShare? @relation(fields: [publicShareId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   body        String   @db.Text
   /// true = staff-only internal note; false = external (visible to the ticket requester in the portal).
   isInternal  Boolean  @default(false)
@@ -332,6 +343,37 @@ model TicketComment {
   updatedAt   DateTime @updatedAt
 
   @@map("ticket_comments")
+}
+
+// ─── Public share (passcode-gated ticket/project access for external clients) ─
+
+model ClientResourceShare {
+  id             String    @id @default(cuid())
+  resourceType   String
+  ticketId       String?
+  projectId      String?
+  clientName     String
+  recipientEmail String?
+  token          String    @unique
+  passcodeHash   String
+  /// Plain passcode for admin copy/display (verification uses passcodeHash).
+  passcodePlain  String
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdById    String
+  lastAccessAt   DateTime?
+  createdAt      DateTime  @default(now())
+
+  ticket       Ticket?              @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  project      Project?             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  ticketComments     TicketComment[]
+  conversationMessages ConversationMessage[]
+
+  @@index([ticketId])
+  @@index([projectId])
+  @@map("client_resource_shares")
 }
 
 model TicketHistory {
@@ -360,6 +402,11 @@ model Order {
   user            User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   companyId       String?
   company         Company? @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  /// WEB = shop/portal checkout; POS = in-store staff sale
+  channel         String   @default("WEB")
+  soldById        String?
+  soldBy          User?    @relation("OrderSoldBy", fields: [soldById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  paymentMethod   String?
   items           String   @db.Text
   subtotal        Decimal  @db.Decimal(10, 2)
   total           Decimal  @db.Decimal(10, 2)
@@ -377,6 +424,8 @@ model Order {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@index([channel, createdAt])
+  @@index([soldById])
   @@map("orders")
 }
 
@@ -420,18 +469,28 @@ model Quote {
 // ─── Notifications ───────────────────────────────────────────────────────────
 
 model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String
-  title     String
-  titleEn   String?
-  body      String    @db.Text
-  bodyEn    String?   @db.Text
-  link      String?
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String
+  category   String    @default("SYSTEM")
+  severity   String    @default("info")
+  title      String
+  titleEn    String?
+  body       String    @db.Text
+  bodyEn     String?   @db.Text
+  link       String?
+  entityType String?
+  entityId   String?
+  actorId    String?
+  metadata   Json?
+  dedupeKey  String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
 
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
+  @@index([userId, category])
   @@map("notifications")
 }
 

@@ -122,13 +122,15 @@ export function AdminStaffAclEditor({
   }
 
   const label = (f: AdminFeature) =>
-    f === "shop_products"
-      ? t("Produkte dyqani", "Shop products")
-      : f === "shop_orders"
-        ? t("Porosi dyqani", "Shop orders")
-        : f === "view_shop"
-          ? t("Shiko dyqanin", "View shop")
-          : f.charAt(0).toUpperCase() + f.slice(1).replace(/_/g, " ");
+    f === "pos_sale"
+      ? t("POS — shitje në dyqan", "POS — in-store sale")
+      : f === "shop_products"
+        ? t("Produkte dyqani", "Shop products")
+        : f === "shop_orders"
+          ? t("Porosi dyqani", "Shop orders")
+          : f === "view_shop"
+            ? t("Shiko dyqanin", "View shop")
+            : f.charAt(0).toUpperCase() + f.slice(1).replace(/_/g, " ");
 
   return (
     <div className="space-y-4 rounded-2xl border border-border/60 bg-card p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.05]">

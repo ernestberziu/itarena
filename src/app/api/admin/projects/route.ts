@@ -142,6 +142,21 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  const { actorDisplayName } = await import("@/lib/notifications/helpers");
+  const actorName = await actorDisplayName(session.user.id);
+  emitNotificationSafe({
+    type: "PROJECT_CREATED",
+    actorId: session.user.id,
+    entity: { type: "project", id: project.id },
+    payload: {
+      projectId: project.id,
+      title: project.title,
+      description: project.description,
+      actorName,
+    },
+  });
+
   revalidateProjectPaths(project.id);
   return NextResponse.json(project, { status: 201 });
 }

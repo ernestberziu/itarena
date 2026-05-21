@@ -46,6 +46,12 @@ import {
 } from "@/components/portal/portal-nav-config";
 import { SHOP_CATEGORY_SELECTED_TEXT } from "@/lib/shop-category-selected-color";
 import type { PortalRole } from "@/lib/portal/access";
+import { useNotificationCount } from "@/components/providers/notification-count-provider";
+import {
+  NotificationBellBadge,
+  NotificationCollapsedDot,
+  NotificationNavBadge,
+} from "@/components/shared/notification-count-badge";
 
 const COLLAPSE_KEY = "portal-sidebar-collapsed";
 
@@ -80,6 +86,7 @@ export function PortalAppShell({
   notificationCount = 0,
   navContext,
 }: PortalAppShellProps) {
+  const liveNotificationCount = useNotificationCount(notificationCount);
   const pathname = useNextPathname();
   const intlPathname = useIntlPathname();
   const intlRouter = useIntlRouter();
@@ -170,13 +177,12 @@ export function PortalAppShell({
 
     const inner = (
       <>
-        <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+        <span className="relative shrink-0">
+          <Icon className="h-4 w-4" strokeWidth={2} />
+          {collapsed && badge != null && badge > 0 ? <NotificationCollapsedDot /> : null}
+        </span>
         {!collapsed && <span className="flex-1 truncate">{label}</span>}
-        {!collapsed && badge != null && badge > 0 ? (
-          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
-            {badge > 9 ? "9+" : badge}
-          </span>
-        ) : null}
+        {!collapsed && badge != null && badge > 0 ? <NotificationNavBadge count={badge} /> : null}
       </>
     );
 
@@ -303,7 +309,7 @@ export function PortalAppShell({
                 icon={item.icon}
                 label={t(item.transKey)}
                 active={isRouteActive(href)}
-                badge={item.id === "notifications" ? notificationCount : undefined}
+                badge={item.id === "notifications" ? liveNotificationCount : undefined}
               />
             );
           })}
@@ -470,14 +476,34 @@ export function PortalAppShell({
               <span className="text-xs font-semibold uppercase tabular-nums">{otherLocale}</span>
             </Button>
 
-            <Button variant="outline" size="sm" className="relative h-9 w-9 shrink-0 p-0" asChild>
-              <Link href={notificationsHref}>
-                <Bell className="h-4 w-4" strokeWidth={2} />
-                {notificationCount > 0 && (
-                  <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
-                    {notificationCount > 9 ? "9+" : notificationCount}
-                  </span>
-                )}
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "relative h-9 w-9 shrink-0 overflow-visible p-0",
+                liveNotificationCount > 0
+                  ? "border-amber-600/30 bg-accent/15 hover:bg-accent/25"
+                  : undefined
+              )}
+              asChild
+            >
+              <Link
+                href={notificationsHref}
+                className="relative inline-flex h-9 w-9 items-center justify-center overflow-visible"
+                aria-label={
+                  liveNotificationCount > 0
+                    ? `${t("notifications")} (${liveNotificationCount})`
+                    : t("notifications")
+                }
+              >
+                <Bell
+                  className={cn(
+                    "h-4 w-4 shrink-0",
+                    liveNotificationCount > 0 && "text-[hsl(var(--brand-navy))]"
+                  )}
+                  strokeWidth={2}
+                />
+                <NotificationBellBadge count={liveNotificationCount} />
               </Link>
             </Button>
 

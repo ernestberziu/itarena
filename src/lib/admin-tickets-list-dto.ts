@@ -15,7 +15,7 @@ export type AdminTicketRow = {
   createdAt: string;
   updatedAt: string;
   externalRequesterName: string | null;
-  createdBy: { firstName: string; lastName: string; email: string };
+  createdBy: { firstName: string; lastName: string; email: string | null };
   assignedTo: { firstName: string; lastName: string } | null;
   company: { name: string } | null;
 };
@@ -36,7 +36,7 @@ export type AdminTicketListDb = {
   createdAt: Date;
   updatedAt: Date;
   externalRequesterName: string | null;
-  createdBy: { firstName: string; lastName: string; email: string };
+  createdBy: { firstName: string; lastName: string; email: string | null };
   assignedTo: { firstName: string; lastName: string } | null;
   company: { name: string } | null;
 };

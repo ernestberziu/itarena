@@ -17,7 +17,7 @@ export function AdminCompanyMemberActions({
     id: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     isActive: boolean;
   };
   locale: string;
@@ -38,7 +38,7 @@ export function AdminCompanyMemberActions({
       </Button>
       <AdminClientResetPasswordDialog
         userId={member.id}
-        userEmail={member.email}
+        userEmail={member.email ?? ""}
         userName={`${member.firstName} ${member.lastName}`}
         locale={locale}
       />

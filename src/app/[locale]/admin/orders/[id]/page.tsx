@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { Mail } from "lucide-react";
+import { FileText } from "lucide-react";
+import { EmailClientButton } from "@/components/admin/email-client-button";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -86,13 +87,24 @@ export default async function AdminOrderDetailPage({
         title={order.orderNumber}
         description={`${order.user.firstName} ${order.user.lastName}`}
         actions={
-          <a
-            href={`mailto:${order.user.email}`}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-border/60 bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50"
-          >
-            <Mail className="h-4 w-4" strokeWidth={2} aria-hidden />
-            {en ? "Email client" : "Email klientit"}
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            {order.user.email ? (
+              <EmailClientButton
+                apiUrl={`/api/admin/orders/${order.id}/email-client`}
+                label={en ? "Email client" : "Email klientit"}
+                className="h-9"
+              />
+            ) : null}
+            <a
+              href={`/api/admin/orders/${order.id}/invoice-pdf?lang=${en ? "en" : "sq"}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border/60 bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-muted/50"
+            >
+              <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+              {en ? "Print invoice" : "Printo faturën"}
+            </a>
+          </div>
         }
       />
       <AdminOrderDetailView order={model} locale={locale} activityLogs={activityLogs} />

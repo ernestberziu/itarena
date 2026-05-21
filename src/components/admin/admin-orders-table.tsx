@@ -13,6 +13,7 @@ import {
 import { AdminInfiniteTable } from "@/components/admin/admin-infinite-table";
 import { AdminOrderRowActions } from "@/components/admin/admin-order-row-actions";
 import { OrderStatusBadge } from "@/components/admin/order-status-badge";
+import { Badge } from "@/components/ui/badge";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 
@@ -22,6 +23,7 @@ export type AdminOrderListRow = {
   id: string;
   orderNumber: string;
   status: string;
+  channel: string;
   total: number | string;
   itemsJson: string;
   createdAt: string;
@@ -76,14 +78,22 @@ export function AdminOrdersTable({
         enableSorting: true,
         cell: ({ row }) => {
           const href = `${lp}/admin/orders/${row.original.id}`;
+          const isPos = row.original.channel === "POS";
           return (
-            <Link
-              href={href}
-              className="font-mono text-xs font-medium text-primary hover:underline"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {row.original.orderNumber}
-            </Link>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Link
+                href={href}
+                className="font-mono text-xs font-medium text-primary hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {row.original.orderNumber}
+              </Link>
+              {isPos ? (
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-semibold">
+                  POS
+                </Badge>
+              ) : null}
+            </div>
           );
         },
       },

@@ -46,8 +46,18 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Notify admins/sales team
-  // TODO: Send email notification to sales team
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  emitNotificationSafe({
+    type: "QUOTE_SUBMITTED",
+    actorId: session?.user?.id ?? null,
+    entity: { type: "quote", id: quote.id },
+    payload: {
+      quoteId: quote.id,
+      quoteNumber: quote.quoteNumber,
+      title: data.title,
+      companyName: data.companyName,
+    },
+  });
 
   return NextResponse.json({ id: quote.id, number: quote.quoteNumber }, { status: 201 });
 }

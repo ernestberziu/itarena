@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Shield, StickyNote, Ticket, ShoppingBag, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { AdminClientInviteDialog } from "@/components/admin/admin-client-invite-dialog";
 import { formatDate, timeAgo } from "@/lib/utils";
 import {
   AdminStatCard,
@@ -17,7 +19,8 @@ export type AdminClientDetailModel = {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
+  hasPortalAccess: boolean;
   phone: string | null;
   language: string;
   isActive: boolean;
@@ -78,6 +81,8 @@ export function AdminClientDetailView({
   const detailHref = `${lp}/admin/clients/${user.id}`;
   const ticketsHref = `${lp}/admin/tickets?requester=${encodeURIComponent(user.id)}`;
   const ordersHref = `${lp}/admin/orders?userId=${encodeURIComponent(user.id)}`;
+  const emailDisplay =
+    user.email ?? (en ? "No email — not invited" : "Pa email — pa ftesë");
 
   return (
     <div className="space-y-8">
@@ -91,8 +96,17 @@ export function AdminClientDetailView({
                   <h1 className="text-2xl font-bold tracking-tight">
                     {user.firstName} {user.lastName}
                   </h1>
-                  <p className="text-sm text-muted-foreground break-all">{user.email}</p>
-                  <UserStatusBadges user={badgeInput} locale={locale} />
+                  <p className={`text-sm break-all ${user.email ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"}`}>
+                    {emailDisplay}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {!user.hasPortalAccess ? (
+                      <Badge variant="secondary" className="border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                        {t("Në pritje të ftesës", "Pending invite")}
+                      </Badge>
+                    ) : null}
+                    <UserStatusBadges user={badgeInput} locale={locale} />
+                  </div>
                   <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <div>
                       <dt className="inline font-medium text-foreground">{t("Lloji", "Type")}: </dt>
@@ -119,11 +133,19 @@ export function AdminClientDetailView({
                   </dl>
                 </div>
               </div>
-              <div className="flex shrink-0 justify-end">
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                {!user.hasPortalAccess ? (
+                  <AdminClientInviteDialog
+                    userId={user.id}
+                    userName={`${user.firstName} ${user.lastName}`}
+                    locale={locale}
+                  />
+                ) : null}
                 <AdminClientRowActions
                   user={{
                     id: user.id,
                     email: user.email,
+                    hasPortalAccess: user.hasPortalAccess,
                     firstName: user.firstName,
                     lastName: user.lastName,
                     isActive: user.isActive,
@@ -158,7 +180,9 @@ export function AdminClientDetailView({
                 </div>
                 <div>
                   <dt className="text-muted-foreground">Email</dt>
-                  <dd className="break-all">{user.email}</dd>
+                  <dd className={`break-all ${user.email ? "" : "text-amber-700 dark:text-amber-400"}`}>
+                    {emailDisplay}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -266,6 +290,7 @@ export function AdminClientDetailView({
             userId={user.id}
             locale={locale}
             userLanguage={user.language}
+            hasPortalAccess={user.hasPortalAccess}
             initialFirstName={user.firstName}
             initialLastName={user.lastName}
             initialEmail={user.email}
@@ -281,6 +306,7 @@ export function AdminClientDetailView({
               locale={locale}
               userId={user.id}
               email={user.email}
+              hasPortalAccess={user.hasPortalAccess}
               ticketsHref={ticketsHref}
               ordersHref={ordersHref}
             />

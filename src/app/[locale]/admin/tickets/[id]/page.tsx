@@ -5,6 +5,7 @@ import { AdminTicketDetailView } from "@/components/admin/admin-ticket-detail-vi
 import type { TicketStatus, Priority, Role } from "@/types/domain";
 import { getCachedEffectiveAcl } from "@/lib/admin-acl/cached-user-acl";
 import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
+import { hasAclLevel } from "@/lib/admin-acl/features";
 import { projectsListWhere } from "@/lib/projects";
 import {
   canStaffAccessTicket,
@@ -36,10 +37,17 @@ export default async function AdminTicketDetailPage({
         project: { select: { id: true, title: true, slug: true } },
         company: { select: { name: true } },
         comments: {
-          include: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            body: true,
+            isInternal: true,
+            attachments: true,
+            createdAt: true,
+            updatedAt: true,
+            guestAuthorName: true,
             author: { select: { id: true, firstName: true, lastName: true, role: true } },
           },
-          orderBy: { createdAt: "asc" },
         },
         history: {
           include: {
@@ -77,13 +85,18 @@ export default async function AdminTicketDetailPage({
     createdBy: { ...ticket.createdBy, role: ticket.createdBy.role as Role },
     comments: ticket.comments.map((c) => ({
       ...c,
-      author: { ...c.author, role: c.author.role as Role },
+      guestAuthorName: c.guestAuthorName,
+      author: c.author
+        ? { ...c.author, role: c.author.role as Role }
+        : null,
     })),
     history: ticket.history.map((h) => ({
       ...h,
       changedBy: { ...h.changedBy, role: h.changedBy.role as Role },
     })),
   };
+
+  const canWriteShares = hasAclLevel(acl, "tickets", "write");
 
   return (
     <AdminTicketDetailView
@@ -93,6 +106,7 @@ export default async function AdminTicketDetailPage({
       engineers={engineers}
       projects={projectOptions}
       ticketsListHref={`${lp}/admin/tickets`}
+      canWriteShares={canWriteShares}
     />
   );
 }

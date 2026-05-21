@@ -23,7 +23,8 @@ import {
   Users,
   CircleHelp,
 } from "lucide-react";
-import { formatDateTime, timeAgo } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
+import { RelativeTimeInParentheses, TimeAgoStamp } from "@/components/shared/relative-time";
 import { DIVISION_LABELS } from "@/lib/sla";
 import {
   mergeTicketActivity,
@@ -67,6 +68,8 @@ import {
   type ProjectOption,
 } from "@/components/admin/admin-ticket-ops-form";
 import { AdminTicketOpsSheet } from "@/components/admin/admin-ticket-ops-sheet";
+import { PublicSharePanel } from "@/components/admin/public-share/public-share-panel";
+import { resolveCommentAuthor } from "@/lib/public-share/guest-author";
 
 export type AdminTicketDetailModel = {
   id: string;
@@ -85,7 +88,7 @@ export type AdminTicketDetailModel = {
   externalRequesterName: string | null;
   createdAt: Date;
   updatedAt: Date;
-  createdBy: { id: string; firstName: string; lastName: string; email: string; role: Role };
+  createdBy: { id: string; firstName: string; lastName: string; email: string | null; role: Role };
   assignedTo: { id: string; firstName: string; lastName: string } | null;
   assignedToId: string | null;
   projectId: string | null;
@@ -112,6 +115,7 @@ export function AdminTicketDetailView({
   engineers,
   projects,
   ticketsListHref,
+  canWriteShares = false,
 }: {
   ticket: AdminTicketDetailModel;
   currentUserRole: Role;
@@ -119,6 +123,7 @@ export function AdminTicketDetailView({
   engineers: EngineerOption[];
   projects: ProjectOption[];
   ticketsListHref: string;
+  canWriteShares?: boolean;
 }) {
   const router = useRouter();
   const isStaff = STAFF_ROLES.includes(currentUserRole);
@@ -325,7 +330,9 @@ export function AdminTicketDetailView({
             <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 py-2 last:pb-0 sm:px-4 sm:py-0">
               <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
               <span className="tabular-nums text-foreground/90">{formatDateTime(ticket.createdAt)}</span>
-              <span className="text-xs text-muted-foreground">({timeAgo(ticket.createdAt)})</span>
+              <span className="text-xs text-muted-foreground">
+                <RelativeTimeInParentheses date={ticket.createdAt} />
+              </span>
             </div>
           </div>
         </div>
@@ -349,6 +356,13 @@ export function AdminTicketDetailView({
           />
         </div>
       </div>
+
+      <PublicSharePanel
+        resourceType="TICKET"
+        resourceId={ticket.id}
+        locale={locale}
+        canWrite={canWriteShares}
+      />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="isolate space-y-6 lg:col-span-2">
@@ -387,12 +401,17 @@ export function AdminTicketDetailView({
                 {activity.map((item) => {
                   if (item.kind === "comment") {
                     const c = item.comment;
-                    const isStaffComment = STAFF_ROLES.includes(c.author.role);
+                    const authorMeta = resolveCommentAuthor(
+                      c.author,
+                      c.guestAuthorName,
+                      lang
+                    );
+                    const isStaffComment =
+                      c.author != null && STAFF_ROLES.includes(c.author.role);
                     return (
                       <li key={item.id} className="relative flex gap-2.5 pl-1">
                         <span className="relative z-[1] mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-[10px] font-semibold text-muted-foreground shadow-sm">
-                          {c.author.firstName[0]}
-                          {c.author.lastName[0]}
+                          {authorMeta.initials}
                         </span>
                         <div
                           className={cn(
@@ -407,7 +426,7 @@ export function AdminTicketDetailView({
                           <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="text-xs font-medium text-foreground">
-                                {c.author.firstName} {c.author.lastName}
+                                {authorMeta.displayName}
                               </span>
                               {c.isInternal ? (
                                 <span className="inline-flex items-center gap-1 rounded-md border border-amber-600/25 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-900 dark:text-amber-100">
@@ -424,9 +443,7 @@ export function AdminTicketDetailView({
                                 {t("Koment", "Comment")}
                               </span>
                             </div>
-                            <time className="text-xs text-muted-foreground" dateTime={item.createdAt.toISOString()}>
-                              {timeAgo(c.createdAt)} · {formatDateTime(c.createdAt)}
-                            </time>
+                            <TimeAgoStamp date={c.createdAt} className="text-xs text-muted-foreground" />
                           </div>
                           <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/95 sm:text-sm">
                             {c.body}
@@ -450,12 +467,10 @@ export function AdminTicketDetailView({
                               {t("Vetëm stafi", "Staff only")}
                             </span>
                           ) : null}
-                          <time
+                          <TimeAgoStamp
+                            date={h.createdAt}
                             className="text-xs text-muted-foreground ml-auto"
-                            dateTime={h.createdAt.toISOString()}
-                          >
-                            {timeAgo(h.createdAt)} · {formatDateTime(h.createdAt)}
-                          </time>
+                          />
                         </div>
                         <p className="text-xs leading-snug text-foreground/90 sm:text-sm">
                           {formatHistoryActivity(h, locale, engineerById)}

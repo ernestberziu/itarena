@@ -30,7 +30,21 @@ export default async function AdminClientDetailPage({
 
   const user = await db.user.findFirst({
     where: { id, role: { in: ["CLIENT", "COMPANY_ADMIN"] } },
-    include: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      passwordHash: true,
+      phone: true,
+      language: true,
+      isActive: true,
+      emailVerified: true,
+      twoFactorEnabled: true,
+      lastLoginAt: true,
+      createdAt: true,
+      role: true,
+      registrationCompanySnapshot: true,
       company: {
         select: {
           id: true,
@@ -73,6 +87,7 @@ export default async function AdminClientDetailPage({
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    hasPortalAccess: Boolean(user.email && user.passwordHash),
     phone: user.phone,
     language: user.language,
     isActive: user.isActive,
@@ -109,7 +124,10 @@ export default async function AdminClientDetailPage({
           { label: `${user.firstName} ${user.lastName}` },
         ]}
         title={`${user.firstName} ${user.lastName}`}
-        description={user.email}
+        description={
+          user.email ??
+          (locale === "sq" ? "Pa email — pa ftesë" : "No email — not invited")
+        }
         actions={
           <Link
             href={`${lp}/admin/clients`}

@@ -62,7 +62,8 @@ export default async function PortalProjectDetailPage({
           id: true,
           body: true,
           createdAt: true,
-          author: { select: { firstName: true, lastName: true, role: true } },
+          guestAuthorName: true,
+          author: { select: { id: true, firstName: true, lastName: true, role: true } },
         },
       })
     : [];
@@ -71,6 +72,7 @@ export default async function PortalProjectDetailPage({
     id: m.id,
     body: m.body,
     createdAt: m.createdAt.toISOString(),
+    guestAuthorName: m.guestAuthorName,
     author: m.author,
   }));
 

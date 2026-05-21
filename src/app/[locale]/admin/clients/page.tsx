@@ -40,6 +40,7 @@ export default async function AdminClientsPage({
   const approved = sp.approved?.trim();
   const active = sp.active?.trim() || "all";
   const affiliation = sp.affiliation?.trim() || "all";
+  const portalAccess = sp.portalAccess?.trim() || "all";
 
   const where = adminClientsListWhere({
     q,
@@ -47,6 +48,7 @@ export default async function AdminClientsPage({
     approved: approved || undefined,
     active: active || undefined,
     affiliation: affiliation || undefined,
+    portalAccess: portalAccess !== "all" ? portalAccess : undefined,
   });
 
   const thirtyDaysAgo = subDays(new Date(), 30);
@@ -57,6 +59,7 @@ export default async function AdminClientsPage({
   if (approved) filterQueryParts.set("approved", approved);
   if (active && active !== "all") filterQueryParts.set("active", active);
   if (affiliation && affiliation !== "all") filterQueryParts.set("affiliation", affiliation);
+  if (portalAccess && portalAccess !== "all") filterQueryParts.set("portalAccess", portalAccess);
   const filterQuery = filterQueryParts.toString();
 
   const [users, totalCount, activeCount, suspendedCount, newCount] = await Promise.all([
@@ -67,6 +70,7 @@ export default async function AdminClientsPage({
         firstName: true,
         lastName: true,
         email: true,
+        passwordHash: true,
         isActive: true,
         emailVerified: true,
         role: true,
@@ -94,7 +98,9 @@ export default async function AdminClientsPage({
 
   const initialClients = users.map(mapClientToAdminRow);
 
-  const hasFilters = Boolean(q || tier || approved || (active && active !== "all") || (affiliation && affiliation !== "all"));
+  const hasFilters = Boolean(
+    q || tier || approved || (active && active !== "all") || (affiliation && affiliation !== "all") || (portalAccess && portalAccess !== "all")
+  );
 
   return (
     <div className="space-y-6">
@@ -124,6 +130,7 @@ export default async function AdminClientsPage({
               approved={approved}
               active={active}
               affiliation={affiliation}
+              portalAccess={portalAccess}
             />
           </FilterBar>
         }

@@ -18,8 +18,11 @@ function buildClientsHref(
     approved?: string;
     active?: string;
     affiliation?: string;
+    portalAccess?: string;
   },
-  patch: Partial<Record<"q" | "tier" | "approved" | "active" | "affiliation", string | null | undefined>>
+  patch: Partial<
+    Record<"q" | "tier" | "approved" | "active" | "affiliation" | "portalAccess", string | null | undefined>
+  >
 ) {
   const p = new URLSearchParams();
   const merged = { ...base, ...patch };
@@ -28,6 +31,7 @@ function buildClientsHref(
   if (merged.approved === "true" || merged.approved === "false") p.set("approved", merged.approved);
   if (merged.active && merged.active !== "all") p.set("active", merged.active);
   if (merged.affiliation && merged.affiliation !== "all") p.set("affiliation", merged.affiliation);
+  if (merged.portalAccess && merged.portalAccess !== "all") p.set("portalAccess", merged.portalAccess);
   const qs = p.toString();
   return qs ? `${lp}/admin/clients?${qs}` : `${lp}/admin/clients`;
 }
@@ -40,6 +44,7 @@ export function AdminUsersToolbar({
   approved,
   active,
   affiliation,
+  portalAccess,
 }: {
   locale: string;
   lp: string;
@@ -48,16 +53,23 @@ export function AdminUsersToolbar({
   approved?: string;
   active?: string;
   affiliation?: string;
+  portalAccess?: string;
 }) {
   const en = locale === "en";
   const t = (sq: string, e: string) => (en ? e : sq);
   const activeNorm = active || "all";
   const affiliationNorm = affiliation || "all";
+  const portalAccessNorm = portalAccess || "all";
   const qTrim = q?.trim();
-  const base = { q, tier, approved, active: activeNorm, affiliation: affiliationNorm };
+  const base = { q, tier, approved, active: activeNorm, affiliation: affiliationNorm, portalAccess: portalAccessNorm };
 
   const filtersActive = Boolean(
-    qTrim || tier || approved || (activeNorm && activeNorm !== "all") || (affiliationNorm && affiliationNorm !== "all")
+    qTrim ||
+      tier ||
+      approved ||
+      (activeNorm && activeNorm !== "all") ||
+      (affiliationNorm && affiliationNorm !== "all") ||
+      (portalAccessNorm && portalAccessNorm !== "all")
   );
   const defaultOpen = filtersActive;
 
@@ -85,8 +97,14 @@ export function AdminUsersToolbar({
       : affiliationNorm === "individual"
         ? t("Individual", "Individual")
         : null;
+  const portalAccessSummary =
+    portalAccessNorm === "invited"
+      ? t("Të ftuar", "Invited")
+      : portalAccessNorm === "pending"
+        ? t("Pa ftesë", "Pending invite")
+        : null;
 
-  const summaryParts = [tierSummary, approvedSummary, accountSummary, affiliationSummary].filter(Boolean);
+  const summaryParts = [tierSummary, approvedSummary, accountSummary, affiliationSummary, portalAccessSummary].filter(Boolean);
   const searchHint =
     qTrim &&
     (en
@@ -135,6 +153,7 @@ export function AdminUsersToolbar({
         {approved && <input type="hidden" name="approved" value={approved} />}
         {activeNorm !== "all" ? <input type="hidden" name="active" value={activeNorm} /> : null}
         {affiliationNorm !== "all" ? <input type="hidden" name="affiliation" value={affiliationNorm} /> : null}
+        {portalAccessNorm !== "all" ? <input type="hidden" name="portalAccess" value={portalAccessNorm} /> : null}
         <Button type="submit" className="h-10 shrink-0 gap-2 rounded-xl px-5 shadow-sm sm:w-auto w-full">
           <Search className="h-4 w-4" strokeWidth={2} aria-hidden />
           {t("Kërko", "Search")}
@@ -235,6 +254,28 @@ export function AdminUsersToolbar({
                 href={buildClientsHref(lp, base, { affiliation: "individual" })}
                 label={t("Individual", "Individual")}
                 selected={affiliationNorm === "individual"}
+              />
+            </SegmentedFilterTrack>
+          </div>
+          <div className="space-y-2">
+            <span className="text-xs font-semibold tracking-tight text-foreground">
+              {t("Aksesi në portal", "Portal access")}
+            </span>
+            <SegmentedFilterTrack>
+              <SegmentedFilterLink
+                href={buildClientsHref(lp, base, { portalAccess: "all" })}
+                label={t("Të gjitha", "All")}
+                selected={portalAccessNorm === "all"}
+              />
+              <SegmentedFilterLink
+                href={buildClientsHref(lp, base, { portalAccess: "invited" })}
+                label={t("Të ftuar", "Invited")}
+                selected={portalAccessNorm === "invited"}
+              />
+              <SegmentedFilterLink
+                href={buildClientsHref(lp, base, { portalAccess: "pending" })}
+                label={t("Pa ftesë", "Pending invite")}
+                selected={portalAccessNorm === "pending"}
               />
             </SegmentedFilterTrack>
           </div>

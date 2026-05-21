@@ -45,6 +45,7 @@ import {
   portalTicketOpenedByLabel,
   isPortalStaffRole,
 } from "@/lib/portal/client-branding";
+import { resolveCommentAuthor } from "@/lib/public-share/guest-author";
 
 export type PortalTicketEngineerOption = {
   id: string;
@@ -70,7 +71,7 @@ interface TicketDetailViewProps {
     externalRequesterName: string | null;
     createdAt: Date;
     updatedAt: Date;
-    createdBy: { id: string; firstName: string; lastName: string; email: string; role: Role };
+    createdBy: { id: string; firstName: string; lastName: string; email: string | null; role: Role };
     assignedTo: { id: string; firstName: string; lastName: string } | null;
     company: { name: string } | null;
     comments: Array<{
@@ -79,7 +80,8 @@ interface TicketDetailViewProps {
       isInternal: boolean;
       attachments: string;
       createdAt: Date;
-      author: { id: string; firstName: string; lastName: string; role: Role };
+      guestAuthorName?: string | null;
+      author: { id: string; firstName: string; lastName: string; role: Role } | null;
     }>;
     history: TicketHistoryRow[];
   };
@@ -307,13 +309,28 @@ export function TicketDetailView({
                 {activity.map((item) => {
                   if (item.kind === "comment") {
                     const c = item.comment;
-                    const isStaffComment = STAFF_ROLES.includes(c.author.role);
+                    const lang = locale === "en" ? "en" : "sq";
+                    const guestMeta = resolveCommentAuthor(
+                      c.author,
+                      c.guestAuthorName,
+                      lang
+                    );
+                    const isStaffComment =
+                      c.author != null && STAFF_ROLES.includes(c.author.role);
                     const authorLabel = isStaff
-                      ? `${c.author.firstName} ${c.author.lastName}`
-                      : portalAuthorDisplayName(c.author, currentUserId, locale === "en" ? "en" : "sq");
+                      ? c.author
+                        ? `${c.author.firstName} ${c.author.lastName}`
+                        : guestMeta.displayName
+                      : c.author
+                        ? portalAuthorDisplayName(c.author, currentUserId, lang)
+                        : guestMeta.displayName;
                     const authorInitials = isStaff
-                      ? `${c.author.firstName[0]}${c.author.lastName[0]}`
-                      : portalAuthorInitials(c.author, currentUserId);
+                      ? c.author
+                        ? `${c.author.firstName[0]}${c.author.lastName[0]}`
+                        : guestMeta.initials
+                      : c.author
+                        ? portalAuthorInitials(c.author, currentUserId)
+                        : guestMeta.initials;
                     return (
                       <li key={item.id} className="relative flex gap-2.5 pl-1">
                         <span className="relative z-[1] mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-[10px] font-semibold text-muted-foreground shadow-sm">

@@ -22,12 +22,14 @@ export function AdminClientQuickActions({
   locale,
   userId,
   email,
+  hasPortalAccess,
   ticketsHref,
   ordersHref,
 }: {
   locale: string;
   userId: string;
-  email: string;
+  email: string | null;
+  hasPortalAccess: boolean;
   ticketsHref: string;
   ordersHref: string;
 }) {
@@ -70,19 +72,40 @@ export function AdminClientQuickActions({
       <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/90">
         {t("Kontakt", "Contact")}
       </p>
-      <button
-        type="button"
-        className={cn(rowBase, "cursor-pointer")}
-        onClick={() => copyText(email, "Emaili u kopjua", "Email copied", locale)}
-      >
-        <span className={iconWrap} aria-hidden>
-          <Copy className="h-4 w-4" strokeWidth={2} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block leading-tight">{t("Kopjo emailin", "Copy email")}</span>
-          <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">{email}</span>
-        </span>
-      </button>
+      {email ? (
+        <>
+          <button
+            type="button"
+            className={cn(rowBase, "cursor-pointer")}
+            onClick={() => copyText(email, "Emaili u kopjua", "Email copied", locale)}
+          >
+            <span className={iconWrap} aria-hidden>
+              <Copy className="h-4 w-4" strokeWidth={2} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block leading-tight">{t("Kopjo emailin", "Copy email")}</span>
+              <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">{email}</span>
+            </span>
+          </button>
+          <a href={`mailto:${email}`} className={cn(rowBase)}>
+            <span className={iconWrap} aria-hidden>
+              <Mail className="h-4 w-4" strokeWidth={2} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block leading-tight">{t("Dërgo email", "Send email")}</span>
+              <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
+                {t("Hap klientin e postës", "Opens your mail app")}
+              </span>
+            </span>
+          </a>
+        </>
+      ) : (
+        <p className="rounded-xl border border-amber-200/80 bg-amber-50/80 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+          {hasPortalAccess
+            ? t("Pa email në regjistrim", "No email on file")
+            : t("Pa email — pa ftesë", "No email — not invited")}
+        </p>
+      )}
       <button
         type="button"
         className={cn(rowBase, "cursor-pointer")}
@@ -98,17 +121,6 @@ export function AdminClientQuickActions({
           </span>
         </span>
       </button>
-      <a href={`mailto:${email}`} className={cn(rowBase)}>
-        <span className={iconWrap} aria-hidden>
-          <Mail className="h-4 w-4" strokeWidth={2} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block leading-tight">{t("Dërgo email", "Send email")}</span>
-          <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">
-            {t("Hap klientin e postës", "Opens your mail app")}
-          </span>
-        </span>
-      </a>
     </div>
   );
 }

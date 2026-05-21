@@ -25,6 +25,7 @@ import { requireAdminPageRead } from "@/lib/admin-acl/page-guard";
 import { ADMIN_LIST_PAGE_SIZE } from "@/lib/admin-list-pagination";
 import { adminListShellClassName } from "@/lib/admin-list-ui";
 import { adminOrdersListWhere, mapOrderToAdminRow } from "@/lib/admin-orders-list-dto";
+import { dbUnavailableDescription } from "@/lib/db-unavailable-message";
 
 export default async function AdminOrdersPage({
   params,
@@ -108,10 +109,15 @@ export default async function AdminOrdersPage({
     deliveredCount = dc;
     cancelledCount = kc;
     gmvOpen = Number(agg._sum.total ?? 0);
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[admin/orders] database error:", err);
+    }
     postgresUnavailable = true;
     orders = [];
   }
+
+  const dbMsg = dbUnavailableDescription(locale, "orders");
 
   function filterHref(s: string | null) {
     const p = new URLSearchParams();
@@ -201,11 +207,7 @@ export default async function AdminOrdersPage({
           icon={ShoppingBag}
           className="rounded-2xl border border-border/50 bg-card/40 py-16"
           title={locale === "sq" ? "Postgres nuk është i lidhur" : "PostgreSQL unavailable"}
-          description={
-            locale === "sq"
-              ? "Nuk mund të lexohen porositë. Nis Postgres: docker compose up -d postgres. Në .env vendos DATABASE_URL=postgresql://itarena:itarena@localhost:5432/itarena (sipas docker-compose), pastaj npx prisma migrate deploy."
-              : "Cannot load orders. Start Postgres (docker compose up -d postgres), set DATABASE_URL to match docker-compose (e.g. postgresql://itarena:itarena@localhost:5432/itarena), then npx prisma migrate deploy."
-          }
+          description={locale === "sq" ? dbMsg.sq : dbMsg.en}
         />
       ) : filteredTotal === 0 ? (
         <EmptyState

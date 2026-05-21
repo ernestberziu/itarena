@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import {
+  sendContactAdminNotifyEmail,
+  sendContactClientConfirmEmail,
+} from "@/lib/email/transactional";
+import { getOpsNotifyEmail } from "@/lib/email/ops-notify-email";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -19,7 +24,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
   }
 
-  // Log the contact request as an audit entry
   await db.auditLog.create({
     data: {
       action: "CONTACT_FORM",
@@ -28,7 +32,37 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // TODO: Send email to info@itarena.al with contact details (e.g. SMTP / Nodemailer)
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  const { excerpt } = await import("@/lib/notifications/helpers");
+  emitNotificationSafe({
+    type: "CONTACT_FORM_SUBMITTED",
+    payload: {
+      excerpt: excerpt(parsed.data.message),
+      subject: parsed.data.service || parsed.data.company || parsed.data.name,
+    },
+    skipEmail: true,
+  });
+
+  const firstName = parsed.data.name.trim().split(/\s+/)[0] ?? parsed.data.name.trim();
+  const notifyEmail = getOpsNotifyEmail();
+
+  await Promise.all([
+    notifyEmail
+      ? sendContactAdminNotifyEmail({
+          to: notifyEmail,
+          name: parsed.data.name,
+          email: parsed.data.email,
+          phone: parsed.data.phone,
+          service: parsed.data.service,
+          company: parsed.data.company,
+          message: parsed.data.message,
+        })
+      : Promise.resolve({ sent: false as const }),
+    sendContactClientConfirmEmail({
+      to: parsed.data.email,
+      firstName,
+    }),
+  ]);
 
   return NextResponse.json({ success: true });
 }

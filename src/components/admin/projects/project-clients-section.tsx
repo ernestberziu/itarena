@@ -15,7 +15,7 @@ export type ProjectClientRow = {
   id: string;
   label?: string | null;
   company: { id: string; name: string } | null;
-  user: { id: string; firstName: string; lastName: string; email: string } | null;
+  user: { id: string; firstName: string; lastName: string; email: string | null } | null;
 };
 
 export type PendingClient =

@@ -120,6 +120,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "ORDER_PLACED",
+      actorId: finalUserId,
+      entity: { type: "order", id: order.id },
+      payload: {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: order.orderNumber,
+      },
+    });
+
     return NextResponse.json(
       { orderNumber: order.orderNumber, id: order.id },
       { status: 201 }

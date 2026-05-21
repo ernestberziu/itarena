@@ -63,6 +63,12 @@ export async function PATCH(req: NextRequest) {
     CANCELLED: "cancelledAt",
   };
 
+  const existing = await db.order.findUnique({
+    where: { id },
+    select: { status: true, orderNumber: true },
+  });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const order = await db.order.update({
     where: { id },
     data: {
@@ -71,6 +77,22 @@ export async function PATCH(req: NextRequest) {
       ...(timestampField[status] ? { [timestampField[status]]: new Date() } : {}),
     },
   });
+
+  if (status !== existing.status) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "ORDER_STATUS_CHANGED",
+      actorId: result.session.user.id,
+      entity: { type: "order", id },
+      dedupeKey: `order:${id}:status:${status}`,
+      payload: {
+        orderId: id,
+        orderNumber: existing.orderNumber,
+        status,
+        oldStatus: existing.status,
+      },
+    });
+  }
 
   return NextResponse.json(order);
 }

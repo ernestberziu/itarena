@@ -19,6 +19,7 @@ import {
   Building2,
 } from "lucide-react";
 import { AdminClientResetPasswordDialog } from "@/components/admin/admin-client-reset-password-dialog";
+import { AdminClientInviteDialog } from "@/components/admin/admin-client-invite-dialog";
 import { AdminAssignCompanyDialog } from "@/components/admin/admin-assign-company-dialog";
 import type { RegistrationCompanySnapshot } from "@/lib/registration-company-snapshot";
 import {
@@ -39,7 +40,8 @@ import { adminWhiteDialogClassName } from "@/components/admin/admin-white-dialog
 
 export type AdminClientActionRow = {
   id: string;
-  email: string;
+  email: string | null;
+  hasPortalAccess: boolean;
   firstName: string;
   lastName: string;
   isActive: boolean;
@@ -81,6 +83,7 @@ export function AdminClientRowActions({
   const [danger, setDanger] = useState<null | "delete" | "suspend" | "activate">(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function patchBody(body: Record<string, unknown>) {
@@ -145,10 +148,17 @@ export function AdminClientRowActions({
         <Building2 className="mr-2 h-4 w-4" />
         {t("Cakto kompani", "Assign company")}
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => setResetOpen(true)}>
-        <KeyRound className="mr-2 h-4 w-4" />
-        {t("Rivendos fjalëkalimin", "Reset password")}
-      </DropdownMenuItem>
+      {user.hasPortalAccess ? (
+        <DropdownMenuItem onClick={() => setResetOpen(true)}>
+          <KeyRound className="mr-2 h-4 w-4" />
+          {t("Rivendos fjalëkalimin", "Reset password")}
+        </DropdownMenuItem>
+      ) : (
+        <DropdownMenuItem onClick={() => setInviteOpen(true)}>
+          <Mail className="mr-2 h-4 w-4" />
+          {t("Fto në portal", "Invite to portal")}
+        </DropdownMenuItem>
+      )}
       <DropdownMenuSeparator />
       <DropdownMenuItem render={<Link href={ticketsHref} />}>
         <Ticket className="mr-2 h-4 w-4" />
@@ -159,19 +169,23 @@ export function AdminClientRowActions({
         {t("Porositë", "Orders")}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem
-        onClick={() => copyText(user.email, "Emaili u kopjua", "Email copied", locale)}
-      >
-        <Copy className="mr-2 h-4 w-4" />
-        {t("Kopjo emailin", "Copy email")}
-      </DropdownMenuItem>
+      {user.email ? (
+        <>
+          <DropdownMenuItem
+            onClick={() => copyText(user.email!, "Emaili u kopjua", "Email copied", locale)}
+          >
+            <Copy className="mr-2 h-4 w-4" />
+            {t("Kopjo emailin", "Copy email")}
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<a href={`mailto:${user.email}`} />}>
+            <Mail className="mr-2 h-4 w-4" />
+            {t("Dërgo email", "Send email")}
+          </DropdownMenuItem>
+        </>
+      ) : null}
       <DropdownMenuItem onClick={() => copyText(user.id, "ID u kopjua", "ID copied", locale)}>
         <Copy className="mr-2 h-4 w-4" />
         {t("Kopjo ID", "Copy ID")}
-      </DropdownMenuItem>
-      <DropdownMenuItem render={<a href={`mailto:${user.email}`} />}>
-        <Mail className="mr-2 h-4 w-4" />
-        {t("Dërgo email", "Send email")}
       </DropdownMenuItem>
       <StartDirectMessageMenuItem
         participantId={user.id}
@@ -239,17 +253,6 @@ export function AdminClientRowActions({
         variant="secondary"
         className="h-auto w-full justify-start py-2.5 font-normal"
         onClick={() => {
-          copyText(user.email, "Emaili u kopjua", "Email copied", locale);
-          setSheetOpen(false);
-        }}
-      >
-        <Copy className="mr-2 h-4 w-4 shrink-0" />
-        {t("Kopjo emailin", "Copy email")}
-      </Button>
-      <Button
-        variant="secondary"
-        className="h-auto w-full justify-start py-2.5 font-normal"
-        onClick={() => {
           copyText(user.id, "ID u kopjua", "ID copied", locale);
           setSheetOpen(false);
         }}
@@ -257,12 +260,39 @@ export function AdminClientRowActions({
         <Copy className="mr-2 h-4 w-4 shrink-0" />
         {t("Kopjo ID", "Copy ID")}
       </Button>
-      <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
-        <a href={`mailto:${user.email}`}>
+      {user.email ? (
+        <>
+          <Button
+            variant="secondary"
+            className="h-auto w-full justify-start py-2.5 font-normal"
+            onClick={() => {
+              copyText(user.email!, "Emaili u kopjua", "Email copied", locale);
+              setSheetOpen(false);
+            }}
+          >
+            <Copy className="mr-2 h-4 w-4 shrink-0" />
+            {t("Kopjo emailin", "Copy email")}
+          </Button>
+          <Button variant="secondary" className="h-auto w-full justify-start py-2.5 font-normal" asChild>
+            <a href={`mailto:${user.email}`}>
+              <Mail className="mr-2 h-4 w-4 shrink-0" />
+              {t("Dërgo email", "Send email")}
+            </a>
+          </Button>
+        </>
+      ) : user.hasPortalAccess ? null : (
+        <Button
+          variant="secondary"
+          className="h-auto w-full justify-start py-2.5 font-normal"
+          onClick={() => {
+            setSheetOpen(false);
+            setInviteOpen(true);
+          }}
+        >
           <Mail className="mr-2 h-4 w-4 shrink-0" />
-          {t("Dërgo email", "Send email")}
-        </a>
-      </Button>
+          {t("Fto në portal", "Invite to portal")}
+        </Button>
+      )}
       <StartDirectMessageButton
         participantId={user.id}
         currentUserId={currentUserId}
@@ -414,11 +444,20 @@ export function AdminClientRowActions({
 
       <AdminClientResetPasswordDialog
         userId={user.id}
-        userEmail={user.email}
+        userEmail={user.email ?? ""}
         userName={`${user.firstName} ${user.lastName}`}
         locale={locale}
         open={resetOpen}
         onOpenChange={setResetOpen}
+        hideTrigger
+      />
+
+      <AdminClientInviteDialog
+        userId={user.id}
+        userName={`${user.firstName} ${user.lastName}`}
+        locale={locale}
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
         hideTrigger
       />
     </>

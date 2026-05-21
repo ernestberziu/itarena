@@ -5,6 +5,7 @@ type OrderDbRow = {
   id: string;
   orderNumber: string;
   status: string;
+  channel: string;
   total: unknown;
   items: unknown;
   createdAt: Date;
@@ -35,6 +36,7 @@ export function mapOrderToAdminRow(order: OrderDbRow): AdminOrderListRow {
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
+    channel: order.channel,
     total: String(order.total),
     itemsJson: order.items as string,
     createdAt: order.createdAt.toISOString(),

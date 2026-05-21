@@ -33,14 +33,14 @@ export const MAIN_NAV: AdminNavItem[] = [
     transKey: "dashboard",
     href: "/admin/dashboard",
     icon: LayoutDashboard,
-    roles: ["ADMIN", "ENGINEER", "SALES", "OPS"],
+    roles: ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"],
   },
   {
     id: "notifications",
     transKey: "notifications",
     href: "/admin/notifications",
     icon: Bell,
-    roles: ["ADMIN", "ENGINEER", "SALES", "OPS"],
+    roles: ["ADMIN", "ENGINEER", "SALES", "OPS", "PARTNER"],
   },
   {
     id: "tickets",

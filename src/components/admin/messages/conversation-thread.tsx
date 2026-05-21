@@ -263,7 +263,7 @@ function ConversationThreadInner({
               <MessageBubble
                 key={m.id}
                 message={m}
-                isOwn={m.author.id === currentUserId}
+                isOwn={m.author?.id === currentUserId}
                 internalLabel={t("internal")}
                 showSenderName
               />

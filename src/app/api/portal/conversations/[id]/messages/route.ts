@@ -116,5 +116,28 @@ export async function POST(req: NextRequest, { params }: Params) {
     data: { lastReadAt: message.createdAt },
   });
 
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  const { actorDisplayName, excerpt } = await import("@/lib/notifications/helpers");
+  const actorName = await actorDisplayName(session.user.id);
+  const eventType =
+    conversation.type === "PROJECT" && conversation.projectId
+      ? ("PROJECT_MESSAGE_ADDED" as const)
+      : ("CONVERSATION_MESSAGE_ADDED" as const);
+  emitNotificationSafe({
+    type: eventType,
+    actorId: session.user.id,
+    entity:
+      conversation.projectId
+        ? { type: "project", id: conversation.projectId }
+        : { type: "conversation", id: conversationId },
+    payload: {
+      conversationId,
+      projectId: conversation.projectId ?? undefined,
+      isInternal: false,
+      actorName,
+      excerpt: excerpt(message.body),
+    },
+  });
+
   return NextResponse.json(toPortalMessageRow(message), { status: 201 });
 }

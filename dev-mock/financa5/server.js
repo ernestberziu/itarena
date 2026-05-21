@@ -100,7 +100,14 @@ function route(req, res) {
 
     let items = [...products];
 
-    if (search)          items = items.filter(p => p.name.toLowerCase().includes(search) || p.kod.toLowerCase().includes(search));
+    if (search) {
+      items = items.filter(
+        (p) =>
+          p.name.toLowerCase().includes(search) ||
+          p.kod.toLowerCase().includes(search) ||
+          (p.barcode && p.barcode.toLowerCase().includes(search))
+      );
+    }
     if (catId)           items = items.filter(p => p.categoryId === catId);
     if (inStock === "true")  items = items.filter(p => p.stock > 0);
     if (inStock === "false") items = items.filter(p => p.stock === 0);

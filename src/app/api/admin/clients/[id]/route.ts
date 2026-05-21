@@ -5,7 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
-import { sendAdminClientAccountUpdateEmail } from "@/lib/portal-invite-email";
+import { sendAdminClientAccountUpdateEmail, sendPortalAccountInviteEmail } from "@/lib/portal-invite-email";
 
 const CLIENT_ROLES = ["CLIENT", "COMPANY_ADMIN"] as const;
 
@@ -64,9 +64,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
   const current = await db.user.findFirst({
     where: { id, role: { in: [...CLIENT_ROLES] } },
-    select: { id: true, email: true, firstName: true, lastName: true, language: true },
+    select: { id: true, email: true, passwordHash: true, firstName: true, lastName: true, language: true },
   });
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const isFirstInvite = !current.email || !current.passwordHash;
 
   const trimmedPassword =
     typeof patch.newPassword === "string" && patch.newPassword.trim().length > 0
@@ -82,14 +84,15 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     plainPassword = generateTemporaryPassword();
   }
 
+  const currentEmailNorm = current.email?.trim().toLowerCase() ?? null;
   const nextEmail =
-    patch.email !== undefined ? patch.email.trim().toLowerCase() : current.email.toLowerCase();
+    patch.email !== undefined ? patch.email.trim().toLowerCase() : currentEmailNorm;
   const emailChanged =
-    patch.email !== undefined && nextEmail !== current.email.trim().toLowerCase();
+    patch.email !== undefined && nextEmail !== currentEmailNorm;
 
   if (patch.email !== undefined) {
     const dup = await db.user.findFirst({
-      where: { email: nextEmail, NOT: { id } },
+      where: { email: nextEmail!, NOT: { id } },
       select: { id: true },
     });
     if (dup) {
@@ -110,7 +113,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   if (patch.firstName !== undefined) prismaData.firstName = patch.firstName;
   if (patch.lastName !== undefined) prismaData.lastName = patch.lastName;
   if (patch.email !== undefined) {
-    prismaData.email = nextEmail;
+    prismaData.email = nextEmail!;
     prismaData.emailVerified = null;
   }
   if (patch.isActive !== undefined) prismaData.isActive = patch.isActive;
@@ -153,17 +156,37 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
 
   let credentialsEmailSent = false;
-  if (patch.notifyCustomer && plainPassword) {
-    const mail = await sendAdminClientAccountUpdateEmail({
-      to: nextEmail,
-      firstName: patch.firstName ?? current.firstName,
-      mailLocale: mailLocale(current.language),
-      temporaryPassword: plainPassword,
-      signInEmail: nextEmail,
-      emailChanged,
-      previousEmail: emailChanged ? current.email : undefined,
+  if (patch.notifyCustomer && plainPassword && nextEmail) {
+    if (isFirstInvite || emailChanged) {
+      const mail = await sendPortalAccountInviteEmail({
+        to: nextEmail,
+        firstName: patch.firstName ?? current.firstName,
+        tempPassword: plainPassword,
+        locale: mailLocale(current.language),
+      });
+      credentialsEmailSent = mail.sent;
+    } else {
+      const mail = await sendAdminClientAccountUpdateEmail({
+        to: nextEmail,
+        firstName: patch.firstName ?? current.firstName,
+        mailLocale: mailLocale(current.language),
+        temporaryPassword: plainPassword,
+        signInEmail: nextEmail,
+        emailChanged,
+        previousEmail: emailChanged ? (current.email ?? undefined) : undefined,
+      });
+      credentialsEmailSent = mail.sent;
+    }
+  }
+
+  if (hasPrismaUpdates) {
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    emitNotificationSafe({
+      type: "CLIENT_ACCOUNT_UPDATED",
+      actorId: session.user.id,
+      payload: { userId: id },
+      skipEmail: patch.notifyCustomer && credentialsEmailSent,
     });
-    credentialsEmailSent = mail.sent;
   }
 
   return NextResponse.json(

@@ -17,6 +17,7 @@ export const ADMIN_FEATURES = [
   "quotes",
   "orders",
   "catalog",
+  "pos_sale",
   "staff",
   "reports",
   "templates",
@@ -67,6 +68,7 @@ export const ROLE_DEFAULT_ACL: Record<StaffRole, Record<AdminFeature, AclLevel>>
   }),
   PARTNER: mergeDefaults({
     dashboard: R,
+    notifications: W,
     projects: W,
     messages: R,
     calendar: W,

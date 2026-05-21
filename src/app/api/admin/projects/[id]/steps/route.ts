@@ -112,6 +112,19 @@ export async function POST(req: NextRequest, { params }: Params) {
     data: { updatedAt: new Date() },
   });
 
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  emitNotificationSafe({
+    type: "PROJECT_STEP_UPDATED",
+    actorId: session.user.id,
+    entity: { type: "project", id: projectId },
+    payload: {
+      projectId,
+      stepTitle: step.title,
+      status: step.status,
+      clientVisible: step.clientVisible,
+    },
+  });
+
   revalidateProjectPaths(projectId);
   return NextResponse.json(serializeStep(step), { status: 201 });
 }

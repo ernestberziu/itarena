@@ -15,10 +15,12 @@ import {
   Save,
   ShoppingBag,
   Tag,
+  FileText,
   Truck,
   User,
 } from "lucide-react";
 import { toast } from "sonner";
+import { EmailClientButton } from "@/components/admin/email-client-button";
 import { OrderStatusBadge } from "@/components/admin/order-status-badge";
 import { AdminStatCard, UserAvatar } from "@/components/admin/users";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +69,7 @@ export type AdminOrderDetailModel = {
   deliveredAt: string | null;
   cancelledAt: string | null;
   cancelReason: string | null;
-  user: { firstName: string; lastName: string; email: string; phone: string | null };
+  user: { firstName: string; lastName: string; email: string | null; phone: string | null };
   company: { name: string } | null;
 };
 
@@ -542,13 +544,24 @@ export function AdminOrderDetailView({
                 {saving ? "…" : t("Ruaj", "Save")}
               </Button>
               {order.user.email ? (
-                <Button variant="secondary" className="w-full gap-2" asChild>
-                  <a href={`mailto:${order.user.email}`}>
-                    <Truck className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    {t("Email klientit", "Email client")}
-                  </a>
-                </Button>
+                <EmailClientButton
+                  apiUrl={`/api/admin/orders/${order.id}/email-client`}
+                  label={t("Email klientit", "Email client")}
+                  variant="secondary"
+                  className="w-full"
+                  size="default"
+                />
               ) : null}
+              <Button variant="outline" className="w-full gap-2" asChild>
+                <a
+                  href={`/api/admin/orders/${order.id}/invoice-pdf?lang=${locale === "en" ? "en" : "sq"}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  {t("Printo faturën", "Print invoice")}
+                </a>
+              </Button>
             </div>
           </motion.div>
         </aside>

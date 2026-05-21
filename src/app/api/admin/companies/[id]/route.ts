@@ -43,7 +43,7 @@ function mapDetail(company: {
     id: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     isActive: boolean;
     lastLoginAt: Date | null;
     role: string;

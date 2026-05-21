@@ -46,6 +46,13 @@ import type { Role } from "@/types/domain";
 import type { AdminFeature, AclLevel } from "@/lib/admin-acl/features";
 import { hasAclLevel } from "@/lib/admin-acl/features";
 import { staffRoleLabelFromRole } from "@/lib/staff-role-labels";
+import { useNotificationCount } from "@/components/providers/notification-count-provider";
+import {
+  NotificationBellBadge,
+  NotificationCollapsedDot,
+  NotificationNavBadge,
+} from "@/components/shared/notification-count-badge";
+import { AdminPosFab } from "@/components/admin/admin-pos-fab";
 
 const COLLAPSE_KEY = "admin-sidebar-collapsed";
 
@@ -80,6 +87,7 @@ export function AdminAppShell({
   notificationCount = 0,
   effectiveAcl = null,
 }: AdminAppShellProps) {
+  const liveNotificationCount = useNotificationCount(notificationCount);
   const pathname = useNextPathname();
   const intlPathname = useIntlPathname();
   const intlRouter = useIntlRouter();
@@ -141,6 +149,10 @@ export function AdminAppShell({
   const canSeeNotifications =
     !effectiveAcl || hasAclLevel(effectiveAcl, "notifications", "read");
   const canSeeProfile = !effectiveAcl || hasAclLevel(effectiveAcl, "profile", "read");
+  const canPosSale = Boolean(
+    effectiveAcl && hasAclLevel(effectiveAcl, "pos_sale", "write")
+  );
+  const showPosDailyReport = userRole === "ADMIN";
 
   const profileHref = crossAppAdminHref(contextApp, locale, "/admin/profile");
   const notificationsHref = crossAppAdminHref(
@@ -181,11 +193,13 @@ export function AdminAppShell({
     icon: Icon,
     label,
     active,
+    badge,
   }: {
     href: string;
     icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
     label: string;
     active: boolean;
+    badge?: number;
   }) => {
     const linkClassName = cn(
       "group flex items-center rounded-xl py-2 text-sm font-medium transition-colors duration-200 ease-out",
@@ -193,6 +207,17 @@ export function AdminAppShell({
       active ? undefined : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
     );
     const linkStyle = active ? { color: SHOP_CATEGORY_SELECTED_TEXT } : undefined;
+
+    const inner = (
+      <>
+        <span className="relative shrink-0">
+          <Icon className="h-4 w-4" strokeWidth={2} />
+          {collapsed && badge != null && badge > 0 ? <NotificationCollapsedDot /> : null}
+        </span>
+        {!collapsed && <span className="flex-1 truncate">{label}</span>}
+        {!collapsed && badge != null && badge > 0 ? <NotificationNavBadge count={badge} /> : null}
+      </>
+    );
 
     if (collapsed && hydrated) {
       return (
@@ -207,7 +232,7 @@ export function AdminAppShell({
               />
             }
           >
-            <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
+            {inner}
           </TooltipTrigger>
           <TooltipContent
             data-slot="admin-sidebar-tooltip"
@@ -218,6 +243,7 @@ export function AdminAppShell({
             className={SIDEBAR_LABEL_PANEL_CLASS}
           >
             {label}
+            {badge != null && badge > 0 ? ` (${badge})` : ""}
           </TooltipContent>
         </Tooltip>
       );
@@ -230,8 +256,7 @@ export function AdminAppShell({
         className={linkClassName}
         style={linkStyle}
       >
-        <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
-        <span className="flex-1 truncate">{label}</span>
+        {inner}
       </Link>
     );
   };
@@ -281,6 +306,11 @@ export function AdminAppShell({
                 icon={item.icon}
                 label={t(item.transKey)}
                 active={isRouteActive(href)}
+                badge={
+                  item.id === "notifications" && canSeeNotifications
+                    ? liveNotificationCount
+                    : undefined
+                }
               />
             );
           })}
@@ -472,16 +502,31 @@ export function AdminAppShell({
           <Button
             variant="outline"
             size="sm"
-            className="relative h-9 w-9 shrink-0 border-border/40 bg-background/80 p-0 shadow-none hover:bg-muted/60"
+            className={cn(
+              "relative h-9 w-9 shrink-0 overflow-visible border-border/40 p-0 shadow-none hover:bg-muted/60",
+              liveNotificationCount > 0
+                ? "bg-accent/15 border-amber-600/30 hover:bg-accent/25"
+                : "bg-background/80"
+            )}
             asChild
           >
-            <Link href={notificationsHref}>
-              <Bell className="h-4 w-4" strokeWidth={2} />
-              {notificationCount > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
-                  {notificationCount > 9 ? "9+" : notificationCount}
-                </span>
-              )}
+            <Link
+              href={notificationsHref}
+              className="relative inline-flex h-9 w-9 items-center justify-center overflow-visible"
+              aria-label={
+                liveNotificationCount > 0
+                  ? `${t("notifications")} (${liveNotificationCount})`
+                  : t("notifications")
+              }
+            >
+              <Bell
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  liveNotificationCount > 0 && "text-[hsl(var(--brand-navy))]"
+                )}
+                strokeWidth={2}
+              />
+              <NotificationBellBadge count={liveNotificationCount} />
             </Link>
           </Button>
           ) : null}
@@ -537,6 +582,14 @@ export function AdminAppShell({
           <div className="mx-auto max-w-7xl px-4 py-6 md:px-8 lg:py-8">{children}</div>
         </main>
       </div>
+
+      {contextApp === "locale" && (canPosSale || showPosDailyReport) ? (
+        <AdminPosFab
+          canPosSale={canPosSale}
+          showDailyReport={showPosDailyReport}
+          locale={locale}
+        />
+      ) : null}
     </div>
     </TooltipProvider>
   );

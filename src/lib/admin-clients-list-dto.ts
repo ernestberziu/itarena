@@ -8,7 +8,8 @@ type ClientDbRow = {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
+  passwordHash: string | null;
   isActive: boolean;
   emailVerified: Date | null;
   role: string;
@@ -26,6 +27,7 @@ export function mapClientToAdminRow(u: ClientDbRow): AdminClientRow {
     firstName: u.firstName,
     lastName: u.lastName,
     email: u.email,
+    hasPortalAccess: Boolean(u.email && u.passwordHash),
     isActive: u.isActive,
     emailVerified: u.emailVerified?.toISOString() ?? null,
     role: u.role,

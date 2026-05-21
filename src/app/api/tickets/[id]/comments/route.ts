@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { z } from "zod";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { canCommentOnPortalTicket, portalUser } from "@/lib/portal/access";
+import { emitNotificationSafe } from "@/lib/notifications";
+import { actorDisplayName, excerpt } from "@/lib/notifications/helpers";
 
 const schema = z.object({
   body: z.string().min(1),
@@ -82,6 +84,37 @@ export async function POST(
 
   // Update ticket updatedAt
   await db.ticket.update({ where: { id }, data: { updatedAt: new Date() } });
+
+  const actorName = await actorDisplayName(session.user.id);
+  emitNotificationSafe({
+    type: "TICKET_COMMENT_ADDED",
+    actorId: session.user.id,
+    entity: { type: "ticket", id },
+    payload: {
+      ticketId: id,
+      ticketNumber: ticket.number,
+      title: ticket.title,
+      isInternal,
+      actorName,
+      excerpt: excerpt(parsed.data.body),
+    },
+  });
+
+  if (!isStaff && ticket.status === "PENDING_CLIENT") {
+    emitNotificationSafe({
+      type: "TICKET_STATUS_CHANGED",
+      actorId: session.user.id,
+      entity: { type: "ticket", id },
+      dedupeKey: `ticket:${id}:status:IN_PROGRESS`,
+      payload: {
+        ticketId: id,
+        ticketNumber: ticket.number,
+        title: ticket.title,
+        oldStatus: "PENDING_CLIENT",
+        newStatus: "IN_PROGRESS",
+      },
+    });
+  }
 
   return NextResponse.json(comment, { status: 201 });
 }

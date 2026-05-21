@@ -54,7 +54,7 @@ const CSV_COLUMNS = [
 function toCsvRow(u: AdminClientRow): Record<string, string | number | boolean> {
   return {
     id: u.id,
-    email: u.email,
+    email: u.email ?? "",
     firstName: u.firstName,
     lastName: u.lastName,
     role: u.role,
@@ -264,7 +264,12 @@ export function AdminClientsTable({
         header: "Email",
         enableSorting: true,
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-xs break-all">{row.original.email}</span>
+          <span
+            className={`text-xs break-all ${row.original.email ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"}`}
+          >
+            {row.original.email ??
+              (locale === "sq" ? "— Pa ftesë" : "— Not invited")}
+          </span>
         ),
       },
       {
@@ -372,6 +377,7 @@ export function AdminClientsTable({
               user={{
                 id: row.original.id,
                 email: row.original.email,
+                hasPortalAccess: row.original.hasPortalAccess,
                 firstName: row.original.firstName,
                 lastName: row.original.lastName,
                 isActive: row.original.isActive,
@@ -472,7 +478,9 @@ export function AdminClientsTable({
                       <p className="font-semibold leading-tight">
                         {u.firstName} {u.lastName}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                      <p className={`text-xs truncate ${u.email ? "text-muted-foreground" : "text-amber-700 dark:text-amber-400"}`}>
+                        {u.email ?? (locale === "sq" ? "Pa ftesë" : "Not invited")}
+                      </p>
                       <UserStatusBadges user={badgeInput} locale={locale} className="mt-2" />
                     </div>
                   </Link>
@@ -491,6 +499,7 @@ export function AdminClientsTable({
                       user={{
                         id: u.id,
                         email: u.email,
+                        hasPortalAccess: u.hasPortalAccess,
                         firstName: u.firstName,
                         lastName: u.lastName,
                         isActive: u.isActive,

@@ -31,7 +31,7 @@ export function AdminCompanyAddMemberDialog({
   const t = (sq: string, e: string) => (en ? e : sq);
   const [q, setQ] = useState("");
   const [clients, setClients] = useState<
-    { id: string; firstName: string; lastName: string; email: string; company: { name: string } | null }[]
+    { id: string; firstName: string; lastName: string; email: string | null; company: { name: string } | null }[]
   >([]);
   const [loading, setLoading] = useState(false);
   const [assigning, setAssigning] = useState<string | null>(null);

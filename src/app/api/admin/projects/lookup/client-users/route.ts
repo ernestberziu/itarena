@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
   const items: ProjectLookupItem[] = users.map((u) => ({
     id: u.id,
     label: `${u.firstName} ${u.lastName}`.trim(),
-    sublabel: u.email,
+    sublabel: u.email ?? undefined,
     meta: u.company?.name ?? undefined,
   }));
 

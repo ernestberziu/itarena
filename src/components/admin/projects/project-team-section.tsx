@@ -15,7 +15,7 @@ import type { ProjectAccess } from "@/lib/projects/types";
 export type ProjectMemberRow = {
   id: string;
   access: ProjectAccess;
-  user: { id: string; firstName: string; lastName: string; email: string; role: string };
+  user: { id: string; firstName: string; lastName: string; email: string | null; role: string };
 };
 
 export type PendingMember = {

@@ -30,10 +30,17 @@ export default async function TicketDetailPage({
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
         company: { select: { name: true } },
         comments: {
-          include: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            body: true,
+            isInternal: true,
+            attachments: true,
+            createdAt: true,
+            updatedAt: true,
+            guestAuthorName: true,
             author: { select: { id: true, firstName: true, lastName: true, role: true } },
           },
-          orderBy: { createdAt: "asc" },
         },
         history: {
           include: {
@@ -75,7 +82,10 @@ export default async function TicketDetailPage({
     createdBy: { ...ticket.createdBy, role: ticket.createdBy.role as Role },
     comments: ticket.comments.map((c) => ({
       ...c,
-      author: { ...c.author, role: c.author.role as Role },
+      guestAuthorName: c.guestAuthorName,
+      author: c.author
+        ? { ...c.author, role: c.author.role as Role }
+        : null,
     })),
     history: isStaff ? mappedHistory : clientHistory,
   };

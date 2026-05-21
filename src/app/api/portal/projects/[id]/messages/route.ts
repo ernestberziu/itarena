@@ -5,6 +5,8 @@ import { portalUser, PORTAL_ROLES } from "@/lib/portal/access";
 import { assertPortalProjectAccess } from "@/lib/portal/project-access";
 import { projectMessageSchema } from "@/lib/projects";
 import { ensureProjectConversation } from "@/lib/messages/project-channel";
+import { emitNotificationSafe } from "@/lib/notifications";
+import { actorDisplayName, excerpt } from "@/lib/notifications/helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -25,7 +27,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const messages = await db.conversationMessage.findMany({
     where: { conversationId: conv.id, isInternal: false },
-    include: {
+    select: {
+      id: true,
+      body: true,
+      createdAt: true,
+      guestAuthorName: true,
       author: { select: { id: true, firstName: true, lastName: true, role: true } },
     },
     orderBy: { createdAt: "asc" },
@@ -36,6 +42,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       id: m.id,
       body: m.body,
       createdAt: m.createdAt.toISOString(),
+      guestAuthorName: m.guestAuthorName,
       author: m.author,
     }))
   );
@@ -77,7 +84,11 @@ export async function POST(req: NextRequest, { params }: Params) {
       body: parsed.data.body.trim(),
       isInternal: false,
     },
-    include: {
+    select: {
+      id: true,
+      body: true,
+      createdAt: true,
+      guestAuthorName: true,
       author: { select: { id: true, firstName: true, lastName: true, role: true } },
     },
   });
@@ -90,6 +101,24 @@ export async function POST(req: NextRequest, { params }: Params) {
   await db.project.update({
     where: { id: projectId },
     data: { updatedAt: new Date() },
+  });
+
+  const project = await db.project.findUnique({
+    where: { id: projectId },
+    select: { title: true },
+  });
+  const actorName = await actorDisplayName(session.user.id);
+  emitNotificationSafe({
+    type: "PROJECT_MESSAGE_ADDED",
+    actorId: session.user.id,
+    entity: { type: "project", id: projectId },
+    payload: {
+      projectId,
+      title: project?.title,
+      isInternal: false,
+      actorName,
+      excerpt: excerpt(message.body),
+    },
   });
 
   return NextResponse.json(

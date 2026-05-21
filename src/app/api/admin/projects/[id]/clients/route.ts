@@ -59,6 +59,23 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   try {
     const client = await linkProjectClient(projectId, parsed.data, { locale });
+    const project = await db.project.findUnique({
+      where: { id: projectId },
+      select: { title: true },
+    });
+    const { emitNotificationSafe } = await import("@/lib/notifications");
+    if (client.userId) {
+      emitNotificationSafe({
+        type: "PROJECT_CLIENT_LINKED",
+        actorId: session.user.id,
+        entity: { type: "project", id: projectId },
+        payload: {
+          projectId,
+          title: project?.title,
+          userId: client.userId,
+        },
+      });
+    }
     revalidateProjectPaths(projectId);
     return NextResponse.json(client, { status: 201 });
   } catch (err) {

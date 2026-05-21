@@ -9,6 +9,8 @@ import {
 } from "@/lib/projects";
 import { ensureProjectConversation } from "@/lib/messages/project-channel";
 import { isStaffRole } from "@/lib/messages";
+import { emitNotificationSafe } from "@/lib/notifications";
+import { actorDisplayName, excerpt } from "@/lib/notifications/helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -99,6 +101,24 @@ export async function POST(req: NextRequest, { params }: Params) {
   await db.project.update({
     where: { id: projectId },
     data: { updatedAt: new Date() },
+  });
+
+  const project = await db.project.findUnique({
+    where: { id: projectId },
+    select: { title: true },
+  });
+  const actorName = await actorDisplayName(session.user.id);
+  emitNotificationSafe({
+    type: "PROJECT_MESSAGE_ADDED",
+    actorId: session.user.id,
+    entity: { type: "project", id: projectId },
+    payload: {
+      projectId,
+      title: project?.title,
+      isInternal: message.isInternal,
+      actorName,
+      excerpt: excerpt(message.body),
+    },
   });
 
   revalidateProjectPaths(projectId);

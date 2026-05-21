@@ -64,6 +64,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     include: projectDetailInclude,
   });
 
+  const { emitNotificationSafe } = await import("@/lib/notifications");
+  emitNotificationSafe({
+    type: "PROJECT_UPDATED",
+    actorId: session.user.id,
+    entity: { type: "project", id },
+    payload: { projectId: id, title: project.title },
+  });
+
   revalidateProjectPaths(id);
   return NextResponse.json(project);
 }

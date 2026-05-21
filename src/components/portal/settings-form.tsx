@@ -16,7 +16,7 @@ interface User {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   language: string;
 }
@@ -138,7 +138,7 @@ export function PortalSettingsForm({
               <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">
                 Email
               </Label>
-              <Input id="email" value={user.email} disabled className="bg-muted/40" />
+              <Input id="email" value={user.email ?? ""} disabled className="bg-muted/40" />
               <p className="text-xs text-muted-foreground">
                 {t("Emaili nuk mund të ndryshohet.", "Email cannot be changed.")}
               </p>

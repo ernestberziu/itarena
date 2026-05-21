@@ -23,6 +23,7 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "sonner";
+import { EmailClientButton } from "@/components/admin/email-client-button";
 import { QuoteStatusBadge } from "@/components/admin/quote-status-badge";
 import { AdminStatCard, UserAvatar } from "@/components/admin/users";
 import { Badge } from "@/components/ui/badge";
@@ -69,7 +70,7 @@ export type AdminQuoteDetailModel = {
   updatedAt: string;
   respondedAt: string | null;
   followUpSentAt: string | null;
-  requestedBy: { firstName: string; lastName: string; email: string };
+  requestedBy: { firstName: string; lastName: string; email: string | null };
   company: { name: string } | null;
 };
 
@@ -519,12 +520,13 @@ export function AdminQuoteDetailView({
                   </a>
                 </Button>
               ) : null}
-              <Button variant="secondary" className="w-full gap-2" asChild>
-                <a href={`mailto:${quote.contactEmail}`}>
-                  <Mail className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  {t("Email klientit", "Email client")}
-                </a>
-              </Button>
+              <EmailClientButton
+                apiUrl={`/api/admin/quotes/${quote.id}/email-client`}
+                label={t("Email klientit", "Email client")}
+                variant="secondary"
+                className="w-full"
+                size="default"
+              />
             </div>
           </motion.div>
         </aside>

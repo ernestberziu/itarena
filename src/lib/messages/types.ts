@@ -21,7 +21,7 @@ export type ConversationListRow = {
     id: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     role: Role;
   }>;
   displayTitle: string;
@@ -40,7 +40,7 @@ export type ConversationDetail = {
     participantRole: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     role: Role;
     lastReadAt: string | null;
   }>;
@@ -52,10 +52,11 @@ export type ConversationMessageRow = {
   body: string;
   isInternal: boolean;
   createdAt: string;
+  guestAuthorName?: string | null;
   author: {
     id: string;
     firstName: string;
     lastName: string;
     role: Role;
-  };
+  } | null;
 };

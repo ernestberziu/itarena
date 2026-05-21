@@ -8,7 +8,7 @@ import { adminClientsListWhere } from "@/lib/admin-clients-list-where";
 import { mapClientToAdminRow } from "@/lib/admin-clients-list-dto";
 import { assertAdminApiAcl } from "@/lib/admin-acl/guards";
 import { paginatedResponse, parseListPageParams } from "@/lib/admin-list-pagination";
-import { sendAdminClientAccountUpdateEmail } from "@/lib/portal-invite-email";
+import { sendAdminClientAccountUpdateEmail, sendPortalAccountInviteEmail } from "@/lib/portal-invite-email";
 
 
 const clientListSelect = {
@@ -16,6 +16,7 @@ const clientListSelect = {
   firstName: true,
   lastName: true,
   email: true,
+  passwordHash: true,
   isActive: true,
   emailVerified: true,
   role: true,
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
     approved: searchParams.get("approved"),
     active: searchParams.get("active") ?? "all",
     affiliation: searchParams.get("affiliation"),
+    portalAccess: searchParams.get("portalAccess"),
   });
 
   const [users, total] = await Promise.all([
@@ -67,7 +69,7 @@ const postSchema = z
   .object({
     firstName: z.string().min(1).max(120),
     lastName: z.string().min(1).max(120),
-    email: z.string().email().max(255),
+    email: z.string().email().max(255).optional().nullable(),
     phone: z.string().max(40).optional().nullable(),
     companyId: z.string().min(1).optional().nullable(),
     language: z.enum(["sq", "en"]).optional().default("sq"),
@@ -75,7 +77,30 @@ const postSchema = z
     generateTemporaryPassword: z.boolean().optional(),
     notifyCustomer: z.boolean().optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((data, ctx) => {
+    const email = data.email?.trim();
+    const hasEmail = Boolean(email);
+    const wantsNotify = Boolean(data.notifyCustomer);
+    const wantsGen = Boolean(data.generateTemporaryPassword);
+    const hasPwd = Boolean(data.newPassword?.trim());
+
+    if ((wantsNotify || wantsGen || hasPwd) && !hasEmail) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Email is required when setting a password or sending notification",
+        path: ["email"],
+      });
+    }
+
+    if (hasEmail && !hasPwd && !wantsGen && !wantsNotify) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Provide newPassword, generateTemporaryPassword, or notifyCustomer when email is set",
+        path: ["newPassword"],
+      });
+    }
+  });
 
 function generateTemporaryPassword(): string {
   return randomBytes(14).toString("base64url").replace(/=/g, "").slice(0, 20);
@@ -110,10 +135,14 @@ export async function POST(req: NextRequest) {
   }
 
   const data = parsed.data;
-  const email = data.email.trim().toLowerCase();
+  const emailRaw = data.email?.trim();
+  const hasEmail = Boolean(emailRaw);
+  const email = hasEmail ? emailRaw!.toLowerCase() : null;
 
-  const dup = await db.user.findFirst({ where: { email }, select: { id: true } });
-  if (dup) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+  if (email) {
+    const dup = await db.user.findFirst({ where: { email }, select: { id: true } });
+    if (dup) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+  }
 
   if (data.companyId) {
     const company = await db.company.findUnique({ where: { id: data.companyId }, select: { id: true } });
@@ -121,14 +150,16 @@ export async function POST(req: NextRequest) {
   }
 
   let plainPassword: string | undefined;
-  if (data.newPassword?.trim()) plainPassword = data.newPassword.trim();
-  else if (data.generateTemporaryPassword || data.notifyCustomer) plainPassword = generateTemporaryPassword();
+  if (email) {
+    if (data.newPassword?.trim()) plainPassword = data.newPassword.trim();
+    else if (data.generateTemporaryPassword || data.notifyCustomer) plainPassword = generateTemporaryPassword();
 
-  if (!plainPassword) {
-    return NextResponse.json(
-      { error: "Provide newPassword (min 8) or generateTemporaryPassword: true" },
-      { status: 400 }
-    );
+    if (!plainPassword) {
+      return NextResponse.json(
+        { error: "Provide newPassword (min 8) or generateTemporaryPassword: true" },
+        { status: 400 }
+      );
+    }
   }
 
   const user = await db.user.create({
@@ -137,7 +168,7 @@ export async function POST(req: NextRequest) {
       lastName: data.lastName.trim(),
       email,
       phone: data.phone?.trim() || null,
-      passwordHash: await bcrypt.hash(plainPassword, 12),
+      passwordHash: plainPassword ? await bcrypt.hash(plainPassword, 12) : null,
       role: "CLIENT",
       language: data.language,
       companyId: data.companyId ?? null,
@@ -146,14 +177,12 @@ export async function POST(req: NextRequest) {
   });
 
   let credentialsEmailSent = false;
-  if (data.notifyCustomer) {
-    const mail = await sendAdminClientAccountUpdateEmail({
+  if (data.notifyCustomer && email && plainPassword) {
+    const mail = await sendPortalAccountInviteEmail({
       to: email,
       firstName: user.firstName,
-      mailLocale: user.language === "en" ? "en" : "sq",
-      temporaryPassword: plainPassword,
-      signInEmail: email,
-      emailChanged: false,
+      tempPassword: plainPassword,
+      locale: user.language === "en" ? "en" : "sq",
     });
     credentialsEmailSent = mail.sent;
   }
@@ -161,9 +190,10 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(
     {
       id: user.id,
-      notifyEmailAttempted: Boolean(data.notifyCustomer),
+      notifyEmailAttempted: Boolean(data.notifyCustomer && email),
       credentialsEmailSent,
       temporaryPassword: data.notifyCustomer && credentialsEmailSent ? undefined : plainPassword,
+      pendingInvite: !email,
     },
     { status: 201 }
   );

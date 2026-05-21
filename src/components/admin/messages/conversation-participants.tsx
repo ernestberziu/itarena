@@ -33,7 +33,7 @@ function ParticipantRow({
 }: {
   firstName: string;
   lastName: string;
-  email: string;
+  email: string | null;
   role: string;
   isCreator?: boolean;
   canRemove?: boolean;
