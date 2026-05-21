@@ -85,10 +85,15 @@ export class Financa5Client {
   }
 
   private get headers(): HeadersInit {
-    return {
+    const h: Record<string, string> = {
       "X-Api-Key": this.apiKey,
       "Content-Type": "application/json",
     };
+    // Required for ngrok free tier — skips browser interstitial on API calls
+    if (this.baseUrl.includes("ngrok")) {
+      h["ngrok-skip-browser-warning"] = "true";
+    }
+    return h;
   }
 
   private async get<T>(path: string): Promise<T> {
